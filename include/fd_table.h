@@ -10,7 +10,7 @@ struct uvwasi_fd_wrap_t {
   uvwasi_fd_t id;
   uv_file fd;
   char path[1024];  /* TODO(cjihrig): Make this dynamic. */
-  uvwasi_filetype_t type;
+  uvwasi_filetype_t type; /* TODO(cjihrig): It probably isn't safe to cache. */
   uvwasi_rights_t rights_base;
   uvwasi_rights_t rights_inheriting;
 };

@@ -278,7 +278,27 @@ uvwasi_errno_t uvwasi_fd_filestat_get(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_fd_filestat_set_size(uvwasi_t* uvwasi,
                                            uvwasi_fd_t fd,
                                            uvwasi_filesize_t st_size) {
-  return UVWASI_ENOTSUP;
+  /* TODO(cjihrig): uv_fs_ftruncate() takes an int64_t. st_size is uint64_t. */
+  struct uvwasi_fd_wrap_t wrap;
+  uv_fs_t req;
+  uvwasi_errno_t err;
+  int r;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds,
+                            fd,
+                            &wrap,
+                            UVWASI_RIGHT_FD_FILESTAT_SET_SIZE,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  r = uv_fs_ftruncate(NULL, &req, wrap.fd, st_size, NULL);
+  uv_fs_req_cleanup(&req);
+
+  if (r != 0)
+    return uvwasi__translate_uv_error(r);
+
+  return UVWASI_ESUCCESS;
 }
 
 
