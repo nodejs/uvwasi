@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "uvwasi.h"
 #include "uv.h"
 #include "fd_table.h"
@@ -600,7 +602,8 @@ uvwasi_errno_t uvwasi_poll_oneoff(uvwasi_t* uvwasi,
 
 
 uvwasi_errno_t uvwasi_proc_exit(uvwasi_t* uvwasi, uvwasi_exitcode_t rval) {
-  return UVWASI_ENOTSUP;
+  exit(rval);
+  return UVWASI_ESUCCESS; /* This doesn't happen. */
 }
 
 

@@ -58,5 +58,7 @@ int main(void) {
   r = uvwasi_path_unlink_file(uvw, dirfd, path, strlen(path));
   printf("unlink_file r = %d\n", r);
 
+  uvwasi_proc_exit(uvw, 75);
+
   return 0;
 }
