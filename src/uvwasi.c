@@ -550,7 +550,16 @@ uvwasi_errno_t uvwasi_path_remove_directory(uvwasi_t* uvwasi,
                                             uvwasi_fd_t fd,
                                             const char* path,
                                             size_t path_len) {
-  return UVWASI_ENOTSUP;
+  uv_fs_t req;
+  int r;
+  /* TODO(cjihrig): Handle fd. */
+  r = uv_fs_rmdir(NULL, &req, path, NULL);
+  uv_fs_req_cleanup(&req);
+
+  if (r != 0)
+    return uvwasi__translate_uv_error(r);
+
+  return UVWASI_ESUCCESS;
 }
 
 
