@@ -14,13 +14,14 @@ int main(void) {
   r = uvwasi_init(uvw, 1, preopen_dirs);
   printf("uvwasi_init() r = %d\n", r);
 
-  uvwasi_fd_t dirfd = 1;
+  uvwasi_fd_t dirfd = 3;
   uvwasi_lookupflags_t dirflags = 1;
   const char* path = "./foo.txt";
   uvwasi_oflags_t o_flags = UVWASI_O_CREAT;
   uvwasi_rights_t fs_rights_base = UVWASI_RIGHT_FD_FILESTAT_GET |
                                    UVWASI_RIGHT_FD_FILESTAT_SET_SIZE |
-                                   UVWASI_RIGHT_FD_READ;
+                                   UVWASI_RIGHT_FD_READ |
+                                   UVWASI_RIGHT_PATH_UNLINK_FILE;
   uvwasi_rights_t fs_rights_inheriting = 1;
   uvwasi_fdflags_t fs_flags = 1;
   uvwasi_fd_t fd;

@@ -9,12 +9,14 @@
 
 uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, int preopenc, char**preopen_dirs) {
   /* TODO(cjihrig): Support mapping preopened directories to other names. */
-  struct uvwasi_fd_wrap_t wrap;
   uv_fs_t realpath_req;
   uv_fs_t open_req;
   int flags;
   int i;
-  int r;
+  uvwasi_errno_t r;
+
+  /* TODO(cjihrig): Make the initial size configurable. */
+  r = uvwasi_fd_table_init(&uvwasi->fds, 1024);
 
   flags = UV_FS_O_CREAT;
 
@@ -23,13 +25,10 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, int preopenc, char**preopen_dirs) {
     /* TODO(cjihrig): Handle errors. */
     r = uv_fs_open(NULL, &open_req, realpath_req.ptr, flags, 0666, NULL);
     /* TODO(cjihrig): Handle errors. */
-    r = uvwasi_fd_table_insert_fd(&uvwasi->preopens,
-                                  open_req.result,
-                                  flags,
-                                  realpath_req.ptr,
-                                  0,  /* TODO(cjihrig): rights_base. */
-                                  0,  /* TODO(cjihrig): rights_inheriting. */
-                                  &wrap);
+    r = uvwasi_fd_table_insert_preopen(&uvwasi->fds,
+                                       open_req.result,
+                                       realpath_req.ptr,
+                                       realpath_req.ptr);
     /* TODO(cjihrig): Handle errors. */
     uv_fs_req_cleanup(&realpath_req);
     uv_fs_req_cleanup(&open_req);
@@ -196,18 +195,23 @@ uvwasi_errno_t uvwasi_fd_allocate(uvwasi_t* uvwasi,
 
 uvwasi_errno_t uvwasi_fd_close(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
   struct uvwasi_fd_wrap_t wrap;
+  uvwasi_errno_t err;
   uv_fs_t req;
   int r;
 
-  r = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, 0, 0);
-  /* TODO(cjihrig): Check for errors. */
+  err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, 0, 0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
 
   r = uv_fs_close(NULL, &req, wrap.fd, NULL);
   uv_fs_req_cleanup(&req);
-  /* TODO(cjihrig): Delete wrap.id from the FD table. */
 
   if (r != 0)
     return uvwasi__translate_uv_error(r);
+
+  err = uvwasi_fd_table_remove(&uvwasi->fds, fd);
+  if (err != UVWASI_ESUCCESS)
+    return err;
 
   return UVWASI_ESUCCESS;
 }
@@ -550,9 +554,20 @@ uvwasi_errno_t uvwasi_path_remove_directory(uvwasi_t* uvwasi,
                                             uvwasi_fd_t fd,
                                             const char* path,
                                             size_t path_len) {
+  struct uvwasi_fd_wrap_t wrap;
   uv_fs_t req;
+  uvwasi_errno_t err;
   int r;
-  /* TODO(cjihrig): Handle fd. */
+
+  err = uvwasi_fd_table_get(&uvwasi->fds,
+                            fd,
+                            &wrap,
+                            UVWASI_RIGHT_PATH_REMOVE_DIRECTORY,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  /* TODO(cjihrig): Resolve path from fd. */
   r = uv_fs_rmdir(NULL, &req, path, NULL);
   uv_fs_req_cleanup(&req);
 
@@ -588,9 +603,20 @@ uvwasi_errno_t uvwasi_path_unlink_file(uvwasi_t* uvwasi,
                                        uvwasi_fd_t fd,
                                        const char* path,
                                        size_t path_len) {
+  struct uvwasi_fd_wrap_t wrap;
   uv_fs_t req;
+  uvwasi_errno_t err;
   int r;
-  /* TODO(cjihrig): Handle fd. */
+
+  err = uvwasi_fd_table_get(&uvwasi->fds,
+                            fd,
+                            &wrap,
+                            UVWASI_RIGHT_PATH_UNLINK_FILE,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  /* TODO(cjihrig): Resolve path from fd. */
   r = uv_fs_unlink(NULL, &req, path, NULL);
   uv_fs_req_cleanup(&req);
 

@@ -5,8 +5,6 @@
 #include "fd_table.h"
 
 typedef struct uvwasi_s {
-  /* TODO(cjihrig): Use a different struct type for preopens? */
-  struct uvwasi_fd_table_t preopens;
   struct uvwasi_fd_table_t fds;
 } uvwasi_t;
 
