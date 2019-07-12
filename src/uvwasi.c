@@ -38,6 +38,20 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, int preopenc, char**preopen_dirs) {
 }
 
 
+static uvwasi_errno_t uvwasi__resolve_path(const struct uvwasi_fd_wrap_t* fd,
+                                           const char* path,
+                                           size_t path_len,
+                                           char* resolved_path) {
+  /* TODO(cjihrig): Actually resolve path to fd. */
+  if (path_len > PATH_MAX_BYTES)
+    return UVWASI_ENOBUFS;
+
+  memcpy(resolved_path, path, path_len);
+  resolved_path[path_len] = '\0';
+  return UVWASI_ESUCCESS;
+}
+
+
 static uvwasi_timestamp_t uvwasi__timespec_to_timestamp(const uv_timespec_t* ts
                                                        ) {
   /* TODO(cjihrig): Handle overflow. */
@@ -431,7 +445,7 @@ uvwasi_errno_t uvwasi_path_create_directory(uvwasi_t* uvwasi,
                                             uvwasi_fd_t fd,
                                             const char* path,
                                             size_t path_len) {
-  /* TODO(cjihrig): path_len is currently unused. */
+  char resolved_path[PATH_MAX_BYTES];
   struct uvwasi_fd_wrap_t wrap;
   uv_fs_t req;
   uvwasi_errno_t err;
@@ -445,8 +459,11 @@ uvwasi_errno_t uvwasi_path_create_directory(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  /* TODO(cjihrig): Resolve path from fd. */
-  r = uv_fs_mkdir(NULL, &req, path, 0777, NULL);
+  err = uvwasi__resolve_path(&wrap, path, path_len, resolved_path);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  r = uv_fs_mkdir(NULL, &req, resolved_path, 0777, NULL);
   uv_fs_req_cleanup(&req);
 
   if (r != 0)
@@ -593,7 +610,7 @@ uvwasi_errno_t uvwasi_path_remove_directory(uvwasi_t* uvwasi,
                                             uvwasi_fd_t fd,
                                             const char* path,
                                             size_t path_len) {
-  /* TODO(cjihrig): path_len is currently unused. */
+  char resolved_path[PATH_MAX_BYTES];
   struct uvwasi_fd_wrap_t wrap;
   uv_fs_t req;
   uvwasi_errno_t err;
@@ -607,8 +624,11 @@ uvwasi_errno_t uvwasi_path_remove_directory(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  /* TODO(cjihrig): Resolve path from fd. */
-  r = uv_fs_rmdir(NULL, &req, path, NULL);
+  err = uvwasi__resolve_path(&wrap, path, path_len, resolved_path);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  r = uv_fs_rmdir(NULL, &req, resolved_path, NULL);
   uv_fs_req_cleanup(&req);
 
   if (r != 0)

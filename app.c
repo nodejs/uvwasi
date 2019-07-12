@@ -63,10 +63,16 @@ int main(void) {
   r = uvwasi_fd_prestat_dir_name(uvw, dirfd, buf, sizeof(buf));
   printf("fd_prestat_dir_name r = %d, %s\n", r, buf);
 
-  r = uvwasi_path_create_directory(uvw, dirfd, "test_dir", 0);
+  r = uvwasi_path_create_directory(uvw,
+                                   dirfd,
+                                   "test_dir",
+                                   strlen("test_dir") + 1);
   printf("create_directory r = %d\n", r);
 
-  r = uvwasi_path_remove_directory(uvw, dirfd, "test_dir", 0);
+  r = uvwasi_path_remove_directory(uvw,
+                                   dirfd,
+                                   "test_dir",
+                                   strlen("test_dir") + 1);
   printf("remove_directory r = %d\n", r);
 
   uvwasi_proc_exit(uvw, 75);
