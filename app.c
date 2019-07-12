@@ -6,6 +6,7 @@
 
 int main(void) {
   char* preopen_dirs[] = { "." };
+  char buf[1024];
   uvwasi_t uvwasi;
   uvwasi_t* uvw;
   uvwasi_errno_t r;
@@ -58,6 +59,9 @@ int main(void) {
 
   r = uvwasi_path_unlink_file(uvw, dirfd, path, strlen(path));
   printf("unlink_file r = %d\n", r);
+
+  r = uvwasi_fd_prestat_dir_name(uvw, dirfd, buf, sizeof(buf));
+  printf("fd_prestat_dir_name r = %d, %s\n", r, buf);
 
   uvwasi_proc_exit(uvw, 75);
 

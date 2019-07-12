@@ -73,7 +73,7 @@ uvwasi_errno_t uvwasi_fd_prestat_get(uvwasi_t* uvwasi,
                                      /* , uvwasi_prestat_t* buf */);
 uvwasi_errno_t uvwasi_fd_prestat_dir_name(uvwasi_t* uvwasi,
                                           uvwasi_fd_t fd,
-                                          const char* path,
+                                          char* path,
                                           size_t path_len);
 uvwasi_errno_t uvwasi_fd_pwrite(uvwasi_t* uvwasi,
                                 uvwasi_fd_t fd,
