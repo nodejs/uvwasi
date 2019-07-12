@@ -431,7 +431,28 @@ uvwasi_errno_t uvwasi_path_create_directory(uvwasi_t* uvwasi,
                                             uvwasi_fd_t fd,
                                             const char* path,
                                             size_t path_len) {
-  return UVWASI_ENOTSUP;
+  /* TODO(cjihrig): path_len is currently unused. */
+  struct uvwasi_fd_wrap_t wrap;
+  uv_fs_t req;
+  uvwasi_errno_t err;
+  int r;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds,
+                            fd,
+                            &wrap,
+                            UVWASI_RIGHT_PATH_CREATE_DIRECTORY,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  /* TODO(cjihrig): Resolve path from fd. */
+  r = uv_fs_mkdir(NULL, &req, path, 0777, NULL);
+  uv_fs_req_cleanup(&req);
+
+  if (r != 0)
+    return uvwasi__translate_uv_error(r);
+
+  return UVWASI_ESUCCESS;
 }
 
 
@@ -572,6 +593,7 @@ uvwasi_errno_t uvwasi_path_remove_directory(uvwasi_t* uvwasi,
                                             uvwasi_fd_t fd,
                                             const char* path,
                                             size_t path_len) {
+  /* TODO(cjihrig): path_len is currently unused. */
   struct uvwasi_fd_wrap_t wrap;
   uv_fs_t req;
   uvwasi_errno_t err;
