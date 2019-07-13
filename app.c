@@ -19,7 +19,8 @@ int main(void) {
   uvwasi_lookupflags_t dirflags = 1;
   const char* path = "./foo.txt";
   uvwasi_oflags_t o_flags = UVWASI_O_CREAT;
-  uvwasi_rights_t fs_rights_base = UVWASI_RIGHT_FD_FILESTAT_GET |
+  uvwasi_rights_t fs_rights_base = UVWASI_RIGHT_FD_DATASYNC |
+                                   UVWASI_RIGHT_FD_FILESTAT_GET |
                                    UVWASI_RIGHT_FD_FILESTAT_SET_SIZE |
                                    UVWASI_RIGHT_FD_READ |
                                    UVWASI_RIGHT_PATH_UNLINK_FILE;
@@ -41,6 +42,9 @@ int main(void) {
 
   r = uvwasi_fd_filestat_set_size(uvw, fd, 106);
   printf("set_size r = %d\n", r);
+
+  r = uvwasi_fd_datasync(uvw, fd);
+  printf("fd_datasync r = %d\n", r);
 
   uvwasi_filestat_t stats;
   r = uvwasi_fd_filestat_get(uvw, fd, &stats);
