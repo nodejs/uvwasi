@@ -23,6 +23,7 @@ int main(void) {
                                    UVWASI_RIGHT_FD_FILESTAT_GET |
                                    UVWASI_RIGHT_FD_FILESTAT_SET_SIZE |
                                    UVWASI_RIGHT_FD_READ |
+                                   UVWASI_RIGHT_FD_SYNC |
                                    UVWASI_RIGHT_PATH_UNLINK_FILE;
   uvwasi_rights_t fs_rights_inheriting = 1;
   uvwasi_fdflags_t fs_flags = 1;
@@ -39,6 +40,9 @@ int main(void) {
                        fs_flags,
                        &fd);
   printf("open r = %d, fd = %d\n", r, fd);
+
+  r = uvwasi_fd_sync(uvw, fd);
+  printf("fd_sync r = %d\n", r);
 
   r = uvwasi_fd_filestat_set_size(uvw, fd, 106);
   printf("set_size r = %d\n", r);

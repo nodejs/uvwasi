@@ -440,7 +440,26 @@ uvwasi_errno_t uvwasi_fd_seek(uvwasi_t* uvwasi,
 
 
 uvwasi_errno_t uvwasi_fd_sync(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
-  return UVWASI_ENOTSUP;
+  struct uvwasi_fd_wrap_t wrap;
+  uv_fs_t req;
+  uvwasi_errno_t err;
+  int r;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds,
+                            fd,
+                            &wrap,
+                            UVWASI_RIGHT_FD_SYNC,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  r = uv_fs_fsync(NULL, &req, wrap.fd, NULL);
+  uv_fs_req_cleanup(&req);
+
+  if (r != 0)
+    return uvwasi__translate_uv_error(r);
+
+  return UVWASI_ESUCCESS;
 }
 
 
