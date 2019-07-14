@@ -208,7 +208,7 @@ uvwasi_errno_t uvwasi_fd_allocate(uvwasi_t* uvwasi,
 
 
 uvwasi_errno_t uvwasi_fd_close(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
-  struct uvwasi_fd_wrap_t wrap;
+  struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
   uv_fs_t req;
   int r;
@@ -217,7 +217,7 @@ uvwasi_errno_t uvwasi_fd_close(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  r = uv_fs_close(NULL, &req, wrap.fd, NULL);
+  r = uv_fs_close(NULL, &req, wrap->fd, NULL);
   uv_fs_req_cleanup(&req);
 
   if (r != 0)
@@ -232,7 +232,7 @@ uvwasi_errno_t uvwasi_fd_close(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
 
 
 uvwasi_errno_t uvwasi_fd_datasync(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
-  struct uvwasi_fd_wrap_t wrap;
+  struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
   uv_fs_t req;
   int r;
@@ -245,7 +245,7 @@ uvwasi_errno_t uvwasi_fd_datasync(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  r = uv_fs_fdatasync(NULL, &req, wrap.fd, NULL);
+  r = uv_fs_fdatasync(NULL, &req, wrap->fd, NULL);
   uv_fs_req_cleanup(&req);
 
   if (r != 0)
@@ -258,7 +258,23 @@ uvwasi_errno_t uvwasi_fd_datasync(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
 uvwasi_errno_t uvwasi_fd_fdstat_get(uvwasi_t* uvwasi,
                                     uvwasi_fd_t fd,
                                     uvwasi_fdstat_t* buf) {
-  return UVWASI_ENOTSUP;
+  struct uvwasi_fd_wrap_t* wrap;
+  uvwasi_errno_t err;
+
+  if (uvwasi == NULL || buf == NULL)
+    return UVWASI_EINVAL;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, 0, 0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  buf->fs_filetype = wrap->type;
+  buf->fs_rights_base = wrap->rights_base;
+  buf->fs_rights_inheriting = wrap->rights_inheriting;
+  /* TODO(cjihrig): Missing support. Use F_GETFL on non-Windows. */
+  buf->fs_flags = 0;
+
+  return UVWASI_ESUCCESS;
 }
 
 
@@ -274,14 +290,31 @@ uvwasi_errno_t uvwasi_fd_fdstat_set_rights(uvwasi_t* uvwasi,
                                            uvwasi_rights_t fs_rights_base,
                                            uvwasi_rights_t fs_rights_inheriting
                                           ) {
-  return UVWASI_ENOTSUP;
+  struct uvwasi_fd_wrap_t* wrap;
+  uvwasi_errno_t err;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, 0, 0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  /* Check for attempts to add new permissions. */
+  if ((fs_rights_base | wrap->rights_base) > wrap->rights_base)
+    return UVWASI_ENOTCAPABLE;
+  if ((fs_rights_inheriting | wrap->rights_inheriting) >
+      wrap->rights_inheriting) {
+    return UVWASI_ENOTCAPABLE;
+  }
+
+  wrap->rights_base = fs_rights_base;
+  wrap->rights_inheriting = fs_rights_inheriting;
+  return UVWASI_ESUCCESS;
 }
 
 
 uvwasi_errno_t uvwasi_fd_filestat_get(uvwasi_t* uvwasi,
                                       uvwasi_fd_t fd,
                                       uvwasi_filestat_t* buf) {
-  struct uvwasi_fd_wrap_t wrap;
+  struct uvwasi_fd_wrap_t* wrap;
   uv_fs_t req;
   uvwasi_errno_t err;
   int r;
@@ -294,7 +327,7 @@ uvwasi_errno_t uvwasi_fd_filestat_get(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  r = uv_fs_fstat(NULL, &req, wrap.fd, NULL);
+  r = uv_fs_fstat(NULL, &req, wrap->fd, NULL);
   if (r != 0) {
     uv_fs_req_cleanup(&req);
     return uvwasi__translate_uv_error(r);
@@ -304,7 +337,7 @@ uvwasi_errno_t uvwasi_fd_filestat_get(uvwasi_t* uvwasi,
   buf->st_ino = req.statbuf.st_ino;
   buf->st_nlink = req.statbuf.st_nlink;
   buf->st_size = req.statbuf.st_size;
-  buf->st_filetype = wrap.type;
+  buf->st_filetype = wrap->type;
   buf->st_atim = uvwasi__timespec_to_timestamp(&req.statbuf.st_atim);
   buf->st_mtim = uvwasi__timespec_to_timestamp(&req.statbuf.st_mtim);
   buf->st_ctim = uvwasi__timespec_to_timestamp(&req.statbuf.st_ctim);
@@ -318,7 +351,7 @@ uvwasi_errno_t uvwasi_fd_filestat_set_size(uvwasi_t* uvwasi,
                                            uvwasi_fd_t fd,
                                            uvwasi_filesize_t st_size) {
   /* TODO(cjihrig): uv_fs_ftruncate() takes an int64_t. st_size is uint64_t. */
-  struct uvwasi_fd_wrap_t wrap;
+  struct uvwasi_fd_wrap_t* wrap;
   uv_fs_t req;
   uvwasi_errno_t err;
   int r;
@@ -331,7 +364,7 @@ uvwasi_errno_t uvwasi_fd_filestat_set_size(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  r = uv_fs_ftruncate(NULL, &req, wrap.fd, st_size, NULL);
+  r = uv_fs_ftruncate(NULL, &req, wrap->fd, st_size, NULL);
   uv_fs_req_cleanup(&req);
 
   if (r != 0)
@@ -372,7 +405,7 @@ uvwasi_errno_t uvwasi_fd_prestat_dir_name(uvwasi_t* uvwasi,
                                           uvwasi_fd_t fd,
                                           char* path,
                                           size_t path_len) {
-  struct uvwasi_fd_wrap_t wrap;
+  struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
   int size;
 
@@ -382,14 +415,14 @@ uvwasi_errno_t uvwasi_fd_prestat_dir_name(uvwasi_t* uvwasi,
   err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, 0, 0);
   if (err != UVWASI_ESUCCESS)
     return err;
-  if (wrap.preopen == NULL)
+  if (wrap->preopen == NULL)
     return UVWASI_EBADF;
 
-  size = strlen(wrap.path) + 1;
+  size = strlen(wrap->path) + 1;
   if (size > path_len)
     return UVWASI_ENOBUFS;
 
-  memcpy(path, wrap.path, size);
+  memcpy(path, wrap->path, size);
   return UVWASI_ESUCCESS;
 }
 
@@ -440,7 +473,7 @@ uvwasi_errno_t uvwasi_fd_seek(uvwasi_t* uvwasi,
 
 
 uvwasi_errno_t uvwasi_fd_sync(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
-  struct uvwasi_fd_wrap_t wrap;
+  struct uvwasi_fd_wrap_t* wrap;
   uv_fs_t req;
   uvwasi_errno_t err;
   int r;
@@ -453,7 +486,7 @@ uvwasi_errno_t uvwasi_fd_sync(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  r = uv_fs_fsync(NULL, &req, wrap.fd, NULL);
+  r = uv_fs_fsync(NULL, &req, wrap->fd, NULL);
   uv_fs_req_cleanup(&req);
 
   if (r != 0)
@@ -484,7 +517,7 @@ uvwasi_errno_t uvwasi_path_create_directory(uvwasi_t* uvwasi,
                                             const char* path,
                                             size_t path_len) {
   char resolved_path[PATH_MAX_BYTES];
-  struct uvwasi_fd_wrap_t wrap;
+  struct uvwasi_fd_wrap_t* wrap;
   uv_fs_t req;
   uvwasi_errno_t err;
   int r;
@@ -497,7 +530,7 @@ uvwasi_errno_t uvwasi_path_create_directory(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  err = uvwasi__resolve_path(&wrap, path, path_len, resolved_path);
+  err = uvwasi__resolve_path(wrap, path, path_len, resolved_path);
   if (err != UVWASI_ESUCCESS)
     return err;
 
@@ -649,7 +682,7 @@ uvwasi_errno_t uvwasi_path_remove_directory(uvwasi_t* uvwasi,
                                             const char* path,
                                             size_t path_len) {
   char resolved_path[PATH_MAX_BYTES];
-  struct uvwasi_fd_wrap_t wrap;
+  struct uvwasi_fd_wrap_t* wrap;
   uv_fs_t req;
   uvwasi_errno_t err;
   int r;
@@ -662,7 +695,7 @@ uvwasi_errno_t uvwasi_path_remove_directory(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  err = uvwasi__resolve_path(&wrap, path, path_len, resolved_path);
+  err = uvwasi__resolve_path(wrap, path, path_len, resolved_path);
   if (err != UVWASI_ESUCCESS)
     return err;
 
@@ -701,7 +734,7 @@ uvwasi_errno_t uvwasi_path_unlink_file(uvwasi_t* uvwasi,
                                        uvwasi_fd_t fd,
                                        const char* path,
                                        size_t path_len) {
-  struct uvwasi_fd_wrap_t wrap;
+  struct uvwasi_fd_wrap_t* wrap;
   uv_fs_t req;
   uvwasi_errno_t err;
   int r;

@@ -309,7 +309,7 @@ uvwasi_errno_t uvwasi_fd_table_insert_fd(struct uvwasi_fd_table_t* table,
 
 uvwasi_errno_t uvwasi_fd_table_get(struct uvwasi_fd_table_t* table,
                                    const uvwasi_fd_t id,
-                                   struct uvwasi_fd_wrap_t* wrap,
+                                   struct uvwasi_fd_wrap_t** wrap,
                                    uvwasi_rights_t rights_base,
                                    uvwasi_rights_t rights_inheriting) {
   struct uvwasi_fd_wrap_t* entry;
@@ -328,7 +328,7 @@ uvwasi_errno_t uvwasi_fd_table_get(struct uvwasi_fd_table_t* table,
       (~entry->rights_inheriting & rights_inheriting) != 0)
     return UVWASI_ENOTCAPABLE;
 
-  *wrap = *entry;
+  *wrap = entry;
   return UVWASI_ESUCCESS;
 }
 

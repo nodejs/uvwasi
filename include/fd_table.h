@@ -51,7 +51,7 @@ uvwasi_errno_t uvwasi_fd_table_insert_fd(struct uvwasi_fd_table_t* table,
                                          struct uvwasi_fd_wrap_t* wrap);
 uvwasi_errno_t uvwasi_fd_table_get(struct uvwasi_fd_table_t* table,
                                    const uvwasi_fd_t id,
-                                   struct uvwasi_fd_wrap_t* wrap,
+                                   struct uvwasi_fd_wrap_t** wrap,
                                    uvwasi_rights_t rights_base,
                                    uvwasi_rights_t rights_inheriting);
 uvwasi_errno_t uvwasi_fd_table_remove(struct uvwasi_fd_table_t* table,

@@ -9,6 +9,7 @@ int main(void) {
   char buf[1024];
   uvwasi_t uvwasi;
   uvwasi_t* uvw;
+  uvwasi_fdstat_t fdstat_buf;
   uvwasi_errno_t r;
 
   uvw = &uvwasi;
@@ -61,6 +62,26 @@ int main(void) {
   printf("\tstats.st_atim = %llu\n", stats.st_atim);
   printf("\tstats.st_mtim = %llu\n", stats.st_mtim);
   printf("\tstats.st_ctim = %llu\n", stats.st_ctim);
+
+  r = uvwasi_fd_fdstat_get(uvw, fd, &fdstat_buf);
+  printf("fd_fdstat_get r = %d\n", r);
+  printf("\tstats.fs_filetype = %d\n", fdstat_buf.fs_filetype);
+  printf("\tstats.fs_rights_base = %llu\n", fdstat_buf.fs_rights_base);
+  printf("\tstats.fs_rights_inheriting = %llu\n",
+         fdstat_buf.fs_rights_inheriting);
+  printf("\tstats.fs_flags = %d\n", fdstat_buf.fs_flags);
+
+
+  r = uvwasi_fd_fdstat_set_rights(uvw, fd, UVWASI_RIGHT_FD_FILESTAT_GET, 0);
+  printf("fd_fdstat_set_rights r = %d\n", r);
+
+  r = uvwasi_fd_fdstat_get(uvw, fd, &fdstat_buf);
+  printf("fd_fdstat_get r = %d\n", r);
+  printf("\tstats.fs_filetype = %d\n", fdstat_buf.fs_filetype);
+  printf("\tstats.fs_rights_base = %llu\n", fdstat_buf.fs_rights_base);
+  printf("\tstats.fs_rights_inheriting = %llu\n",
+         fdstat_buf.fs_rights_inheriting);
+  printf("\tstats.fs_flags = %d\n", fdstat_buf.fs_flags);
 
   r = uvwasi_fd_close(uvw, fd);
   printf("close r = %d\n", r);
