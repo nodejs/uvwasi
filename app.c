@@ -25,6 +25,7 @@ int main(void) {
                                    UVWASI_RIGHT_FD_FILESTAT_SET_SIZE |
                                    UVWASI_RIGHT_FD_READ |
                                    UVWASI_RIGHT_FD_SYNC |
+                                   UVWASI_RIGHT_PATH_READLINK |
                                    UVWASI_RIGHT_PATH_UNLINK_FILE;
   uvwasi_rights_t fs_rights_inheriting = 1;
   uvwasi_fdflags_t fs_flags = 1;

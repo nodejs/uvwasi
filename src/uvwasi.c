@@ -673,7 +673,43 @@ uvwasi_errno_t uvwasi_path_readlink(uvwasi_t* uvwasi,
                                     char* buf,
                                     size_t buf_len,
                                     size_t* bufused) {
-  return UVWASI_ENOTSUP;
+  /* TODO(cjihrig): This function is currently untested. */
+  char resolved_path[PATH_MAX_BYTES];
+  struct uvwasi_fd_wrap_t* wrap;
+  uvwasi_errno_t err;
+  uv_fs_t req;
+  size_t len;
+  int r;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds,
+                            fd,
+                            &wrap,
+                            UVWASI_RIGHT_PATH_READLINK,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  err = uvwasi__resolve_path(wrap, path, path_len, resolved_path);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  r = uv_fs_readlink(NULL, &req, resolved_path, NULL);
+  if (r != 0) {
+    uv_fs_req_cleanup(&req);
+    return uvwasi__translate_uv_error(r);
+  }
+
+  len = strnlen(req.ptr, buf_len);
+  if (len >= buf_len) {
+    uv_fs_req_cleanup(&req);
+    return UVWASI_ENOBUFS;
+  }
+
+  memcpy(buf, req.ptr, len);
+  buf[len] = '\0';
+  *bufused = len + 1;
+  uv_fs_req_cleanup(&req);
+  return UVWASI_ESUCCESS;
 }
 
 
