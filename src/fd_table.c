@@ -96,10 +96,10 @@
 #define UVWASI__RIGHTS_TTY_INHERITING 0
 
 static uvwasi_errno_t uvwasi__get_type_and_rights(uv_file fd,
-                                          int flags,
-                                          uvwasi_filetype_t* type,
-                                          uvwasi_rights_t* rights_base,
-                                          uvwasi_rights_t* rights_inheriting) {
+                                           int flags,
+                                           uvwasi_filetype_t* type,
+                                           uvwasi_rights_t* rights_base,
+                                           uvwasi_rights_t* rights_inheriting) {
   uv_fs_t req;
   uint64_t mode;
   uv_handle_type handle_type;
@@ -263,7 +263,7 @@ uvwasi_errno_t uvwasi_fd_table_insert_preopen(struct uvwasi_fd_table_t* table,
 
 uvwasi_errno_t uvwasi_fd_table_insert_fd(struct uvwasi_fd_table_t* table,
                                          const uv_file fd,
-                                         int flags,
+                                         const int flags,
                                          const char* path,
                                          uvwasi_rights_t rights_base,
                                          uvwasi_rights_t rights_inheriting,
@@ -275,7 +275,8 @@ uvwasi_errno_t uvwasi_fd_table_insert_fd(struct uvwasi_fd_table_t* table,
   uvwasi_errno_t r;
   int id;
 
-  /* TODO(cjihrig): Add input validation. */
+  if (table == NULL || path == NULL || wrap == NULL)
+    return UVWASI_EINVAL;
 
   id = uvwasi__fd_table_find_open_slot(table);
   if (id < 0)
@@ -307,17 +308,16 @@ uvwasi_errno_t uvwasi_fd_table_insert_fd(struct uvwasi_fd_table_t* table,
 }
 
 
-uvwasi_errno_t uvwasi_fd_table_get(struct uvwasi_fd_table_t* table,
+uvwasi_errno_t uvwasi_fd_table_get(const struct uvwasi_fd_table_t* table,
                                    const uvwasi_fd_t id,
                                    struct uvwasi_fd_wrap_t** wrap,
                                    uvwasi_rights_t rights_base,
                                    uvwasi_rights_t rights_inheriting) {
   struct uvwasi_fd_wrap_t* entry;
 
-  if (table == NULL || wrap == NULL)
+  if (table == NULL || wrap == NULL || id >= table->size)
     return UVWASI_EINVAL;
 
-  /* TODO(cjihrig): Add index range validation. */
   entry = &table->fds[id];
 
   if (entry->valid != 1 || entry->id != id)
@@ -337,15 +337,15 @@ uvwasi_errno_t uvwasi_fd_table_remove(struct uvwasi_fd_table_t* table,
                                       const uvwasi_fd_t id) {
   struct uvwasi_fd_wrap_t* entry;
 
-  if (table == NULL)
+  if (table == NULL || id >= table->size)
     return UVWASI_EINVAL;
 
-  /* TODO(cjihrig): Add index range validation. */
   entry = &table->fds[id];
 
   if (entry->valid != 1 || entry->id != id)
     return UVWASI_EBADF;
 
   entry->valid = 0;
+  table->used--;
   return UVWASI_ESUCCESS;
 }

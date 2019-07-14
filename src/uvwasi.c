@@ -770,6 +770,7 @@ uvwasi_errno_t uvwasi_path_unlink_file(uvwasi_t* uvwasi,
                                        uvwasi_fd_t fd,
                                        const char* path,
                                        size_t path_len) {
+  char resolved_path[PATH_MAX_BYTES];
   struct uvwasi_fd_wrap_t* wrap;
   uv_fs_t req;
   uvwasi_errno_t err;
@@ -783,8 +784,11 @@ uvwasi_errno_t uvwasi_path_unlink_file(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  /* TODO(cjihrig): Resolve path from fd. */
-  r = uv_fs_unlink(NULL, &req, path, NULL);
+  err = uvwasi__resolve_path(wrap, path, path_len, resolved_path);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  r = uv_fs_unlink(NULL, &req, resolved_path, NULL);
   uv_fs_req_cleanup(&req);
 
   if (r != 0)
