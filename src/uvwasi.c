@@ -415,7 +415,7 @@ uvwasi_errno_t uvwasi_fd_prestat_dir_name(uvwasi_t* uvwasi,
   err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, 0, 0);
   if (err != UVWASI_ESUCCESS)
     return err;
-  if (wrap->preopen == NULL)
+  if (wrap->preopen != 1)
     return UVWASI_EBADF;
 
   size = strlen(wrap->path) + 1;

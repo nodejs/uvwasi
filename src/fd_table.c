@@ -207,10 +207,11 @@ uvwasi_errno_t uvwasi_fd_table_init(struct uvwasi_fd_table_t* table,
     entry->id = i;
     entry->fd = i;
     entry->path[0] = '\0';
+    entry->real_path[0] = '\0';
     entry->type = UVWASI_FILETYPE_UNKNOWN;
     entry->rights_base = 0;
     entry->rights_inheriting = 0;
-    entry->preopen = NULL;
+    entry->preopen = 0;
     entry->valid = 1;
     table->used++;
   }
@@ -251,12 +252,8 @@ uvwasi_errno_t uvwasi_fd_table_insert_preopen(struct uvwasi_fd_table_t* table,
   entry->rights_base = UVWASI__RIGHTS_DIRECTORY_BASE;
   entry->rights_inheriting = UVWASI__RIGHTS_DIRECTORY_INHERITING;
   strcpy(entry->path, path);
-  entry->preopen = malloc(sizeof(struct uvwasi_fd_preopen_t));
-
-  if (entry->preopen == NULL)
-    return UVWASI_ENOMEM;
-
-  strcpy(entry->preopen->real_path, real_path);
+  strcpy(entry->real_path, real_path);
+  entry->preopen = 1;
   entry->valid = 1;
   table->used++;
 
@@ -292,13 +289,16 @@ uvwasi_errno_t uvwasi_fd_table_insert_fd(struct uvwasi_fd_table_t* table,
   entry->id = id;
   entry->fd = fd;
 
-  if (path != NULL)
-    strcpy(entry->path, path); /* TODO(cjihrig): Call realpath() here? */
+  if (path != NULL) {
+    /* TODO(cjihrig): Call realpath() here? */
+    strcpy(entry->path, path);
+    strcpy(entry->real_path, path);
+  }
 
   entry->type = type;
   entry->rights_base = rights_base & max_base;
   entry->rights_inheriting = rights_inheriting & max_inheriting;
-  entry->preopen = NULL;
+  entry->preopen = 0;
   entry->valid = 1;
   table->used++;
   *wrap = *entry;
@@ -346,8 +346,6 @@ uvwasi_errno_t uvwasi_fd_table_remove(struct uvwasi_fd_table_t* table,
   if (entry->valid != 1 || entry->id != id)
     return UVWASI_EBADF;
 
-  free(entry->preopen);
-  entry->preopen = NULL;
   entry->valid = 0;
   return UVWASI_ESUCCESS;
 }

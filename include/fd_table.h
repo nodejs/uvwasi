@@ -15,18 +15,15 @@
 #endif
 
 
-struct uvwasi_fd_preopen_t {
-  char real_path[PATH_MAX_BYTES];
-};
-
 struct uvwasi_fd_wrap_t {
   uvwasi_fd_t id;
   uv_file fd;
   char path[PATH_MAX_BYTES];
+  char real_path[PATH_MAX_BYTES];
   uvwasi_filetype_t type; /* TODO(cjihrig): It probably isn't safe to cache. */
   uvwasi_rights_t rights_base;
   uvwasi_rights_t rights_inheriting;
-  struct uvwasi_fd_preopen_t* preopen;
+  int preopen;
   int valid;
 };
 
