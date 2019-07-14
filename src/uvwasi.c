@@ -7,27 +7,38 @@
 #define NANOS_PER_SEC 1000000000
 
 
-uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, int preopenc, char**preopen_dirs) {
-  /* TODO(cjihrig): Support mapping preopened directories to other names. */
+uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   uv_fs_t realpath_req;
   uv_fs_t open_req;
   int flags;
   int i;
   uvwasi_errno_t r;
 
-  /* TODO(cjihrig): Make the initial size configurable. */
-  r = uvwasi_fd_table_init(&uvwasi->fds, 1024);
+  if (uvwasi == NULL || options == NULL || options->fd_table_size == 0)
+    return UVWASI_EINVAL;
+
+  for (i = 0; i < options->preopenc; ++i) {
+    if (options->preopens[i].real_path == NULL ||
+        options->preopens[i].mapped_path == NULL) {
+      return UVWASI_EINVAL;
+    }
+  }
+
+  r = uvwasi_fd_table_init(&uvwasi->fds, options->fd_table_size);
 
   flags = UV_FS_O_CREAT;
 
-  for (i = 0; i < preopenc; ++i) {
-    r = uv_fs_realpath(NULL, &realpath_req, preopen_dirs[i], NULL);
+  for (i = 0; i < options->preopenc; ++i) {
+    r = uv_fs_realpath(NULL,
+                       &realpath_req,
+                       options->preopens[i].real_path,
+                       NULL);
     /* TODO(cjihrig): Handle errors. */
     r = uv_fs_open(NULL, &open_req, realpath_req.ptr, flags, 0666, NULL);
     /* TODO(cjihrig): Handle errors. */
     r = uvwasi_fd_table_insert_preopen(&uvwasi->fds,
                                        open_req.result,
-                                       realpath_req.ptr,
+                                       options->preopens[i].mapped_path,
                                        realpath_req.ptr);
     /* TODO(cjihrig): Handle errors. */
     uv_fs_req_cleanup(&realpath_req);

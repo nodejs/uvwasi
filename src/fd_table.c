@@ -192,7 +192,7 @@ uvwasi_errno_t uvwasi_fd_table_init(struct uvwasi_fd_table_t* table,
   struct uvwasi_fd_wrap_t* entry;
   int i;
 
-  if (table == NULL || init_size < 3)
+  if (table == NULL || init_size == 0)
     return UVWASI_EINVAL;
 
   table->size = init_size;

@@ -8,8 +8,19 @@ typedef struct uvwasi_s {
   struct uvwasi_fd_table_t fds;
 } uvwasi_t;
 
+typedef struct uvwasi_preopen_s {
+  char* mapped_path;
+  char* real_path;
+} uvwasi_preopen_t;
 
-uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, int preopenc, char**preopen_dirs);
+typedef struct uvwasi_options_s {
+  size_t fd_table_size;
+  size_t preopenc;
+  uvwasi_preopen_t *preopens;
+} uvwasi_options_t;
+
+
+uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options);
 
 uvwasi_errno_t uvwasi_args_get(uvwasi_t* uvwasi, char** argv, char* argv_buf);
 uvwasi_errno_t uvwasi_args_sizes_get(uvwasi_t* uvwasi,

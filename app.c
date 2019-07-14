@@ -1,11 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "uv.h"
 #include "uvwasi.h"
 
 
 int main(void) {
-  char* preopen_dirs[] = { "." };
+  uvwasi_options_t init_options;
   char buf[1024];
   uvwasi_t uvwasi;
   uvwasi_t* uvw;
@@ -13,7 +14,13 @@ int main(void) {
   uvwasi_errno_t r;
 
   uvw = &uvwasi;
-  r = uvwasi_init(uvw, 1, preopen_dirs);
+  init_options.fd_table_size = 16;
+  init_options.preopenc = 1;
+  init_options.preopens = calloc(1, sizeof(uvwasi_preopen_t));
+  init_options.preopens[0].mapped_path = "/var";
+  init_options.preopens[0].real_path = ".";
+
+  r = uvwasi_init(uvw, &init_options);
   printf("uvwasi_init() r = %d\n", r);
 
   uvwasi_fd_t dirfd = 3;
