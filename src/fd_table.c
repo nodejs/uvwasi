@@ -263,12 +263,18 @@ uvwasi_errno_t uvwasi_fd_table_init(struct uvwasi_fd_table_t* table,
                                   0,
                                   &wrap);
     if (err != UVWASI_ESUCCESS)
-      return err;
-    if (wrap->id != i || wrap->id != wrap->fd)
-      return UVWASI_EBADF;
+      goto error_exit;
+    if (wrap->id != i || wrap->id != wrap->fd) {
+      err = UVWASI_EBADF;
+      goto error_exit;
+    }
   }
 
   return UVWASI_ESUCCESS;
+error_exit:
+  free(table->fds);
+  table->fds = NULL;
+  return err;
 }
 
 
