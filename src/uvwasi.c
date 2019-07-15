@@ -10,9 +10,10 @@
 uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   uv_fs_t realpath_req;
   uv_fs_t open_req;
+  uvwasi_errno_t err;
   int flags;
   int i;
-  uvwasi_errno_t r;
+  int r;
 
   if (uvwasi == NULL || options == NULL || options->fd_table_size == 0)
     return UVWASI_EINVAL;
@@ -24,7 +25,9 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
     }
   }
 
-  r = uvwasi_fd_table_init(&uvwasi->fds, options->fd_table_size);
+  err = uvwasi_fd_table_init(&uvwasi->fds, options->fd_table_size);
+  if (err != UVWASI_ESUCCESS)
+    return err;
 
   flags = UV_FS_O_CREAT;
 
@@ -36,10 +39,10 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
     /* TODO(cjihrig): Handle errors. */
     r = uv_fs_open(NULL, &open_req, realpath_req.ptr, flags, 0666, NULL);
     /* TODO(cjihrig): Handle errors. */
-    r = uvwasi_fd_table_insert_preopen(&uvwasi->fds,
-                                       open_req.result,
-                                       options->preopens[i].mapped_path,
-                                       realpath_req.ptr);
+    err = uvwasi_fd_table_insert_preopen(&uvwasi->fds,
+                                         open_req.result,
+                                         options->preopens[i].mapped_path,
+                                         realpath_req.ptr);
     /* TODO(cjihrig): Handle errors. */
     uv_fs_req_cleanup(&realpath_req);
     uv_fs_req_cleanup(&open_req);

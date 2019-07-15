@@ -14,7 +14,7 @@ int main(void) {
   uvwasi_errno_t r;
 
   uvw = &uvwasi;
-  init_options.fd_table_size = 16;
+  init_options.fd_table_size = 3;
   init_options.preopenc = 1;
   init_options.preopens = calloc(1, sizeof(uvwasi_preopen_t));
   init_options.preopens[0].mapped_path = "/var";

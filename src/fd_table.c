@@ -172,27 +172,77 @@ static uvwasi_errno_t uvwasi__get_type_and_rights(uv_file fd,
 }
 
 
-static int uvwasi__fd_table_find_open_slot(struct uvwasi_fd_table_t* table) {
+static uvwasi_errno_t uvwasi__fd_table_insert(struct uvwasi_fd_table_t* table,
+                                              uv_file fd,
+                                              const char* mapped_path,
+                                              const char* real_path,
+                                              uvwasi_filetype_t type,
+                                              uvwasi_rights_t rights_base,
+                                              uvwasi_rights_t rights_inheriting,
+                                              int preopen,
+                                              struct uvwasi_fd_wrap_t** wrap) {
   struct uvwasi_fd_wrap_t* entry;
+  struct uvwasi_fd_wrap_t* new_fds;
+  uint32_t new_size;
+  int index;
   int i;
 
-  for (i = 0; i < table->size; ++i) {
-    entry = &table->fds[i];
+  /* Check that there is room for a new item. If there isn't, grow the table. */
+  if (table->used >= table->size) {
+    new_size = table->size * 2;
+    new_fds = realloc(table->fds, new_size * sizeof(*new_fds));
+    if (new_fds == NULL)
+      return UVWASI_ENOMEM;
 
-    if (entry->valid != 1)
-      return i;
+    for (i = table->size; i < new_size; ++i) {
+      new_fds[i].valid = 0;
+    }
+
+    index = table->size;
+    table->fds = new_fds;
+    table->size = new_size;
+  } else {
+    /* The table is big enough, so find an empty slot for the new data. */
+    index = -1;
+    for (i = 0; i < table->size; ++i) {
+      if (table->fds[i].valid != 1) {
+        index = i;
+        break;
+      }
+    }
+
+    /* index should never be -1. */
+    if (index == -1)
+      return UVWASI_ENOSPC;
   }
 
-  return -1;
+  entry = &table->fds[index];
+  entry->id = index;
+  entry->fd = fd;
+  strcpy(entry->path, mapped_path);
+  strcpy(entry->real_path, real_path);
+  entry->type = type;
+  entry->rights_base = rights_base;
+  entry->rights_inheriting = rights_inheriting;
+  entry->preopen = preopen;
+  entry->valid = 1;
+  table->used++;
+
+  if (wrap != NULL)
+    *wrap = entry;
+
+  return UVWASI_ESUCCESS;
 }
 
 
 uvwasi_errno_t uvwasi_fd_table_init(struct uvwasi_fd_table_t* table,
                                     uint32_t init_size) {
-  struct uvwasi_fd_wrap_t* entry;
+  struct uvwasi_fd_wrap_t* wrap;
+  uvwasi_errno_t err;
   int i;
 
-  if (table == NULL || init_size == 0)
+  /* Require an initial size of at least three to store the stdio FDs. */
+  if (table == NULL || init_size < 3)
     return UVWASI_EINVAL;
 
   table->size = init_size;
@@ -203,17 +253,19 @@ uvwasi_errno_t uvwasi_fd_table_init(struct uvwasi_fd_table_t* table,
 
   /* Create the stdio FDs. */
   for (i = 0; i < 3; ++i) {
-    entry = &table->fds[i];
-    entry->id = i;
-    entry->fd = i;
-    entry->path[0] = '\0';
-    entry->real_path[0] = '\0';
-    entry->type = UVWASI_FILETYPE_UNKNOWN;
-    entry->rights_base = 0;
-    entry->rights_inheriting = 0;
-    entry->preopen = 0;
-    entry->valid = 1;
-    table->used++;
+    err = uvwasi__fd_table_insert(table,
+                                  i,
+                                  "",
+                                  "",
+                                  UVWASI_FILETYPE_UNKNOWN,
+                                  0,
+                                  0,
+                                  0,
+                                  &wrap);
+    if (err != UVWASI_ESUCCESS)
+      return err;
+    if (wrap->id != i || wrap->id != wrap->fd)
+      return UVWASI_EBADF;
   }
 
   return UVWASI_ESUCCESS;
@@ -224,38 +276,32 @@ uvwasi_errno_t uvwasi_fd_table_insert_preopen(struct uvwasi_fd_table_t* table,
                                               const uv_file fd,
                                               const char* path,
                                               const char* real_path) {
-  struct uvwasi_fd_wrap_t* entry;
   uvwasi_filetype_t type;
   uvwasi_rights_t base;
   uvwasi_rights_t inheriting;
-  uvwasi_errno_t r;
-  int id;
+  uvwasi_errno_t err;
 
   if (table == NULL || path == NULL || real_path == NULL)
     return UVWASI_EINVAL;
 
-  r = uvwasi__get_type_and_rights(fd, 0, &type, &base, &inheriting);
-  if (r != UVWASI_ESUCCESS)
-    return r;
+  err = uvwasi__get_type_and_rights(fd, 0, &type, &base, &inheriting);
+  if (err != UVWASI_ESUCCESS)
+    return err;
 
   if (type != UVWASI_FILETYPE_DIRECTORY)
     return UVWASI_ENOTDIR;
 
-  id = uvwasi__fd_table_find_open_slot(table);
-  if (id < 0)
-    return UVWASI_ENOSPC;
-
-  entry = &table->fds[id];
-  entry->id = id;
-  entry->fd = fd;
-  entry->type = UVWASI_FILETYPE_DIRECTORY;
-  entry->rights_base = UVWASI__RIGHTS_DIRECTORY_BASE;
-  entry->rights_inheriting = UVWASI__RIGHTS_DIRECTORY_INHERITING;
-  strcpy(entry->path, path);
-  strcpy(entry->real_path, real_path);
-  entry->preopen = 1;
-  entry->valid = 1;
-  table->used++;
+  err = uvwasi__fd_table_insert(table,
+                                fd,
+                                path,
+                                real_path,
+                                UVWASI_FILETYPE_DIRECTORY,
+                                UVWASI__RIGHTS_DIRECTORY_BASE,
+                                UVWASI__RIGHTS_DIRECTORY_INHERITING,
+                                1,
+                                NULL);
+  if (err != UVWASI_ESUCCESS)
+    return err;
 
   return UVWASI_ESUCCESS;
 }
@@ -268,42 +314,32 @@ uvwasi_errno_t uvwasi_fd_table_insert_fd(struct uvwasi_fd_table_t* table,
                                          uvwasi_rights_t rights_base,
                                          uvwasi_rights_t rights_inheriting,
                                          struct uvwasi_fd_wrap_t* wrap) {
-  struct uvwasi_fd_wrap_t* entry;
+  struct uvwasi_fd_wrap_t* fd_wrap;
   uvwasi_filetype_t type;
   uvwasi_rights_t max_base;
   uvwasi_rights_t max_inheriting;
   uvwasi_errno_t r;
-  int id;
 
   if (table == NULL || path == NULL || wrap == NULL)
     return UVWASI_EINVAL;
-
-  id = uvwasi__fd_table_find_open_slot(table);
-  if (id < 0)
-    return UVWASI_ENOSPC;
 
   r = uvwasi__get_type_and_rights(fd, flags, &type, &max_base, &max_inheriting);
   if (r != UVWASI_ESUCCESS)
     return r;
 
-  entry = &table->fds[id];
-  entry->id = id;
-  entry->fd = fd;
+  r = uvwasi__fd_table_insert(table,
+                              fd,
+                              path,
+                              path, /* TODO(cjihrig): Fix this double path. */
+                              type,
+                              rights_base & max_base,
+                              rights_inheriting & max_inheriting,
+                              0,
+                              &fd_wrap);
+  if (r != UVWASI_ESUCCESS)
+    return r;
 
-  if (path != NULL) {
-    /* TODO(cjihrig): Call realpath() here? */
-    strcpy(entry->path, path);
-    strcpy(entry->real_path, path);
-  }
-
-  entry->type = type;
-  entry->rights_base = rights_base & max_base;
-  entry->rights_inheriting = rights_inheriting & max_inheriting;
-  entry->preopen = 0;
-  entry->valid = 1;
-  table->used++;
-  *wrap = *entry;
-
+  *wrap = *fd_wrap;
   return UVWASI_ESUCCESS;
 }
 
