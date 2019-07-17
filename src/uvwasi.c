@@ -1,5 +1,10 @@
 #include <stdlib.h>
 
+#ifndef _WIN32
+# include <sys/types.h>
+# include <unistd.h>
+#endif /* _WIN32 */
+
 #include "uvwasi.h"
 #include "uv.h"
 #include "fd_table.h"
@@ -11,12 +16,34 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   uv_fs_t realpath_req;
   uv_fs_t open_req;
   uvwasi_errno_t err;
+  size_t args_size;
+  size_t size;
+  size_t offset;
   int flags;
   int i;
   int r;
 
   if (uvwasi == NULL || options == NULL || options->fd_table_size == 0)
     return UVWASI_EINVAL;
+
+
+  args_size = 0;
+  for (i = 0; i < options->argc; ++i) {
+    args_size += strlen(options->argv[i]) + 1;
+  }
+
+  uvwasi->argc = options->argc;
+  uvwasi->argv_buf_size = args_size;
+  uvwasi->argv_buf = malloc(args_size);
+  uvwasi->argv = calloc(options->argc, sizeof(char*));
+
+  offset = 0;
+  for (i = 0; i < options->argc; ++i) {
+    size = strlen(options->argv[i]) + 1;
+    memcpy(uvwasi->argv_buf + offset, options->argv[i], size);
+    uvwasi->argv[i] = uvwasi->argv_buf + offset;
+    offset += size;
+  }
 
   for (i = 0; i < options->preopenc; ++i) {
     if (options->preopens[i].real_path == NULL ||
@@ -132,26 +159,12 @@ static uvwasi_errno_t uvwasi__translate_uv_error(int err) {
     case UV_ETXTBSY:         return UVWASI_ETXTBSY;
     case UV_EXDEV:           return UVWASI_EXDEV;
     case 0:                  return UVWASI_ESUCCESS;
-    /* TODO(cjihrig): libuv errors with no corresponding WASI error.
-    case UV_EAI_ADDRFAMILY:
-    case UV_EAI_AGAIN:
-    case UV_EAI_BADFLAGS:
-    case UV_EAI_BADHINTS:
-    case UV_EAI_CANCELED:
-    case UV_EAI_FAIL:
-    case UV_EAI_FAMILY:
-    case UV_EAI_MEMORY:
-    case UV_EAI_NODATA:
-    case UV_EAI_NONAME:
-    case UV_EAI_OVERFLOW:
-    case UV_EAI_PROTOCOL:
-    case UV_EAI_SERVICE:
-    case UV_EAI_SOCKTYPE:
-    case UV_ECHARSET:
-    case UV_ENONET:
-    case UV_EOF:
-    case UV_ESHUTDOWN:
-    case UV_UNKNOWN:
+    /* The following libuv error codes have no corresponding WASI error code:
+          UV_EAI_ADDRFAMILY, UV_EAI_AGAIN, UV_EAI_BADFLAGS, UV_EAI_BADHINTS,
+          UV_EAI_CANCELED, UV_EAI_FAIL, UV_EAI_FAMILY, UV_EAI_MEMORY,
+          UV_EAI_NODATA, UV_EAI_NONAME, UV_EAI_OVERFLOW, UV_EAI_PROTOCOL,
+          UV_EAI_SERVICE, UV_EAI_SOCKTYPE, UV_ECHARSET, UV_ENONET, UV_EOF,
+          UV_ESHUTDOWN, UV_UNKNOWN
     */
     default:
       /* libuv errors are < 0 */
@@ -163,15 +176,65 @@ static uvwasi_errno_t uvwasi__translate_uv_error(int err) {
 }
 
 
+static uvwasi_errno_t uvwasi__lseek(uv_file fd,
+                                    uvwasi_filedelta_t offset,
+                                    uvwasi_whence_t whence,
+                                    uvwasi_filesize_t* newoffset) {
+  int real_whence;
+
+  if (whence == UVWASI_WHENCE_CUR)
+    real_whence = SEEK_CUR;
+  else if (whence == UVWASI_WHENCE_END)
+    real_whence = SEEK_END;
+  else if (whence == UVWASI_WHENCE_SET)
+    real_whence = SEEK_SET;
+  else
+    return UVWASI_EINVAL;
+
+#ifdef _WIN32
+  int64_t r;
+
+  r = _lseeki64(fd, offset, real_whence);
+  if (-1L == r)
+    return uvwasi__translate_uv_error(uv_translate_sys_error(errno));
+#else
+  off_t r;
+
+  r = lseek(fd, offset, real_whence);
+  if ((off_t) -1 == r)
+    return uvwasi__translate_uv_error(uv_translate_sys_error(errno));
+#endif /* _WIN32 */
+
+  *newoffset = r;
+  return UVWASI_ESUCCESS;
+}
+
+
 uvwasi_errno_t uvwasi_args_get(uvwasi_t* uvwasi, char** argv, char* argv_buf) {
-  return UVWASI_ENOTSUP;
+  int i;
+
+  if (uvwasi == NULL || argv == NULL || argv_buf == NULL)
+    return UVWASI_EINVAL;
+
+  for (i = 0; i < uvwasi->argc; ++i) {
+    argv[i] = argv_buf + (uvwasi->argv[i] - uvwasi->argv_buf);
+  }
+
+  argv[uvwasi->argc] = NULL;
+  memcpy(argv_buf, uvwasi->argv_buf, uvwasi->argv_buf_size);
+  return UVWASI_ESUCCESS;
 }
 
 
 uvwasi_errno_t uvwasi_args_sizes_get(uvwasi_t* uvwasi,
                                      size_t* argc,
                                      size_t* argv_buf_size) {
-  return UVWASI_ENOTSUP;
+  if (uvwasi == NULL || argc == NULL || argv_buf_size == NULL)
+    return UVWASI_EINVAL;
+
+  *argc = uvwasi->argc;
+  *argv_buf_size = uvwasi->argv_buf_size;
+  return UVWASI_ESUCCESS;
 }
 
 
@@ -482,7 +545,19 @@ uvwasi_errno_t uvwasi_fd_seek(uvwasi_t* uvwasi,
                               uvwasi_filedelta_t offset,
                               uvwasi_whence_t whence,
                               uvwasi_filesize_t* newoffset) {
-  return UVWASI_ENOTSUP;
+  /* TODO(cjihrig): This function is currently untested. */
+  struct uvwasi_fd_wrap_t* wrap;
+  uvwasi_errno_t err;
+
+  if (uvwasi == NULL) {
+    return UVWASI_EINVAL;
+  }
+
+  err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, UVWASI_RIGHT_FD_SEEK, 0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  return uvwasi__lseek(wrap->fd, offset, whence, newoffset);
 }
 
 
@@ -513,7 +588,18 @@ uvwasi_errno_t uvwasi_fd_sync(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
 uvwasi_errno_t uvwasi_fd_tell(uvwasi_t* uvwasi,
                               uvwasi_fd_t fd,
                               uvwasi_filesize_t* offset) {
-  return UVWASI_ENOTSUP;
+  /* TODO(cjihrig): This function is currently untested. */
+  struct uvwasi_fd_wrap_t* wrap;
+  uvwasi_errno_t err;
+
+  if (uvwasi == NULL || offset == NULL)
+    return UVWASI_EINVAL;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, UVWASI_RIGHT_FD_TELL, 0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  return uvwasi__lseek(wrap->fd, 0, UVWASI_WHENCE_CUR, offset);
 }
 
 

@@ -12,9 +12,16 @@ int main(void) {
   uvwasi_t* uvw;
   uvwasi_fdstat_t fdstat_buf;
   uvwasi_errno_t r;
+  size_t argc;
+  size_t argv_buf_size;
 
   uvw = &uvwasi;
   init_options.fd_table_size = 3;
+  init_options.argc = 3;
+  init_options.argv = calloc(3, sizeof(char*));
+  init_options.argv[0] = "--foo=bar";
+  init_options.argv[1] = "-baz";
+  init_options.argv[2] = "100";
   init_options.preopenc = 1;
   init_options.preopens = calloc(1, sizeof(uvwasi_preopen_t));
   init_options.preopens[0].mapped_path = "/var";
@@ -22,6 +29,18 @@ int main(void) {
 
   r = uvwasi_init(uvw, &init_options);
   printf("uvwasi_init() r = %d\n", r);
+
+  r = uvwasi_args_sizes_get(uvw, &argc, &argv_buf_size);
+  printf("args_sizes_get() r = %d, argc = %zu, argv_size = %zu\n",
+         r,
+         argc,
+         argv_buf_size);
+
+  char** args_get_argv = calloc(argc, sizeof(char*));
+  r = uvwasi_args_get(uvw, args_get_argv, buf);
+  printf("args_get() r = %d, %s\n", r, buf);
+  for (int i = 0; i < argc; ++i)
+    printf("\t'%s'\n", args_get_argv[i]);
 
   uvwasi_fd_t dirfd = 3;
   uvwasi_lookupflags_t dirflags = 1;
