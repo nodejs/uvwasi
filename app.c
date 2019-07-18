@@ -14,6 +14,7 @@ int main(void) {
   uvwasi_errno_t r;
   size_t argc;
   size_t argv_buf_size;
+  int i;
 
   uvw = &uvwasi;
   init_options.fd_table_size = 3;
@@ -39,7 +40,7 @@ int main(void) {
   char** args_get_argv = calloc(argc, sizeof(char*));
   r = uvwasi_args_get(uvw, args_get_argv, buf);
   printf("args_get() r = %d, %s\n", r, buf);
-  for (int i = 0; i < argc; ++i)
+  for (i = 0; i < argc; ++i)
     printf("\t'%s'\n", args_get_argv[i]);
 
   uvwasi_fd_t dirfd = 3;
@@ -98,10 +99,6 @@ int main(void) {
          fdstat_buf.fs_rights_inheriting);
   printf("\tstats.fs_flags = %d\n", fdstat_buf.fs_flags);
 
-
-  r = uvwasi_fd_fdstat_set_rights(uvw, fd, UVWASI_RIGHT_FD_FILESTAT_GET, 0);
-  printf("fd_fdstat_set_rights r = %d\n", r);
-
   r = uvwasi_fd_fdstat_get(uvw, fd, &fdstat_buf);
   printf("fd_fdstat_get r = %d\n", r);
   printf("\tstats.fs_filetype = %d\n", fdstat_buf.fs_filetype);
@@ -109,6 +106,25 @@ int main(void) {
   printf("\tstats.fs_rights_inheriting = %llu\n",
          fdstat_buf.fs_rights_inheriting);
   printf("\tstats.fs_flags = %d\n", fdstat_buf.fs_flags);
+
+  uvwasi_iovec_t* iovs;
+  size_t iovs_len;
+  size_t nread;
+
+  nread = 0;
+  iovs_len = 2;
+  iovs = calloc(iovs_len, sizeof(*iovs));
+  for (i = 0; i < iovs_len; ++i) {
+    iovs[i].buf_len = 10;
+    iovs[i].buf = malloc(1024);
+  }
+
+  r = uvwasi_fd_read(uvw, fd, iovs, iovs_len, &nread);
+  free(iovs);
+  printf("fd_read r = %d, nread = %zu\n", r, nread);
+
+  r = uvwasi_fd_fdstat_set_rights(uvw, fd, UVWASI_RIGHT_FD_FILESTAT_GET, 0);
+  printf("fd_fdstat_set_rights r = %d\n", r);
 
   r = uvwasi_fd_close(uvw, fd);
   printf("close r = %d\n", r);

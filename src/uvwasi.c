@@ -519,7 +519,38 @@ uvwasi_errno_t uvwasi_fd_read(uvwasi_t* uvwasi,
                               const uvwasi_iovec_t* iovs,
                               size_t iovs_len,
                               size_t* nread) {
-  return UVWASI_ENOTSUP;
+  struct uvwasi_fd_wrap_t* wrap;
+  uv_buf_t* bufs;
+  uv_fs_t req;
+  uvwasi_errno_t err;
+  size_t uvread;
+  int i;
+  int r;
+
+  if (uvwasi == NULL || iovs == NULL || nread == NULL)
+    return UVWASI_EINVAL;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, UVWASI_RIGHT_FD_READ, 0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  bufs = malloc(iovs_len * sizeof(*bufs));
+  if (bufs == NULL)
+    return UVWASI_ENOMEM;
+
+  for (i = 0; i < iovs_len; ++i)
+    bufs[i] = uv_buf_init(iovs[i].buf, iovs[i].buf_len);
+
+  r = uv_fs_read(NULL, &req, wrap->fd, bufs, iovs_len, 0, NULL);
+  uvread = req.result;
+  uv_fs_req_cleanup(&req);
+  free(bufs);
+
+  if (r < 0)
+    return uvwasi__translate_uv_error(r);
+
+  *nread = uvread;
+  return UVWASI_ESUCCESS;
 }
 
 
