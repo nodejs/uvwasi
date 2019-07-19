@@ -26,7 +26,6 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   if (uvwasi == NULL || options == NULL || options->fd_table_size == 0)
     return UVWASI_EINVAL;
 
-
   args_size = 0;
   for (i = 0; i < options->argc; ++i) {
     args_size += strlen(options->argv[i]) + 1;
@@ -97,6 +96,91 @@ static uvwasi_timestamp_t uvwasi__timespec_to_timestamp(const uv_timespec_t* ts
                                                        ) {
   /* TODO(cjihrig): Handle overflow. */
   return (uvwasi_timestamp_t) ts->tv_sec * NANOS_PER_SEC + ts->tv_nsec;
+}
+
+
+static int uvwasi__translate_to_uv_signal(uvwasi_signal_t sig) {
+  switch (sig) {
+#ifdef SIGABRT
+    case UVWASI_SIGABRT:   return SIGABRT;
+#endif
+#ifdef SIGALRM
+    case UVWASI_SIGALRM:   return SIGALRM;
+#endif
+#ifdef SIGBUS
+    case UVWASI_SIGBUS:    return SIGBUS;
+#endif
+#ifdef SIGCHLD
+    case UVWASI_SIGCHLD:   return SIGCHLD;
+#endif
+#ifdef SIGCONT
+    case UVWASI_SIGCONT:   return SIGCONT;
+#endif
+#ifdef SIGFPE
+    case UVWASI_SIGFPE:    return SIGFPE;
+#endif
+#ifdef SIGHUP
+    case UVWASI_SIGHUP:    return SIGHUP;
+#endif
+#ifdef SIGILL
+    case UVWASI_SIGILL:    return SIGILL;
+#endif
+#ifdef SIGINT
+    case UVWASI_SIGINT:    return SIGINT;
+#endif
+#ifdef SIGKILL
+    case UVWASI_SIGKILL:   return SIGKILL;
+#endif
+#ifdef SIGPIPE
+    case UVWASI_SIGPIPE:   return SIGPIPE;
+#endif
+#ifdef SIGQUIT
+    case UVWASI_SIGQUIT:   return SIGQUIT;
+#endif
+#ifdef SIGSEGV
+    case UVWASI_SIGSEGV:   return SIGSEGV;
+#endif
+#ifdef SIGSTOP
+    case UVWASI_SIGSTOP:   return SIGSTOP;
+#endif
+#ifdef SIGSYS
+    case UVWASI_SIGSYS:    return SIGSYS;
+#endif
+#ifdef SIGTERM
+    case UVWASI_SIGTERM:   return SIGTERM;
+#endif
+#ifdef SIGTRAP
+    case UVWASI_SIGTRAP:   return SIGTRAP;
+#endif
+#ifdef SIGTSTP
+    case UVWASI_SIGTSTP:   return SIGTSTP;
+#endif
+#ifdef SIGTTIN
+    case UVWASI_SIGTTIN:   return SIGTTIN;
+#endif
+#ifdef SIGTTOU
+    case UVWASI_SIGTTOU:   return SIGTTOU;
+#endif
+#ifdef SIGURG
+    case UVWASI_SIGURG:    return SIGURG;
+#endif
+#ifdef SIGUSR1
+    case UVWASI_SIGUSR1:   return SIGUSR1;
+#endif
+#ifdef SIGUSR2
+    case UVWASI_SIGUSR2:   return SIGUSR2;
+#endif
+#ifdef SIGVTALRM
+    case UVWASI_SIGVTALRM: return SIGVTALRM;
+#endif
+#ifdef SIGXCPU
+    case UVWASI_SIGXCPU:   return SIGXCPU;
+#endif
+#ifdef SIGXFSZ
+    case UVWASI_SIGXFSZ:   return SIGXFSZ;
+#endif
+    default:               return -1;
+  }
 }
 
 
@@ -206,6 +290,42 @@ static uvwasi_errno_t uvwasi__lseek(uv_file fd,
 #endif /* _WIN32 */
 
   *newoffset = r;
+  return UVWASI_ESUCCESS;
+}
+
+
+static uvwasi_errno_t uvwasi__setup_iovs(uv_buf_t** buffers,
+                                         const uvwasi_iovec_t* iovs,
+                                         size_t iovs_len) {
+  uv_buf_t* bufs;
+  int i;
+
+  bufs = malloc(iovs_len * sizeof(*bufs));
+  if (bufs == NULL)
+    return UVWASI_ENOMEM;
+
+  for (i = 0; i < iovs_len; ++i)
+    bufs[i] = uv_buf_init(iovs[i].buf, iovs[i].buf_len);
+
+  *buffers = bufs;
+  return UVWASI_ESUCCESS;
+}
+
+
+static uvwasi_errno_t uvwasi__setup_ciovs(uv_buf_t** buffers,
+                                         const uvwasi_ciovec_t* iovs,
+                                         size_t iovs_len) {
+  uv_buf_t* bufs;
+  int i;
+
+  bufs = malloc(iovs_len * sizeof(*bufs));
+  if (bufs == NULL)
+    return UVWASI_ENOMEM;
+
+  for (i = 0; i < iovs_len; ++i)
+    bufs[i] = uv_buf_init((char*)iovs[i].buf, iovs[i].buf_len);
+
+  *buffers = bufs;
   return UVWASI_ESUCCESS;
 }
 
@@ -466,7 +586,38 @@ uvwasi_errno_t uvwasi_fd_pread(uvwasi_t* uvwasi,
                                size_t iovs_len,
                                uvwasi_filesize_t offset,
                                size_t* nread) {
-  return UVWASI_ENOTSUP;
+  struct uvwasi_fd_wrap_t* wrap;
+  uv_buf_t* bufs;
+  uv_fs_t req;
+  uvwasi_errno_t err;
+  size_t uvread;
+  int r;
+
+  if (uvwasi == NULL || iovs == NULL || nread == NULL)
+    return UVWASI_EINVAL;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds,
+                            fd,
+                            &wrap,
+                            UVWASI_RIGHT_FD_READ | UVWASI_RIGHT_FD_SEEK,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  err = uvwasi__setup_iovs(&bufs, iovs, iovs_len);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  r = uv_fs_read(NULL, &req, wrap->fd, bufs, iovs_len, offset, NULL);
+  uvread = req.result;
+  uv_fs_req_cleanup(&req);
+  free(bufs);
+
+  if (r < 0)
+    return uvwasi__translate_uv_error(r);
+
+  *nread = uvread;
+  return UVWASI_ESUCCESS;
 }
 
 
@@ -510,7 +661,38 @@ uvwasi_errno_t uvwasi_fd_pwrite(uvwasi_t* uvwasi,
                                 size_t iovs_len,
                                 uvwasi_filesize_t offset,
                                 size_t* nwritten) {
-  return UVWASI_ENOTSUP;
+  struct uvwasi_fd_wrap_t* wrap;
+  uv_buf_t* bufs;
+  uv_fs_t req;
+  uvwasi_errno_t err;
+  size_t uvwritten;
+  int r;
+
+  if (uvwasi == NULL || iovs == NULL || nwritten == NULL)
+    return UVWASI_EINVAL;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds,
+                            fd,
+                            &wrap,
+                            UVWASI_RIGHT_FD_WRITE | UVWASI_RIGHT_FD_SEEK,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  err = uvwasi__setup_ciovs(&bufs, iovs, iovs_len);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  r = uv_fs_write(NULL, &req, wrap->fd, bufs, iovs_len, offset, NULL);
+  uvwritten = req.result;
+  uv_fs_req_cleanup(&req);
+  free(bufs);
+
+  if (r < 0)
+    return uvwasi__translate_uv_error(r);
+
+  *nwritten = uvwritten;
+  return UVWASI_ESUCCESS;
 }
 
 
@@ -524,7 +706,6 @@ uvwasi_errno_t uvwasi_fd_read(uvwasi_t* uvwasi,
   uv_fs_t req;
   uvwasi_errno_t err;
   size_t uvread;
-  int i;
   int r;
 
   if (uvwasi == NULL || iovs == NULL || nread == NULL)
@@ -534,12 +715,9 @@ uvwasi_errno_t uvwasi_fd_read(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  bufs = malloc(iovs_len * sizeof(*bufs));
-  if (bufs == NULL)
-    return UVWASI_ENOMEM;
-
-  for (i = 0; i < iovs_len; ++i)
-    bufs[i] = uv_buf_init(iovs[i].buf, iovs[i].buf_len);
+  err = uvwasi__setup_iovs(&bufs, iovs, iovs_len);
+  if (err != UVWASI_ESUCCESS)
+    return err;
 
   r = uv_fs_read(NULL, &req, wrap->fd, bufs, iovs_len, 0, NULL);
   uvread = req.result;
@@ -639,7 +817,34 @@ uvwasi_errno_t uvwasi_fd_write(uvwasi_t* uvwasi,
                                const uvwasi_ciovec_t* iovs,
                                size_t iovs_len,
                                size_t* nwritten) {
-  return UVWASI_ENOTSUP;
+  struct uvwasi_fd_wrap_t* wrap;
+  uv_buf_t* bufs;
+  uv_fs_t req;
+  uvwasi_errno_t err;
+  size_t uvwritten;
+  int r;
+
+  if (uvwasi == NULL || iovs == NULL || nwritten == NULL)
+    return UVWASI_EINVAL;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, UVWASI_RIGHT_FD_WRITE, 0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  err = uvwasi__setup_ciovs(&bufs, iovs, iovs_len);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  r = uv_fs_write(NULL, &req, wrap->fd, bufs, iovs_len, 0, NULL);
+  uvwritten = req.result;
+  uv_fs_req_cleanup(&req);
+  free(bufs);
+
+  if (r < 0)
+    return uvwasi__translate_uv_error(r);
+
+  *nwritten = uvwritten;
+  return UVWASI_ESUCCESS;
 }
 
 
@@ -945,11 +1150,25 @@ uvwasi_errno_t uvwasi_proc_exit(uvwasi_t* uvwasi, uvwasi_exitcode_t rval) {
 
 
 uvwasi_errno_t uvwasi_proc_raise(uvwasi_t* uvwasi, uvwasi_signal_t sig) {
-  return UVWASI_ENOTSUP;
+  int r;
+
+  if (uvwasi == NULL)
+    return UVWASI_EINVAL;
+
+  r = uvwasi__translate_to_uv_signal(sig);
+  if (r == -1)
+    return UVWASI_ENOSYS;
+
+  r = uv_kill(uv_os_getpid(), r);
+  if (r != 0)
+    return uvwasi__translate_uv_error(r);
+
+  return UVWASI_ESUCCESS;
 }
 
 
 uvwasi_errno_t uvwasi_random_get(uvwasi_t* uvwasi, void* buf, size_t buf_len) {
+  /* Pending libuv support: https://github.com/libuv/libuv/pull/2347 */
   return UVWASI_ENOTSUP;
 }
 
