@@ -22,6 +22,8 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   size_t args_size;
   size_t size;
   size_t offset;
+  size_t env_count;
+  size_t env_buf_size;
   int flags;
   int i;
   int r;
@@ -36,6 +38,7 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
 
   uvwasi->argc = options->argc;
   uvwasi->argv_buf_size = args_size;
+  /* TODO(cjihrig): Add error handling. */
   uvwasi->argv_buf = malloc(args_size);
   uvwasi->argv = calloc(options->argc, sizeof(char*));
 
@@ -44,6 +47,26 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
     size = strlen(options->argv[i]) + 1;
     memcpy(uvwasi->argv_buf + offset, options->argv[i], size);
     uvwasi->argv[i] = uvwasi->argv_buf + offset;
+    offset += size;
+  }
+
+  env_count = 0;
+  env_buf_size = 0;
+  while (options->envp[env_count] != NULL) {
+    env_buf_size += strlen(options->envp[env_count]) + 1;
+    env_count++;
+  }
+
+  uvwasi->envc = env_count;
+  uvwasi->env_buf_size = env_buf_size;
+  uvwasi->env_buf = malloc(env_buf_size);
+  uvwasi->env = calloc(env_count, sizeof(char*));
+
+  offset = 0;
+  for (i = 0; i < env_count; ++i) {
+    size = strlen(options->envp[i]) + 1;
+    memcpy(uvwasi->env_buf + offset, options->envp[i], size);
+    uvwasi->env[i] = uvwasi->env_buf + offset;
     offset += size;
   }
 
@@ -343,7 +366,6 @@ uvwasi_errno_t uvwasi_args_get(uvwasi_t* uvwasi, char** argv, char* argv_buf) {
     argv[i] = argv_buf + (uvwasi->argv[i] - uvwasi->argv_buf);
   }
 
-  argv[uvwasi->argc] = NULL;
   memcpy(argv_buf, uvwasi->argv_buf, uvwasi->argv_buf_size);
   return UVWASI_ESUCCESS;
 }
@@ -364,6 +386,23 @@ uvwasi_errno_t uvwasi_args_sizes_get(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_clock_res_get(uvwasi_t* uvwasi,
                                     uvwasi_clockid_t clock_id,
                                     uvwasi_timestamp_t* resolution) {
+  if (uvwasi == NULL || resolution == NULL)
+    return UVWASI_EINVAL;
+
+  /*
+  if (clock_id == UVWASI_CLOCK_MONOTONIC) {
+
+  } else if (clock_id == UVWASI_CLOCK_PROCESS_CPUTIME_ID) {
+
+  } else if (clock_id == UVWASI_CLOCK_REALTIME) {
+
+  } else if (clock_id == UVWASI_CLOCK_THREAD_CPUTIME_ID) {
+
+  } else {
+    return UVWASI_EINVAL;
+  }
+  */
+
   return UVWASI_ENOTSUP;
 }
 
@@ -372,6 +411,23 @@ uvwasi_errno_t uvwasi_clock_time_get(uvwasi_t* uvwasi,
                                      uvwasi_clockid_t clock_id,
                                      uvwasi_timestamp_t precision,
                                      uvwasi_timestamp_t* time) {
+  if (uvwasi == NULL || time == NULL)
+    return UVWASI_EINVAL;
+
+  /*
+  if (clock_id == UVWASI_CLOCK_MONOTONIC) {
+
+  } else if (clock_id == UVWASI_CLOCK_PROCESS_CPUTIME_ID) {
+
+  } else if (clock_id == UVWASI_CLOCK_REALTIME) {
+
+  } else if (clock_id == UVWASI_CLOCK_THREAD_CPUTIME_ID) {
+
+  } else {
+    return UVWASI_EINVAL;
+  }
+  */
+
   return UVWASI_ENOTSUP;
 }
 
@@ -379,14 +435,29 @@ uvwasi_errno_t uvwasi_clock_time_get(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_environ_get(uvwasi_t* uvwasi,
                                   char** environ,
                                   char* environ_buf) {
-  return UVWASI_ENOTSUP;
+  int i;
+
+  if (uvwasi == NULL || environ == NULL || environ_buf == NULL)
+    return UVWASI_EINVAL;
+
+  for (i = 0; i < uvwasi->envc; ++i) {
+    environ[i] = environ_buf + (uvwasi->env[i] - uvwasi->env_buf);
+  }
+
+  memcpy(environ_buf, uvwasi->env_buf, uvwasi->env_buf_size);
+  return UVWASI_ESUCCESS;
 }
 
 
 uvwasi_errno_t uvwasi_environ_sizes_get(uvwasi_t* uvwasi,
                                         size_t* environ_count,
                                         size_t* environ_buf_size) {
-  return UVWASI_ENOTSUP;
+  if (uvwasi == NULL || environ_count == NULL || environ_buf_size == NULL)
+    return UVWASI_EINVAL;
+
+  *environ_count = uvwasi->envc;
+  *environ_buf_size = uvwasi->env_buf_size;
+  return UVWASI_ESUCCESS;
 }
 
 

@@ -4,16 +4,25 @@
 #include "uv.h"
 #include "uvwasi.h"
 
+#ifdef __APPLE__
+#include <crt_externs.h>
+#define environ (*_NSGetEnviron())
+#elif !defined(_MSC_VER)
+extern char** environ;
+#endif
+
 
 int main(void) {
   uvwasi_options_t init_options;
-  char buf[1024];
+  char buf[4096];
   uvwasi_t uvwasi;
   uvwasi_t* uvw;
   uvwasi_fdstat_t fdstat_buf;
   uvwasi_errno_t r;
   size_t argc;
   size_t argv_buf_size;
+  size_t envc;
+  size_t env_buf_size;
   int i;
 
   uvw = &uvwasi;
@@ -23,6 +32,7 @@ int main(void) {
   init_options.argv[0] = "--foo=bar";
   init_options.argv[1] = "-baz";
   init_options.argv[2] = "100";
+  init_options.envp = environ;
   init_options.preopenc = 1;
   init_options.preopens = calloc(1, sizeof(uvwasi_preopen_t));
   init_options.preopens[0].mapped_path = "/var";
@@ -42,6 +52,18 @@ int main(void) {
   printf("args_get() r = %d, %s\n", r, buf);
   for (i = 0; i < argc; ++i)
     printf("\t'%s'\n", args_get_argv[i]);
+
+  r = uvwasi_environ_sizes_get(uvw, &envc, &env_buf_size);
+  printf("environ_sizes_get() r = %d, envc = %zu, env_buf_size = %zu\n",
+         r,
+         envc,
+         env_buf_size);
+
+  char** env_get_env = calloc(envc, sizeof(char*));
+  r = uvwasi_environ_get(uvw, env_get_env, buf);
+  printf("environ_get() r = %d, %s\n", r, buf);
+  for (i = 0; i < envc; ++i)
+    printf("\t'%s'\n", env_get_env[i]);
 
   uvwasi_fd_t dirfd = 3;
   uvwasi_lookupflags_t dirflags = 1;

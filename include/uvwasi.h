@@ -10,6 +10,10 @@ typedef struct uvwasi_s {
   char** argv;
   char* argv_buf;
   size_t argv_buf_size;
+  size_t envc;
+  char** env;
+  char* env_buf;
+  size_t env_buf_size;
 } uvwasi_t;
 
 typedef struct uvwasi_preopen_s {
@@ -23,6 +27,7 @@ typedef struct uvwasi_options_s {
   uvwasi_preopen_t *preopens;
   size_t argc;
   char** argv;
+  char** envp;
 } uvwasi_options_t;
 
 
