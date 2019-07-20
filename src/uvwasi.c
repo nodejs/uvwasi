@@ -1,8 +1,11 @@
 #include <stdlib.h>
 
 #ifndef _WIN32
+# include <sched.h>
 # include <sys/types.h>
 # include <unistd.h>
+#else
+# include <processthreadsapi.h>
 #endif /* _WIN32 */
 
 #include "uvwasi.h"
@@ -1174,7 +1177,17 @@ uvwasi_errno_t uvwasi_random_get(uvwasi_t* uvwasi, void* buf, size_t buf_len) {
 
 
 uvwasi_errno_t uvwasi_sched_yield(uvwasi_t* uvwasi) {
-  return UVWASI_ENOTSUP;
+  if (uvwasi == NULL)
+    return UVWASI_EINVAL;
+
+#ifndef _WIN32
+  if (0 != sched_yield())
+    return uvwasi__translate_uv_error(uv_translate_sys_error(errno));
+#else
+  SwitchToThread();
+#endif /* _WIN32 */
+
+  return UVWASI_ESUCCESS;
 }
 
 
