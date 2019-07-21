@@ -960,7 +960,45 @@ uvwasi_errno_t uvwasi_path_filestat_get(uvwasi_t* uvwasi,
                                         const char* path,
                                         size_t path_len,
                                         uvwasi_filestat_t* buf) {
-  return UVWASI_ENOTSUP;
+  /* TODO(cjihrig): flags is currently unused. */
+  char resolved_path[PATH_MAX_BYTES];
+  struct uvwasi_fd_wrap_t* wrap;
+  uv_fs_t req;
+  uvwasi_errno_t err;
+  int r;
+
+  if (uvwasi == NULL || path == NULL || buf == NULL)
+    return UVWASI_EINVAL;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds,
+                            fd,
+                            &wrap,
+                            UVWASI_RIGHT_PATH_FILESTAT_GET,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  err = uvwasi__resolve_path(wrap, path, path_len, resolved_path);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  r = uv_fs_stat(NULL, &req, resolved_path, NULL);
+  if (r != 0) {
+    uv_fs_req_cleanup(&req);
+    return uvwasi__translate_uv_error(r);
+  }
+
+  buf->st_dev = req.statbuf.st_dev;
+  buf->st_ino = req.statbuf.st_ino;
+  buf->st_nlink = req.statbuf.st_nlink;
+  buf->st_size = req.statbuf.st_size;
+  buf->st_filetype = wrap->type;
+  buf->st_atim = uvwasi__timespec_to_timestamp(&req.statbuf.st_atim);
+  buf->st_mtim = uvwasi__timespec_to_timestamp(&req.statbuf.st_mtim);
+  buf->st_ctim = uvwasi__timespec_to_timestamp(&req.statbuf.st_ctim);
+  uv_fs_req_cleanup(&req);
+
+  return UVWASI_ESUCCESS;
 }
 
 
