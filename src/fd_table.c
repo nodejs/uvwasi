@@ -245,6 +245,7 @@ uvwasi_errno_t uvwasi_fd_table_init(struct uvwasi_fd_table_t* table,
   if (table == NULL || init_size < 3)
     return UVWASI_EINVAL;
 
+  table->used = 0;
   table->size = init_size;
   table->fds = calloc(init_size, sizeof(struct uvwasi_fd_wrap_t));
 
@@ -264,6 +265,7 @@ uvwasi_errno_t uvwasi_fd_table_init(struct uvwasi_fd_table_t* table,
                                   &wrap);
     if (err != UVWASI_ESUCCESS)
       goto error_exit;
+
     if (wrap->id != i || wrap->id != wrap->fd) {
       err = UVWASI_EBADF;
       goto error_exit;

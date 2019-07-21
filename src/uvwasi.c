@@ -339,8 +339,8 @@ static uvwasi_errno_t uvwasi__setup_iovs(uv_buf_t** buffers,
 
 
 static uvwasi_errno_t uvwasi__setup_ciovs(uv_buf_t** buffers,
-                                         const uvwasi_ciovec_t* iovs,
-                                         size_t iovs_len) {
+                                          const uvwasi_ciovec_t* iovs,
+                                          size_t iovs_len) {
   uv_buf_t* bufs;
   int i;
 

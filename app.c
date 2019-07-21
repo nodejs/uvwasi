@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,29 +40,29 @@ int main(void) {
   init_options.preopens[0].real_path = ".";
 
   r = uvwasi_init(uvw, &init_options);
-  printf("uvwasi_init() r = %d\n", r);
+  assert(r == 0);
 
   r = uvwasi_args_sizes_get(uvw, &argc, &argv_buf_size);
-  printf("args_sizes_get() r = %d, argc = %zu, argv_size = %zu\n",
-         r,
-         argc,
-         argv_buf_size);
+  assert(r == 0);
+  assert(argc == init_options.argc);
+  assert(argv_buf_size > 0);
 
   char** args_get_argv = calloc(argc, sizeof(char*));
   r = uvwasi_args_get(uvw, args_get_argv, buf);
-  printf("args_get() r = %d, %s\n", r, buf);
-  for (i = 0; i < argc; ++i)
-    printf("\t'%s'\n", args_get_argv[i]);
+  assert(r == 0);
+  assert(strcmp(args_get_argv[0], init_options.argv[0]) == 0);
+  assert(strcmp(args_get_argv[1], init_options.argv[1]) == 0);
+  assert(strcmp(args_get_argv[2], init_options.argv[2]) == 0);
 
   r = uvwasi_environ_sizes_get(uvw, &envc, &env_buf_size);
-  printf("environ_sizes_get() r = %d, envc = %zu, env_buf_size = %zu\n",
-         r,
-         envc,
-         env_buf_size);
+  assert(r == 0);
+  assert(envc > 0);
+  assert(env_buf_size > 0);
 
   char** env_get_env = calloc(envc, sizeof(char*));
   r = uvwasi_environ_get(uvw, env_get_env, buf);
-  printf("environ_get() r = %d, %s\n", r, buf);
+  assert(r == 0);
+  printf("uvwasi_environ_get(), envc = %zu\n", envc);
   for (i = 0; i < envc; ++i)
     printf("\t'%s'\n", env_get_env[i]);
 
@@ -90,44 +91,45 @@ int main(void) {
                        fs_rights_inheriting,
                        fs_flags,
                        &fd);
-  printf("open r = %d, fd = %d\n", r, fd);
+  assert(r == 0);
+  assert(fd >= 0);
 
   r = uvwasi_fd_sync(uvw, fd);
-  printf("fd_sync r = %d\n", r);
+  assert(r == 0);
 
   r = uvwasi_fd_filestat_set_size(uvw, fd, 106);
-  printf("set_size r = %d\n", r);
+  assert(r == 0);
 
   r = uvwasi_fd_datasync(uvw, fd);
-  printf("fd_datasync r = %d\n", r);
+  assert(r == 0);
 
   uvwasi_filestat_t stats;
   r = uvwasi_fd_filestat_get(uvw, fd, &stats);
-  printf("fstat r = %d\n", r);
-  printf("\tstats.st_dev = %llu\n", stats.st_dev);
-  printf("\tstats.st_ino = %llu\n", stats.st_ino);
-  printf("\tstats.st_nlink = %u\n", stats.st_nlink);
-  printf("\tstats.st_size = %llu\n", stats.st_size);
-  printf("\tstats.st_filetype = %hhu\n", stats.st_filetype);
-  printf("\tstats.st_atim = %llu\n", stats.st_atim);
-  printf("\tstats.st_mtim = %llu\n", stats.st_mtim);
-  printf("\tstats.st_ctim = %llu\n", stats.st_ctim);
+  assert(r == 0);
+  assert(stats.st_dev > 0);
+  assert(stats.st_ino > 0);
+  assert(stats.st_nlink == 1);
+  assert(stats.st_size == 106);
+  assert(stats.st_filetype == UVWASI_FILETYPE_REGULAR_FILE);
+  assert(stats.st_atim > 0);
+  assert(stats.st_mtim > 0);
+  assert(stats.st_ctim > 0);
 
   r = uvwasi_fd_fdstat_get(uvw, fd, &fdstat_buf);
-  printf("fd_fdstat_get r = %d\n", r);
-  printf("\tstats.fs_filetype = %d\n", fdstat_buf.fs_filetype);
+  assert(r == 0);
+  assert(fdstat_buf.fs_filetype == UVWASI_FILETYPE_REGULAR_FILE);
+  assert(fdstat_buf.fs_rights_inheriting == 0);
+  assert(fdstat_buf.fs_flags == 0);
+  printf("uvwasi_fd_fdstat_get()\n");
   printf("\tstats.fs_rights_base = %llu\n", fdstat_buf.fs_rights_base);
-  printf("\tstats.fs_rights_inheriting = %llu\n",
-         fdstat_buf.fs_rights_inheriting);
-  printf("\tstats.fs_flags = %d\n", fdstat_buf.fs_flags);
 
   r = uvwasi_fd_fdstat_get(uvw, fd, &fdstat_buf);
-  printf("fd_fdstat_get r = %d\n", r);
-  printf("\tstats.fs_filetype = %d\n", fdstat_buf.fs_filetype);
+  assert(r == 0);
+  assert(fdstat_buf.fs_filetype == UVWASI_FILETYPE_REGULAR_FILE);
+  assert(fdstat_buf.fs_rights_inheriting == 0);
+  assert(fdstat_buf.fs_flags == 0);
+  printf("uvwasi_fd_fdstat_get()\n");
   printf("\tstats.fs_rights_base = %llu\n", fdstat_buf.fs_rights_base);
-  printf("\tstats.fs_rights_inheriting = %llu\n",
-         fdstat_buf.fs_rights_inheriting);
-  printf("\tstats.fs_flags = %d\n", fdstat_buf.fs_flags);
 
   uvwasi_iovec_t* iovs;
   size_t iovs_len;
@@ -142,32 +144,34 @@ int main(void) {
   }
 
   r = uvwasi_fd_read(uvw, fd, iovs, iovs_len, &nread);
+  assert(r == 0);
+  assert(nread == 20);
   free(iovs);
-  printf("fd_read r = %d, nread = %zu\n", r, nread);
 
   r = uvwasi_fd_fdstat_set_rights(uvw, fd, UVWASI_RIGHT_FD_FILESTAT_GET, 0);
-  printf("fd_fdstat_set_rights r = %d\n", r);
+  assert(r == 0);
 
   r = uvwasi_fd_close(uvw, fd);
-  printf("close r = %d\n", r);
+  assert(r == 0);
 
   r = uvwasi_path_unlink_file(uvw, dirfd, path, strlen(path));
-  printf("unlink_file r = %d\n", r);
+  assert(r == 0);
 
   r = uvwasi_fd_prestat_dir_name(uvw, dirfd, buf, sizeof(buf));
-  printf("fd_prestat_dir_name r = %d, %s\n", r, buf);
+  assert(r == 0);
+  assert(strcmp(buf, init_options.preopens[0].mapped_path) == 0);
 
   r = uvwasi_path_create_directory(uvw,
                                    dirfd,
                                    "test_dir",
                                    strlen("test_dir") + 1);
-  printf("create_directory r = %d\n", r);
+  assert(r == 0);
 
   r = uvwasi_path_remove_directory(uvw,
                                    dirfd,
                                    "test_dir",
                                    strlen("test_dir") + 1);
-  printf("remove_directory r = %d\n", r);
+  assert(r == 0);
 
   uvwasi_proc_exit(uvw, 75);
 
