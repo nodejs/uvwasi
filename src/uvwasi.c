@@ -1043,7 +1043,54 @@ uvwasi_errno_t uvwasi_path_link(uvwasi_t* uvwasi,
                                 uvwasi_fd_t new_fd,
                                 const char* new_path,
                                 size_t new_path_len) {
-  return UVWASI_ENOTSUP;
+  /* TODO(cjihrig): old_flags is currently unused. */
+  char resolved_old_path[PATH_MAX_BYTES];
+  char resolved_new_path[PATH_MAX_BYTES];
+  struct uvwasi_fd_wrap_t* old_wrap;
+  struct uvwasi_fd_wrap_t* new_wrap;
+  uvwasi_errno_t err;
+  uv_fs_t req;
+  int r;
+
+  if (uvwasi == NULL || old_path == NULL || new_path == NULL)
+    return UVWASI_EINVAL;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds,
+                            old_fd,
+                            &old_wrap,
+                            UVWASI_RIGHT_PATH_LINK_SOURCE,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds,
+                            new_fd,
+                            &new_wrap,
+                            UVWASI_RIGHT_PATH_LINK_TARGET,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  err = uvwasi__resolve_path(old_wrap,
+                             old_path,
+                             old_path_len,
+                             resolved_old_path);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  err = uvwasi__resolve_path(new_wrap,
+                             new_path,
+                             new_path_len,
+                             resolved_new_path);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  r = uv_fs_link(NULL, &req, resolved_old_path, resolved_new_path, NULL);
+  uv_fs_req_cleanup(&req);
+  if (r != 0)
+    return uvwasi__translate_uv_error(r);
+
+  return UVWASI_ESUCCESS;
 }
 
 
@@ -1221,7 +1268,53 @@ uvwasi_errno_t uvwasi_path_rename(uvwasi_t* uvwasi,
                                   uvwasi_fd_t new_fd,
                                   const char* new_path,
                                   size_t new_path_len) {
-  return UVWASI_ENOTSUP;
+  char resolved_old_path[PATH_MAX_BYTES];
+  char resolved_new_path[PATH_MAX_BYTES];
+  struct uvwasi_fd_wrap_t* old_wrap;
+  struct uvwasi_fd_wrap_t* new_wrap;
+  uvwasi_errno_t err;
+  uv_fs_t req;
+  int r;
+
+  if (uvwasi == NULL || old_path == NULL || new_path == NULL)
+    return UVWASI_EINVAL;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds,
+                            old_fd,
+                            &old_wrap,
+                            UVWASI_RIGHT_PATH_RENAME_SOURCE,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds,
+                            new_fd,
+                            &new_wrap,
+                            UVWASI_RIGHT_PATH_RENAME_TARGET,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  err = uvwasi__resolve_path(old_wrap,
+                             old_path,
+                             old_path_len,
+                             resolved_old_path);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  err = uvwasi__resolve_path(new_wrap,
+                             new_path,
+                             new_path_len,
+                             resolved_new_path);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  r = uv_fs_rename(NULL, &req, resolved_old_path, resolved_new_path, NULL);
+  uv_fs_req_cleanup(&req);
+  if (r != 0)
+    return uvwasi__translate_uv_error(r);
+
+  return UVWASI_ESUCCESS;
 }
 
 
@@ -1231,7 +1324,39 @@ uvwasi_errno_t uvwasi_path_symlink(uvwasi_t* uvwasi,
                                    uvwasi_fd_t fd,
                                    const char* new_path,
                                    size_t new_path_len) {
-  return UVWASI_ENOTSUP;
+  char resolved_new_path[PATH_MAX_BYTES];
+  struct uvwasi_fd_wrap_t* wrap;
+  uvwasi_errno_t err;
+  uv_fs_t req;
+  int r;
+
+  if (uvwasi == NULL || old_path == NULL || new_path == NULL)
+    return UVWASI_EINVAL;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds,
+                            fd,
+                            &wrap,
+                            UVWASI_RIGHT_PATH_SYMLINK,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  err = uvwasi__resolve_path(wrap,
+                             new_path,
+                             new_path_len,
+                             resolved_new_path);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  /* TODO(cjihrig): Need to NULL terminate old_path. */
+
+  /* Windows support may require settings the flags option. */
+  r = uv_fs_symlink(NULL, &req, old_path, resolved_new_path, 0, NULL);
+  uv_fs_req_cleanup(&req);
+  if (r != 0)
+    return uvwasi__translate_uv_error(r);
+
+  return UVWASI_ESUCCESS;
 }
 
 
