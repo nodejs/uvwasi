@@ -4,8 +4,14 @@
 # include <sched.h>
 # include <sys/types.h>
 # include <unistd.h>
+# define SLASH '/'
+# define SLASH_STR "/"
+# define IS_SLASH(c) ((c) == '/')
 #else
 # include <processthreadsapi.h>
+# define SLASH '\\'
+# define SLASH_STR "\\"
+# define IS_SLASH(c) ((c) == '/' || (c) == '\\')
 #endif /* _WIN32 */
 
 #include "uvwasi.h"
@@ -100,20 +106,6 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
     uv_fs_req_cleanup(&open_req);
   }
 
-  return UVWASI_ESUCCESS;
-}
-
-
-static uvwasi_errno_t uvwasi__resolve_path(const struct uvwasi_fd_wrap_t* fd,
-                                           const char* path,
-                                           size_t path_len,
-                                           char* resolved_path) {
-  /* TODO(cjihrig): Actually resolve path to fd. */
-  if (path_len > PATH_MAX_BYTES)
-    return UVWASI_ENOBUFS;
-
-  memcpy(resolved_path, path, path_len);
-  resolved_path[path_len] = '\0';
   return UVWASI_ESUCCESS;
 }
 
@@ -283,6 +275,92 @@ static uvwasi_errno_t uvwasi__translate_uv_error(int err) {
 
       return UVWASI_ENOSYS;
   }
+}
+
+
+static int uvwasi__is_absolute_path(const char* path, size_t path_len) {
+  /* TODO(cjihrig): Add a Windows implementation. */
+  return path != NULL && path_len > 0 && path[0] == SLASH;
+}
+
+
+static uvwasi_errno_t uvwasi__resolve_path(const struct uvwasi_fd_wrap_t* fd,
+                                           const char* path,
+                                           size_t path_len,
+                                           char* resolved_path) {
+  /* TODO(cjihrig): path_len is treated as a size. Need to verify if path_len is
+     really a string length or a size. Also need to verify if it is null
+     terminated. */
+  uvwasi_errno_t err;
+  char* abs_path;
+  char* tok;
+  char* ptr;
+  int abs_size;
+  int input_is_absolute;
+  int r;
+
+  err = UVWASI_ESUCCESS;
+  input_is_absolute = uvwasi__is_absolute_path(path, path_len);
+
+  if (1 == input_is_absolute) {
+    /* TODO(cjihrig): Revisit this. Copying is probably not necessary here. */
+    abs_size = path_len;
+    abs_path = malloc(abs_size);
+    if (abs_path == NULL) {
+      err = UVWASI_ENOMEM;
+      goto exit;
+    }
+
+    memcpy(abs_path, path, abs_size);
+  } else {
+    /* Resolve the relative path to fd's real path. */
+    abs_size = path_len + strlen(fd->real_path) + 1; /* +1 for the "/" */
+    abs_path = malloc(abs_size);
+    if (abs_path == NULL) {
+      err = UVWASI_ENOMEM;
+      goto exit;
+    }
+
+    r = snprintf(abs_path, abs_size, "%s/%s", fd->real_path, path);
+    if (r != abs_size - 1) {
+      err = uvwasi__translate_uv_error(uv_translate_sys_error(errno));
+      goto exit;
+    }
+  }
+
+  /* TODO(cjihrig): On Windows, convert all slashes to backslashes. */
+
+  ptr = resolved_path;
+  tok = strtok(abs_path, SLASH_STR);
+  for (; tok != NULL; tok = strtok(NULL, SLASH_STR)) {
+    if (0 == strcmp(tok, "."))
+      continue;
+
+    if (0 == strcmp(tok, "..")) {
+      while (*ptr != SLASH && ptr != resolved_path)
+        ptr--;
+      *ptr = '\0';
+      continue;
+    }
+
+    r = sprintf(ptr, "%c%s", SLASH, tok);
+    if (r < 1) { /* At least one character should have been written. */
+      err = uvwasi__translate_uv_error(uv_translate_sys_error(errno));
+      goto exit;
+    }
+
+    ptr += r;
+  }
+
+  /* Verify that the resolved path is still in the sandbox. */
+  if (resolved_path != strstr(resolved_path, fd->real_path)) {
+    err = UVWASI_ENOTCAPABLE;
+    goto exit;
+  }
+
+exit:
+  free(abs_path);
+  return err;
 }
 
 

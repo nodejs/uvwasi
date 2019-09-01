@@ -62,13 +62,12 @@ int main(void) {
   char** env_get_env = calloc(envc, sizeof(char*));
   r = uvwasi_environ_get(uvw, env_get_env, buf);
   assert(r == 0);
-  printf("uvwasi_environ_get(), envc = %zu\n", envc);
   for (i = 0; i < envc; ++i)
-    printf("\t'%s'\n", env_get_env[i]);
+    assert(strlen(env_get_env[i]) > 0);
 
   uvwasi_fd_t dirfd = 3;
   uvwasi_lookupflags_t dirflags = 1;
-  const char* path = "./foo.txt";
+  const char* path = "../uvwasi/./foo.txt";
   uvwasi_oflags_t o_flags = UVWASI_O_CREAT;
   uvwasi_rights_t fs_rights_base = UVWASI_RIGHT_FD_DATASYNC |
                                    UVWASI_RIGHT_FD_FILESTAT_GET |
@@ -85,7 +84,7 @@ int main(void) {
                        dirfd,
                        dirflags,
                        path,
-                       strlen(path),
+                       strlen(path) + 1,
                        o_flags,
                        fs_rights_base,
                        fs_rights_inheriting,
@@ -154,7 +153,7 @@ int main(void) {
   r = uvwasi_fd_close(uvw, fd);
   assert(r == 0);
 
-  r = uvwasi_path_unlink_file(uvw, dirfd, path, strlen(path));
+  r = uvwasi_path_unlink_file(uvw, dirfd, path, strlen(path) + 1);
   assert(r == 0);
 
   r = uvwasi_fd_prestat_dir_name(uvw, dirfd, buf, sizeof(buf));
@@ -166,6 +165,12 @@ int main(void) {
                                    "test_dir",
                                    strlen("test_dir") + 1);
   assert(r == 0);
+
+  r = uvwasi_path_create_directory(uvw,
+                                   dirfd,
+                                   "../test_dir",
+                                   strlen("../test_dir") + 1);
+  assert(r == UVWASI_ENOTCAPABLE);
 
   r = uvwasi_path_remove_directory(uvw,
                                    dirfd,

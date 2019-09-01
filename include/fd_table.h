@@ -5,7 +5,8 @@
 #include "uv.h"
 #include "wasi_types.h"
 
-/* TODO(cjihrig): libuv needs a PATH_MAX_BYTES. */
+/* TODO(cjihrig): PATH_MAX_BYTES shouldn't be stack allocated. On Windows, paths
+   can be 32k long, and this PATH_MAX_BYTES is an artificial limitation. */
 #ifdef _WIN32
 /* MAX_PATH is in characters, not bytes. Make sure we have enough headroom. */
 # define PATH_MAX_BYTES (MAX_PATH * 4)
