@@ -1,7 +1,12 @@
 #ifndef __UVWASI_H__
 #define __UVWASI_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "wasi_types.h"
+#include "uv_mapping.h"
 #include "fd_table.h"
 
 typedef struct uvwasi_s {
@@ -220,5 +225,9 @@ uvwasi_errno_t uvwasi_sock_send(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_sock_shutdown(uvwasi_t* uvwasi,
                                     uvwasi_fd_t sock,
                                     uvwasi_sdflags_t how);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __UVWASI_H__ */

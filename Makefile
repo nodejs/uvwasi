@@ -1,5 +1,5 @@
-_HEADERS=uvwasi.h fd_table.h wasi_types.h
-_OBJ=uvwasi.o fd_table.o
+_HEADERS=uvwasi.h fd_table.h uv_mapping.h wasi_types.h
+_OBJ=uvwasi.o fd_table.o uv_mapping.o
 IDIR=./include
 SDIR=./src
 OUTDIR=./out
