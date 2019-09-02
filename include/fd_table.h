@@ -37,6 +37,7 @@ struct uvwasi_fd_table_t {
 
 uvwasi_errno_t uvwasi_fd_table_init(struct uvwasi_fd_table_t* table,
                                     uint32_t init_size);
+void uvwasi_fd_table_free(struct uvwasi_fd_table_t* table);
 uvwasi_errno_t uvwasi_fd_table_insert_preopen(struct uvwasi_fd_table_t* table,
                                               const uv_file fd,
                                               const char* path,

@@ -196,6 +196,7 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   uvwasi->argv = NULL;
   uvwasi->env_buf = NULL;
   uvwasi->env = NULL;
+  uvwasi->fds.fds = NULL;
 
   args_size = 0;
   for (i = 0; i < options->argc; ++i)
@@ -301,7 +302,7 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   return UVWASI_ESUCCESS;
 
 exit:
-  /* TODO(cjihrig): Clean up fd table on error. */
+  uvwasi_fd_table_free(&uvwasi->fds);
   free(uvwasi->argv_buf);
   free(uvwasi->argv);
   free(uvwasi->env_buf);

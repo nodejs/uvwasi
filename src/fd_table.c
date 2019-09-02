@@ -282,6 +282,17 @@ error_exit:
 }
 
 
+void uvwasi_fd_table_free(struct uvwasi_fd_table_t* table) {
+  if (table == NULL)
+    return;
+
+  free(table->fds);
+  table->fds = NULL;
+  table->size = 0;
+  table->used = 0;
+}
+
+
 uvwasi_errno_t uvwasi_fd_table_insert_preopen(struct uvwasi_fd_table_t* table,
                                               const uv_file fd,
                                               const char* path,
