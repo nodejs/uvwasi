@@ -21,6 +21,82 @@
 #define NANOS_PER_SEC 1000000000
 
 
+static uvwasi_errno_t uvwasi__translate_uv_error(int err) {
+  switch (err) {
+    case UV_E2BIG:           return UVWASI_E2BIG;
+    case UV_EACCES:          return UVWASI_EACCES;
+    case UV_EADDRINUSE:      return UVWASI_EADDRINUSE;
+    case UV_EADDRNOTAVAIL:   return UVWASI_EADDRNOTAVAIL;
+    case UV_EAFNOSUPPORT:    return UVWASI_EAFNOSUPPORT;
+    case UV_EAGAIN:          return UVWASI_EAGAIN;
+    case UV_EALREADY:        return UVWASI_EALREADY;
+    case UV_EBADF:           return UVWASI_EBADF;
+    case UV_EBUSY:           return UVWASI_EBUSY;
+    case UV_ECANCELED:       return UVWASI_ECANCELED;
+    case UV_ECONNABORTED:    return UVWASI_ECONNABORTED;
+    case UV_ECONNREFUSED:    return UVWASI_ECONNREFUSED;
+    case UV_ECONNRESET:      return UVWASI_ECONNRESET;
+    case UV_EDESTADDRREQ:    return UVWASI_EDESTADDRREQ;
+    case UV_EEXIST:          return UVWASI_EEXIST;
+    case UV_EFAULT:          return UVWASI_EFAULT;
+    case UV_EFBIG:           return UVWASI_EFBIG;
+    case UV_EHOSTUNREACH:    return UVWASI_EHOSTUNREACH;
+    case UV_EINTR:           return UVWASI_EINTR;
+    case UV_EINVAL:          return UVWASI_EINVAL;
+    case UV_EIO:             return UVWASI_EIO;
+    case UV_EISCONN:         return UVWASI_EISCONN;
+    case UV_EISDIR:          return UVWASI_EISDIR;
+    case UV_ELOOP:           return UVWASI_ELOOP;
+    case UV_EMFILE:          return UVWASI_EMFILE;
+    case UV_EMLINK:          return UVWASI_EMLINK;
+    case UV_EMSGSIZE:        return UVWASI_EMSGSIZE;
+    case UV_ENAMETOOLONG:    return UVWASI_ENAMETOOLONG;
+    case UV_ENETDOWN:        return UVWASI_ENETDOWN;
+    case UV_ENETUNREACH:     return UVWASI_ENETUNREACH;
+    case UV_ENFILE:          return UVWASI_ENFILE;
+    case UV_ENOBUFS:         return UVWASI_ENOBUFS;
+    case UV_ENODEV:          return UVWASI_ENODEV;
+    case UV_ENOENT:          return UVWASI_ENOENT;
+    case UV_ENOMEM:          return UVWASI_ENOMEM;
+    case UV_ENOPROTOOPT:     return UVWASI_ENOPROTOOPT;
+    case UV_ENOSPC:          return UVWASI_ENOSPC;
+    case UV_ENOSYS:          return UVWASI_ENOSYS;
+    case UV_ENOTCONN:        return UVWASI_ENOTCONN;
+    case UV_ENOTDIR:         return UVWASI_ENOTDIR;
+    case UV_ENOTEMPTY:       return UVWASI_ENOTEMPTY;
+    case UV_ENOTSOCK:        return UVWASI_ENOTSOCK;
+    case UV_ENOTSUP:         return UVWASI_ENOTSUP;
+    case UV_ENXIO:           return UVWASI_ENXIO;
+    case UV_EPERM:           return UVWASI_EPERM;
+    case UV_EPIPE:           return UVWASI_EPIPE;
+    case UV_EPROTO:          return UVWASI_EPROTO;
+    case UV_EPROTONOSUPPORT: return UVWASI_EPROTONOSUPPORT;
+    case UV_EPROTOTYPE:      return UVWASI_EPROTOTYPE;
+    case UV_ERANGE:          return UVWASI_ERANGE;
+    case UV_EROFS:           return UVWASI_EROFS;
+    case UV_ESPIPE:          return UVWASI_ESPIPE;
+    case UV_ESRCH:           return UVWASI_ESRCH;
+    case UV_ETIMEDOUT:       return UVWASI_ETIMEDOUT;
+    case UV_ETXTBSY:         return UVWASI_ETXTBSY;
+    case UV_EXDEV:           return UVWASI_EXDEV;
+    case 0:                  return UVWASI_ESUCCESS;
+    /* The following libuv error codes have no corresponding WASI error code:
+          UV_EAI_ADDRFAMILY, UV_EAI_AGAIN, UV_EAI_BADFLAGS, UV_EAI_BADHINTS,
+          UV_EAI_CANCELED, UV_EAI_FAIL, UV_EAI_FAMILY, UV_EAI_MEMORY,
+          UV_EAI_NODATA, UV_EAI_NONAME, UV_EAI_OVERFLOW, UV_EAI_PROTOCOL,
+          UV_EAI_SERVICE, UV_EAI_SOCKTYPE, UV_ECHARSET, UV_ENONET, UV_EOF,
+          UV_ESHUTDOWN, UV_UNKNOWN
+    */
+    default:
+      /* libuv errors are < 0 */
+      if (err > 0)
+        return err;
+
+      return UVWASI_ENOSYS;
+  }
+}
+
+
 uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   uv_fs_t realpath_req;
   uv_fs_t open_req;
@@ -37,16 +113,29 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   if (uvwasi == NULL || options == NULL || options->fd_table_size == 0)
     return UVWASI_EINVAL;
 
+  uvwasi->argv_buf = NULL;
+  uvwasi->argv = NULL;
+  uvwasi->env_buf = NULL;
+  uvwasi->env = NULL;
+
   args_size = 0;
-  for (i = 0; i < options->argc; ++i) {
+  for (i = 0; i < options->argc; ++i)
     args_size += strlen(options->argv[i]) + 1;
-  }
 
   uvwasi->argc = options->argc;
   uvwasi->argv_buf_size = args_size;
-  /* TODO(cjihrig): Add error handling. */
+
   uvwasi->argv_buf = malloc(args_size);
+  if (uvwasi->argv_buf == NULL) {
+    err = UVWASI_ENOMEM;
+    goto exit;
+  }
+
   uvwasi->argv = calloc(options->argc, sizeof(char*));
+  if (uvwasi->argv == NULL) {
+    err = UVWASI_ENOMEM;
+    goto exit;
+  }
 
   offset = 0;
   for (i = 0; i < options->argc; ++i) {
@@ -65,8 +154,18 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
 
   uvwasi->envc = env_count;
   uvwasi->env_buf_size = env_buf_size;
+
   uvwasi->env_buf = malloc(env_buf_size);
+  if (uvwasi->env_buf == NULL) {
+    err = UVWASI_ENOMEM;
+    goto exit;
+  }
+
   uvwasi->env = calloc(env_count, sizeof(char*));
+  if (uvwasi->env == NULL) {
+    err = UVWASI_ENOMEM;
+    goto exit;
+  }
 
   offset = 0;
   for (i = 0; i < env_count; ++i) {
@@ -79,13 +178,14 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   for (i = 0; i < options->preopenc; ++i) {
     if (options->preopens[i].real_path == NULL ||
         options->preopens[i].mapped_path == NULL) {
-      return UVWASI_EINVAL;
+      err = UVWASI_EINVAL;
+      goto exit;
     }
   }
 
   err = uvwasi_fd_table_init(&uvwasi->fds, options->fd_table_size);
   if (err != UVWASI_ESUCCESS)
-    return err;
+    goto exit;
 
   flags = UV_FS_O_CREAT;
 
@@ -94,19 +194,44 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
                        &realpath_req,
                        options->preopens[i].real_path,
                        NULL);
-    /* TODO(cjihrig): Handle errors. */
+    if (r != 0) {
+      err = uvwasi__translate_uv_error(r);
+      uv_fs_req_cleanup(&realpath_req);
+      goto exit;
+    }
+
     r = uv_fs_open(NULL, &open_req, realpath_req.ptr, flags, 0666, NULL);
-    /* TODO(cjihrig): Handle errors. */
+    if (r < 0) {
+      err = uvwasi__translate_uv_error(r);
+      uv_fs_req_cleanup(&realpath_req);
+      uv_fs_req_cleanup(&open_req);
+      goto exit;
+    }
+
     err = uvwasi_fd_table_insert_preopen(&uvwasi->fds,
                                          open_req.result,
                                          options->preopens[i].mapped_path,
                                          realpath_req.ptr);
-    /* TODO(cjihrig): Handle errors. */
     uv_fs_req_cleanup(&realpath_req);
     uv_fs_req_cleanup(&open_req);
+
+    if (err != UVWASI_ESUCCESS)
+      goto exit;
   }
 
   return UVWASI_ESUCCESS;
+
+exit:
+  /* TODO(cjihrig): Clean up fd table on error. */
+  free(uvwasi->argv_buf);
+  free(uvwasi->argv);
+  free(uvwasi->env_buf);
+  free(uvwasi->env);
+  uvwasi->argv_buf = NULL;
+  uvwasi->argv = NULL;
+  uvwasi->env_buf = NULL;
+  uvwasi->env = NULL;
+  return err;
 }
 
 
@@ -198,82 +323,6 @@ static int uvwasi__translate_to_uv_signal(uvwasi_signal_t sig) {
     case UVWASI_SIGXFSZ:   return SIGXFSZ;
 #endif
     default:               return -1;
-  }
-}
-
-
-static uvwasi_errno_t uvwasi__translate_uv_error(int err) {
-  switch (err) {
-    case UV_E2BIG:           return UVWASI_E2BIG;
-    case UV_EACCES:          return UVWASI_EACCES;
-    case UV_EADDRINUSE:      return UVWASI_EADDRINUSE;
-    case UV_EADDRNOTAVAIL:   return UVWASI_EADDRNOTAVAIL;
-    case UV_EAFNOSUPPORT:    return UVWASI_EAFNOSUPPORT;
-    case UV_EAGAIN:          return UVWASI_EAGAIN;
-    case UV_EALREADY:        return UVWASI_EALREADY;
-    case UV_EBADF:           return UVWASI_EBADF;
-    case UV_EBUSY:           return UVWASI_EBUSY;
-    case UV_ECANCELED:       return UVWASI_ECANCELED;
-    case UV_ECONNABORTED:    return UVWASI_ECONNABORTED;
-    case UV_ECONNREFUSED:    return UVWASI_ECONNREFUSED;
-    case UV_ECONNRESET:      return UVWASI_ECONNRESET;
-    case UV_EDESTADDRREQ:    return UVWASI_EDESTADDRREQ;
-    case UV_EEXIST:          return UVWASI_EEXIST;
-    case UV_EFAULT:          return UVWASI_EFAULT;
-    case UV_EFBIG:           return UVWASI_EFBIG;
-    case UV_EHOSTUNREACH:    return UVWASI_EHOSTUNREACH;
-    case UV_EINTR:           return UVWASI_EINTR;
-    case UV_EINVAL:          return UVWASI_EINVAL;
-    case UV_EIO:             return UVWASI_EIO;
-    case UV_EISCONN:         return UVWASI_EISCONN;
-    case UV_EISDIR:          return UVWASI_EISDIR;
-    case UV_ELOOP:           return UVWASI_ELOOP;
-    case UV_EMFILE:          return UVWASI_EMFILE;
-    case UV_EMLINK:          return UVWASI_EMLINK;
-    case UV_EMSGSIZE:        return UVWASI_EMSGSIZE;
-    case UV_ENAMETOOLONG:    return UVWASI_ENAMETOOLONG;
-    case UV_ENETDOWN:        return UVWASI_ENETDOWN;
-    case UV_ENETUNREACH:     return UVWASI_ENETUNREACH;
-    case UV_ENFILE:          return UVWASI_ENFILE;
-    case UV_ENOBUFS:         return UVWASI_ENOBUFS;
-    case UV_ENODEV:          return UVWASI_ENODEV;
-    case UV_ENOENT:          return UVWASI_ENOENT;
-    case UV_ENOMEM:          return UVWASI_ENOMEM;
-    case UV_ENOPROTOOPT:     return UVWASI_ENOPROTOOPT;
-    case UV_ENOSPC:          return UVWASI_ENOSPC;
-    case UV_ENOSYS:          return UVWASI_ENOSYS;
-    case UV_ENOTCONN:        return UVWASI_ENOTCONN;
-    case UV_ENOTDIR:         return UVWASI_ENOTDIR;
-    case UV_ENOTEMPTY:       return UVWASI_ENOTEMPTY;
-    case UV_ENOTSOCK:        return UVWASI_ENOTSOCK;
-    case UV_ENOTSUP:         return UVWASI_ENOTSUP;
-    case UV_ENXIO:           return UVWASI_ENXIO;
-    case UV_EPERM:           return UVWASI_EPERM;
-    case UV_EPIPE:           return UVWASI_EPIPE;
-    case UV_EPROTO:          return UVWASI_EPROTO;
-    case UV_EPROTONOSUPPORT: return UVWASI_EPROTONOSUPPORT;
-    case UV_EPROTOTYPE:      return UVWASI_EPROTOTYPE;
-    case UV_ERANGE:          return UVWASI_ERANGE;
-    case UV_EROFS:           return UVWASI_EROFS;
-    case UV_ESPIPE:          return UVWASI_ESPIPE;
-    case UV_ESRCH:           return UVWASI_ESRCH;
-    case UV_ETIMEDOUT:       return UVWASI_ETIMEDOUT;
-    case UV_ETXTBSY:         return UVWASI_ETXTBSY;
-    case UV_EXDEV:           return UVWASI_EXDEV;
-    case 0:                  return UVWASI_ESUCCESS;
-    /* The following libuv error codes have no corresponding WASI error code:
-          UV_EAI_ADDRFAMILY, UV_EAI_AGAIN, UV_EAI_BADFLAGS, UV_EAI_BADHINTS,
-          UV_EAI_CANCELED, UV_EAI_FAIL, UV_EAI_FAMILY, UV_EAI_MEMORY,
-          UV_EAI_NODATA, UV_EAI_NONAME, UV_EAI_OVERFLOW, UV_EAI_PROTOCOL,
-          UV_EAI_SERVICE, UV_EAI_SOCKTYPE, UV_ECHARSET, UV_ENONET, UV_EOF,
-          UV_ESHUTDOWN, UV_UNKNOWN
-    */
-    default:
-      /* libuv errors are < 0 */
-      if (err > 0)
-        return err;
-
-      return UVWASI_ENOSYS;
   }
 }
 
@@ -927,7 +976,6 @@ uvwasi_errno_t uvwasi_fd_seek(uvwasi_t* uvwasi,
                               uvwasi_filedelta_t offset,
                               uvwasi_whence_t whence,
                               uvwasi_filesize_t* newoffset) {
-  /* TODO(cjihrig): This function is currently untested. */
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
 
@@ -970,7 +1018,6 @@ uvwasi_errno_t uvwasi_fd_sync(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
 uvwasi_errno_t uvwasi_fd_tell(uvwasi_t* uvwasi,
                               uvwasi_fd_t fd,
                               uvwasi_filesize_t* offset) {
-  /* TODO(cjihrig): This function is currently untested. */
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
 
@@ -1267,7 +1314,6 @@ uvwasi_errno_t uvwasi_path_readlink(uvwasi_t* uvwasi,
                                     char* buf,
                                     size_t buf_len,
                                     size_t* bufused) {
-  /* TODO(cjihrig): This function is currently untested. */
   char resolved_path[PATH_MAX_BYTES];
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
