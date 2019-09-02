@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "uv.h"
 #include "wasi_types.h"
+#include "uv_mapping.h"
 
 /* TODO(cjihrig): PATH_MAX_BYTES shouldn't be stack allocated. On Windows, paths
    can be 32k long, and this PATH_MAX_BYTES is an artificial limitation. */

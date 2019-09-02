@@ -3,6 +3,7 @@
 #include "uv.h"
 #include "fd_table.h"
 #include "wasi_types.h"
+#include "uv_mapping.h"
 
 
 #define UVWASI__RIGHTS_ALL (UVWASI_RIGHT_FD_DATASYNC |                        \
@@ -107,9 +108,10 @@ static uvwasi_errno_t uvwasi__get_type_and_rights(uv_file fd,
   int r;
 
   r = uv_fs_fstat(NULL, &req, fd, NULL);
-  /* TODO(cjihrig): Handle errors. */
   mode = req.statbuf.st_mode;
   uv_fs_req_cleanup(&req);
+  if (r != 0)
+    return uvwasi__translate_uv_error(r);
 
   if (S_ISREG(mode)) {
     *type = UVWASI_FILETYPE_REGULAR_FILE;
