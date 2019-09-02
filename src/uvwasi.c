@@ -1061,10 +1061,13 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
                                 uvwasi_rights_t fs_rights_inheriting,
                                 uvwasi_fdflags_t fs_flags,
                                 uvwasi_fd_t* fd) {
-  /* TODO(cjihrig): Check dirfd? */
+  /* TODO(cjihrig): dirflags is currently unused. */
+  char resolved_path[PATH_MAX_BYTES];
   uvwasi_rights_t needed_inheriting;
   uvwasi_rights_t needed_base;
+  struct uvwasi_fd_wrap_t* dirfd_wrap;
   struct uvwasi_fd_wrap_t wrap;
+  uvwasi_errno_t err;
   uv_fs_t req;
   int flags;
   int read;
@@ -1117,22 +1120,36 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
   if (write && (flags & (UV_FS_O_APPEND | UV_FS_O_TRUNC)) == 0)
     needed_inheriting |= UVWASI_RIGHT_FD_SEEK;
 
-  /* TODO(cjihrig): Resolve path to dirfd's path and check for '..' */
+  err = uvwasi_fd_table_get(&uvwasi->fds,
+                            dirfd,
+                            &dirfd_wrap,
+                            needed_base,
+                            needed_inheriting);
+  if (err != UVWASI_ESUCCESS)
+    return err;
 
-  r = uv_fs_open(NULL, &req, path, flags, 0666, NULL);
+  err = uvwasi__resolve_path(dirfd_wrap, path, path_len, resolved_path);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  r = uv_fs_open(NULL, &req, resolved_path, flags, 0666, NULL);
   uv_fs_req_cleanup(&req);
 
   if (r < 0)
     return uvwasi__translate_uv_error(r);
 
-  r = uvwasi_fd_table_insert_fd(&uvwasi->fds,
-                                r,
-                                flags,
-                                path,
-                                fs_rights_base,
-                                fs_rights_inheriting,
-                                &wrap);
-  /* TODO(cjihrig): Handle errors. Also need to close the new fd on error. */
+  err = uvwasi_fd_table_insert_fd(&uvwasi->fds,
+                                  r,
+                                  flags,
+                                  resolved_path,
+                                  fs_rights_base,
+                                  fs_rights_inheriting,
+                                  &wrap);
+  if (err != UVWASI_ESUCCESS) {
+    uv_fs_close(NULL, &req, r, NULL);
+    uv_fs_req_cleanup(&req);
+    return err;
+  }
 
   *fd = wrap.id;
   return UVWASI_ESUCCESS;
