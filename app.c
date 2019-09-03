@@ -72,6 +72,7 @@ int main(void) {
   uvwasi_rights_t fs_rights_base = UVWASI_RIGHT_FD_DATASYNC |
                                    UVWASI_RIGHT_FD_FILESTAT_GET |
                                    UVWASI_RIGHT_FD_FILESTAT_SET_SIZE |
+                                   UVWASI_RIGHT_FD_ADVISE |
                                    UVWASI_RIGHT_FD_READ |
                                    UVWASI_RIGHT_FD_SYNC |
                                    UVWASI_RIGHT_PATH_READLINK |
@@ -100,6 +101,9 @@ int main(void) {
   assert(r == 0);
 
   r = uvwasi_fd_datasync(uvw, fd);
+  assert(r == 0);
+
+  r = uvwasi_fd_advise(uvw, fd, 0, 0, UVWASI_ADVICE_DONTNEED);
   assert(r == 0);
 
   uvwasi_filestat_t stats;

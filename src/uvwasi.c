@@ -425,7 +425,61 @@ uvwasi_errno_t uvwasi_fd_advise(uvwasi_t* uvwasi,
                                 uvwasi_filesize_t offset,
                                 uvwasi_filesize_t len,
                                 uvwasi_advice_t advice) {
-  return UVWASI_ENOTSUP;
+  struct uvwasi_fd_wrap_t* wrap;
+  uvwasi_errno_t err;
+#ifdef POSIX_FADV_NORMAL
+  int mapped_advice;
+  int r;
+#endif /* POSIX_FADV_NORMAL */
+
+  if (uvwasi == NULL)
+    return UVWASI_EINVAL;
+
+  switch (advice) {
+    case UVWASI_ADVICE_DONTNEED:
+#ifdef POSIX_FADV_NORMAL
+      mapped_advice = POSIX_FADV_DONTNEED;
+#endif /* POSIX_FADV_NORMAL */
+      break;
+    case UVWASI_ADVICE_NOREUSE:
+#ifdef POSIX_FADV_NORMAL
+      mapped_advice = POSIX_FADV_NOREUSE;
+#endif /* POSIX_FADV_NORMAL */
+      break;
+    case UVWASI_ADVICE_NORMAL:
+#ifdef POSIX_FADV_NORMAL
+      mapped_advice = POSIX_FADV_NORMAL;
+#endif /* POSIX_FADV_NORMAL */
+      break;
+    case UVWASI_ADVICE_RANDOM:
+#ifdef POSIX_FADV_NORMAL
+      mapped_advice = POSIX_FADV_RANDOM;
+#endif /* POSIX_FADV_NORMAL */
+      break;
+    case UVWASI_ADVICE_SEQUENTIAL:
+#ifdef POSIX_FADV_NORMAL
+      mapped_advice = POSIX_FADV_SEQUENTIAL;
+#endif /* POSIX_FADV_NORMAL */
+      break;
+    case UVWASI_ADVICE_WILLNEED:
+#ifdef POSIX_FADV_NORMAL
+      mapped_advice = POSIX_FADV_WILLNEED;
+#endif /* POSIX_FADV_NORMAL */
+      break;
+    default:
+      return UVWASI_EINVAL;
+  }
+
+  err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, UVWASI_RIGHT_FD_ADVISE, 0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+#ifdef POSIX_FADV_NORMAL
+  r = posix_fadvise(wrap->fd, offset, len, mapped_advice);
+  if (r != 0)
+    return uvwasi__translate_uv_error(uv_translate_sys_error(r));
+#endif /* POSIX_FADV_NORMAL */
+  return UVWASI_ESUCCESS;
 }
 
 
@@ -462,6 +516,9 @@ uvwasi_errno_t uvwasi_fd_datasync(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
   uvwasi_errno_t err;
   uv_fs_t req;
   int r;
+
+  if (uvwasi == NULL)
+    return UVWASI_EINVAL;
 
   err = uvwasi_fd_table_get(&uvwasi->fds,
                             fd,
