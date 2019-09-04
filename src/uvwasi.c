@@ -497,6 +497,9 @@ uvwasi_errno_t uvwasi_fd_close(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
   uv_fs_t req;
   int r;
 
+  if (uvwasi == NULL)
+    return UVWASI_EINVAL;
+
   err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, 0, 0);
   if (err != UVWASI_ESUCCESS)
     return err;
@@ -576,6 +579,9 @@ uvwasi_errno_t uvwasi_fd_fdstat_set_rights(uvwasi_t* uvwasi,
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
 
+  if (uvwasi == NULL)
+    return UVWASI_EINVAL;
+
   err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, 0, 0);
   if (err != UVWASI_ESUCCESS)
     return err;
@@ -601,6 +607,9 @@ uvwasi_errno_t uvwasi_fd_filestat_get(uvwasi_t* uvwasi,
   uv_fs_t req;
   uvwasi_errno_t err;
   int r;
+
+  if (uvwasi == NULL || buf == NULL)
+    return UVWASI_EINVAL;
 
   err = uvwasi_fd_table_get(&uvwasi->fds,
                             fd,
@@ -639,6 +648,9 @@ uvwasi_errno_t uvwasi_fd_filestat_set_size(uvwasi_t* uvwasi,
   uvwasi_errno_t err;
   int r;
 
+  if (uvwasi == NULL)
+    return UVWASI_EINVAL;
+
   err = uvwasi_fd_table_get(&uvwasi->fds,
                             fd,
                             &wrap,
@@ -662,7 +674,36 @@ uvwasi_errno_t uvwasi_fd_filestat_set_times(uvwasi_t* uvwasi,
                                             uvwasi_timestamp_t st_atim,
                                             uvwasi_timestamp_t st_mtim,
                                             uvwasi_fstflags_t fst_flags) {
-  return UVWASI_ENOTSUP;
+  /* TODO(cjihrig): libuv does not currently support nanosecond precision. */
+  struct uvwasi_fd_wrap_t* wrap;
+  uv_fs_t req;
+  uvwasi_errno_t err;
+  int r;
+
+  if (uvwasi == NULL)
+    return UVWASI_EINVAL;
+
+  if (fst_flags & ~(UVWASI_FILESTAT_SET_ATIM | UVWASI_FILESTAT_SET_ATIM_NOW |
+                    UVWASI_FILESTAT_SET_MTIM | UVWASI_FILESTAT_SET_MTIM_NOW)) {
+    return UVWASI_EINVAL;
+  }
+
+  err = uvwasi_fd_table_get(&uvwasi->fds,
+                            fd,
+                            &wrap,
+                            UVWASI_RIGHT_FD_FILESTAT_SET_TIMES,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  /* TODO(cjihrig): st_atim and st_mtim should not be unconditionally passed. */
+  r = uv_fs_futime(NULL, &req, wrap->fd, st_atim, st_mtim, NULL);
+  uv_fs_req_cleanup(&req);
+
+  if (r != 0)
+    return uvwasi__translate_uv_error(r);
+
+  return UVWASI_ESUCCESS;
 }
 
 
@@ -868,9 +909,8 @@ uvwasi_errno_t uvwasi_fd_seek(uvwasi_t* uvwasi,
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
 
-  if (uvwasi == NULL) {
+  if (uvwasi == NULL || newoffset == NULL)
     return UVWASI_EINVAL;
-  }
 
   err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, UVWASI_RIGHT_FD_SEEK, 0);
   if (err != UVWASI_ESUCCESS)
@@ -885,6 +925,9 @@ uvwasi_errno_t uvwasi_fd_sync(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
   uv_fs_t req;
   uvwasi_errno_t err;
   int r;
+
+  if (uvwasi == NULL)
+    return UVWASI_EINVAL;
 
   err = uvwasi_fd_table_get(&uvwasi->fds,
                             fd,
@@ -967,6 +1010,9 @@ uvwasi_errno_t uvwasi_path_create_directory(uvwasi_t* uvwasi,
   uvwasi_errno_t err;
   int r;
 
+  if (uvwasi == NULL || path == NULL)
+    return UVWASI_EINVAL;
+
   err = uvwasi_fd_table_get(&uvwasi->fds,
                             fd,
                             &wrap,
@@ -1045,7 +1091,42 @@ uvwasi_errno_t uvwasi_path_filestat_set_times(uvwasi_t* uvwasi,
                                               uvwasi_timestamp_t st_atim,
                                               uvwasi_timestamp_t st_mtim,
                                               uvwasi_fstflags_t fst_flags) {
-  return UVWASI_ENOTSUP;
+  /* TODO(cjihrig): libuv does not currently support nanosecond precision. */
+  /* TODO(cjihrig): flags is not currently used. */
+  char resolved_path[PATH_MAX_BYTES];
+  struct uvwasi_fd_wrap_t* wrap;
+  uv_fs_t req;
+  uvwasi_errno_t err;
+  int r;
+
+  if (uvwasi == NULL || path == NULL)
+    return UVWASI_EINVAL;
+
+  if (fst_flags & ~(UVWASI_FILESTAT_SET_ATIM | UVWASI_FILESTAT_SET_ATIM_NOW |
+                    UVWASI_FILESTAT_SET_MTIM | UVWASI_FILESTAT_SET_MTIM_NOW)) {
+    return UVWASI_EINVAL;
+  }
+
+  err = uvwasi_fd_table_get(&uvwasi->fds,
+                            fd,
+                            &wrap,
+                            UVWASI_RIGHT_PATH_FILESTAT_SET_TIMES,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  err = uvwasi__resolve_path(wrap, path, path_len, resolved_path);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  /* TODO(cjihrig): st_atim and st_mtim should not be unconditionally passed. */
+  r = uv_fs_utime(NULL, &req, resolved_path, st_atim, st_mtim, NULL);
+  uv_fs_req_cleanup(&req);
+
+  if (r != 0)
+    return uvwasi__translate_uv_error(r);
+
+  return UVWASI_ESUCCESS;
 }
 
 
@@ -1130,6 +1211,9 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
   int read;
   int write;
   int r;
+
+  if (uvwasi == NULL || path == NULL || fd == NULL)
+    return UVWASI_EINVAL;
 
   read = 0 != (fs_rights_base & (UVWASI_RIGHT_FD_READ |
                                  UVWASI_RIGHT_FD_READDIR));
@@ -1227,6 +1311,9 @@ uvwasi_errno_t uvwasi_path_readlink(uvwasi_t* uvwasi,
   size_t len;
   int r;
 
+  if (uvwasi == NULL || path == NULL || buf == NULL || bufused == NULL)
+    return UVWASI_EINVAL;
+
   err = uvwasi_fd_table_get(&uvwasi->fds,
                             fd,
                             &wrap,
@@ -1268,6 +1355,9 @@ uvwasi_errno_t uvwasi_path_remove_directory(uvwasi_t* uvwasi,
   uv_fs_t req;
   uvwasi_errno_t err;
   int r;
+
+  if (uvwasi == NULL || path == NULL)
+    return UVWASI_EINVAL;
 
   err = uvwasi_fd_table_get(&uvwasi->fds,
                             fd,
@@ -1399,6 +1489,9 @@ uvwasi_errno_t uvwasi_path_unlink_file(uvwasi_t* uvwasi,
   uv_fs_t req;
   uvwasi_errno_t err;
   int r;
+
+  if (uvwasi == NULL || path == NULL)
+    return UVWASI_EINVAL;
 
   err = uvwasi_fd_table_get(&uvwasi->fds,
                             fd,
