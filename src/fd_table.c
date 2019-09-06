@@ -187,7 +187,7 @@ static uvwasi_errno_t uvwasi__fd_table_insert(struct uvwasi_fd_table_t* table,
   struct uvwasi_fd_wrap_t* new_fds;
   uint32_t new_size;
   int index;
-  int i;
+  uint32_t i;
 
   /* Check that there is room for a new item. If there isn't, grow the table. */
   if (table->used >= table->size) {
@@ -196,9 +196,8 @@ static uvwasi_errno_t uvwasi__fd_table_insert(struct uvwasi_fd_table_t* table,
     if (new_fds == NULL)
       return UVWASI_ENOMEM;
 
-    for (i = table->size; i < new_size; ++i) {
+    for (i = table->size; i < new_size; ++i)
       new_fds[i].valid = 0;
-    }
 
     index = table->size;
     table->fds = new_fds;
@@ -241,7 +240,7 @@ uvwasi_errno_t uvwasi_fd_table_init(struct uvwasi_fd_table_t* table,
                                     uint32_t init_size) {
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
-  int i;
+  uvwasi_fd_t i;
 
   /* Require an initial size of at least three to store the stdio FDs. */
   if (table == NULL || init_size < 3)
@@ -268,7 +267,7 @@ uvwasi_errno_t uvwasi_fd_table_init(struct uvwasi_fd_table_t* table,
     if (err != UVWASI_ESUCCESS)
       goto error_exit;
 
-    if (wrap->id != i || wrap->id != wrap->fd) {
+    if (wrap->id != i || wrap->id != (uvwasi_fd_t) wrap->fd) {
       err = UVWASI_EBADF;
       goto error_exit;
     }

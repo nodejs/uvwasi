@@ -144,7 +144,7 @@ static uvwasi_errno_t uvwasi__setup_iovs(uv_buf_t** buffers,
                                          const uvwasi_iovec_t* iovs,
                                          size_t iovs_len) {
   uv_buf_t* bufs;
-  int i;
+  size_t i;
 
   bufs = malloc(iovs_len * sizeof(*bufs));
   if (bufs == NULL)
@@ -162,7 +162,7 @@ static uvwasi_errno_t uvwasi__setup_ciovs(uv_buf_t** buffers,
                                           const uvwasi_ciovec_t* iovs,
                                           size_t iovs_len) {
   uv_buf_t* bufs;
-  int i;
+  size_t i;
 
   bufs = malloc(iovs_len * sizeof(*bufs));
   if (bufs == NULL)
@@ -186,7 +186,7 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   size_t env_count;
   size_t env_buf_size;
   int flags;
-  int i;
+  size_t i;
   int r;
 
   if (uvwasi == NULL || options == NULL || options->fd_table_size == 0)
@@ -235,6 +235,7 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   uvwasi->envc = env_count;
   uvwasi->env_buf_size = env_buf_size;
 
+  /* TODO(cjihrig): Audit allocation sites for zero-sized allocations. */
   uvwasi->env_buf = malloc(env_buf_size);
   if (uvwasi->env_buf == NULL) {
     err = UVWASI_ENOMEM;
@@ -316,7 +317,7 @@ exit:
 
 
 uvwasi_errno_t uvwasi_args_get(uvwasi_t* uvwasi, char** argv, char* argv_buf) {
-  int i;
+  size_t i;
 
   if (uvwasi == NULL || argv == NULL || argv_buf == NULL)
     return UVWASI_EINVAL;
@@ -394,7 +395,7 @@ uvwasi_errno_t uvwasi_clock_time_get(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_environ_get(uvwasi_t* uvwasi,
                                   char** environ,
                                   char* environ_buf) {
-  int i;
+  size_t i;
 
   if (uvwasi == NULL || environ == NULL || environ_buf == NULL)
     return UVWASI_EINVAL;
@@ -762,7 +763,7 @@ uvwasi_errno_t uvwasi_fd_prestat_dir_name(uvwasi_t* uvwasi,
                                           size_t path_len) {
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
-  int size;
+  size_t size;
 
   if (uvwasi == NULL || path == NULL)
     return UVWASI_EINVAL;

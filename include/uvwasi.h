@@ -29,7 +29,7 @@ typedef struct uvwasi_preopen_s {
 typedef struct uvwasi_options_s {
   size_t fd_table_size;
   size_t preopenc;
-  uvwasi_preopen_t *preopens;
+  uvwasi_preopen_t* preopens;
   size_t argc;
   char** argv;
   char** envp;

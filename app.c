@@ -24,7 +24,7 @@ int main(void) {
   size_t argv_buf_size;
   size_t envc;
   size_t env_buf_size;
-  int i;
+  size_t i;
 
   uvw = &uvwasi;
   init_options.fd_table_size = 3;
