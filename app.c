@@ -15,7 +15,6 @@ extern char** environ;
 
 int main(void) {
   uvwasi_options_t init_options;
-  char buf[4096];
   uvwasi_t uvwasi;
   uvwasi_t* uvw;
   uvwasi_fdstat_t fdstat_buf;
@@ -47,6 +46,12 @@ int main(void) {
   assert(argc == init_options.argc);
   assert(argv_buf_size > 0);
 
+  r = uvwasi_environ_sizes_get(uvw, &envc, &env_buf_size);
+  assert(r == 0);
+  assert(envc > 0);
+  assert(env_buf_size > 0);
+  char buf[env_buf_size > argv_buf_size ? env_buf_size : argv_buf_size];
+
   char** args_get_argv = calloc(argc, sizeof(char*));
   r = uvwasi_args_get(uvw, args_get_argv, buf);
   assert(r == 0);
@@ -54,10 +59,6 @@ int main(void) {
   assert(strcmp(args_get_argv[1], init_options.argv[1]) == 0);
   assert(strcmp(args_get_argv[2], init_options.argv[2]) == 0);
 
-  r = uvwasi_environ_sizes_get(uvw, &envc, &env_buf_size);
-  assert(r == 0);
-  assert(envc > 0);
-  assert(env_buf_size > 0);
 
   char** env_get_env = calloc(envc, sizeof(char*));
   r = uvwasi_environ_get(uvw, env_get_env, buf);
