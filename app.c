@@ -32,7 +32,7 @@ int main(void) {
   init_options.argv[0] = "--foo=bar";
   init_options.argv[1] = "-baz";
   init_options.argv[2] = "100";
-  init_options.envp = environ;
+  init_options.envp = (const char**) environ;
   init_options.preopenc = 1;
   init_options.preopens = calloc(1, sizeof(uvwasi_preopen_t));
   init_options.preopens[0].mapped_path = "/var";
