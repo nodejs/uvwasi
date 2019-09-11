@@ -166,6 +166,18 @@ typedef uint16_t uvwasi_oflags_t;                /* Bitfield */
 #define UVWASI_O_EXCL      (1 << 2)
 #define UVWASI_O_TRUNC     (1 << 3)
 
+typedef uint8_t uvwasi_preopentype_t;
+#define UVWASI_PREOPENTYPE_DIR
+
+typedef struct uvwasi_prestat_s {
+  uvwasi_preopentype_t pr_type;
+  union uvwasi_prestat_u {
+    struct uvwasi_prestat_dir_t {
+      size_t pr_name_len;
+    } dir;
+  } u;
+} uvwasi_prestat_t;
+
 typedef uint16_t uvwasi_riflags_t;               /* Bitfield */
 #define UVWASI_SOCK_RECV_PEEK    (1 << 0)
 #define UVWASI_SOCK_RECV_WAITALL (1 << 1)

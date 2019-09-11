@@ -94,10 +94,9 @@ uvwasi_errno_t uvwasi_fd_pread(uvwasi_t* uvwasi,
                                size_t iovs_len,
                                uvwasi_filesize_t offset,
                                size_t* nread);
-/* TODO(cjihrig): uvwasi_prestat_t is not defined. */
 uvwasi_errno_t uvwasi_fd_prestat_get(uvwasi_t* uvwasi,
-                                     uvwasi_fd_t fd
-                                     /* , uvwasi_prestat_t* buf */);
+                                     uvwasi_fd_t fd,
+                                     uvwasi_prestat_t* buf);
 uvwasi_errno_t uvwasi_fd_prestat_dir_name(uvwasi_t* uvwasi,
                                           uvwasi_fd_t fd,
                                           char* path,
