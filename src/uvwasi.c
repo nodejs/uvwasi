@@ -754,7 +754,21 @@ uvwasi_errno_t uvwasi_fd_pread(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_fd_prestat_get(uvwasi_t* uvwasi,
                                      uvwasi_fd_t fd,
                                      uvwasi_prestat_t* buf) {
-  return UVWASI_ENOTSUP;
+  struct uvwasi_fd_wrap_t* wrap;
+  uvwasi_errno_t err;
+
+  if (uvwasi == NULL || buf == NULL)
+    return UVWASI_EINVAL;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, 0, 0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+  if (wrap->preopen != 1)
+    return UVWASI_EINVAL;
+
+  buf->pr_type = UVWASI_PREOPENTYPE_DIR;
+  buf->u.dir.pr_name_len = strlen(wrap->path);
+  return UVWASI_ESUCCESS;
 }
 
 

@@ -161,9 +161,17 @@ int main(void) {
   r = uvwasi_path_unlink_file(uvw, dirfd, path, strlen(path) + 1);
   assert(r == 0);
 
-  r = uvwasi_fd_prestat_dir_name(uvw, dirfd, buf, sizeof(buf));
+  uvwasi_prestat_t prestat;
+  r = uvwasi_fd_prestat_get(uvw, dirfd, &prestat);
   assert(r == 0);
-  assert(strcmp(buf, init_options.preopens[0].mapped_path) == 0);
+  assert(prestat.pr_type == UVWASI_PREOPENTYPE_DIR);
+  assert(prestat.u.dir.pr_name_len ==
+         strlen(init_options.preopens[0].mapped_path));
+
+  char prestat_buf[prestat.u.dir.pr_name_len + 1];
+  r = uvwasi_fd_prestat_dir_name(uvw, dirfd, prestat_buf, sizeof(prestat_buf));
+  assert(r == 0);
+  assert(strcmp(prestat_buf, init_options.preopens[0].mapped_path) == 0);
 
   r = uvwasi_path_create_directory(uvw,
                                    dirfd,
