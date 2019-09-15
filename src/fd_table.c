@@ -371,8 +371,10 @@ uvwasi_errno_t uvwasi_fd_table_get(const struct uvwasi_fd_table_t* table,
                                    uvwasi_rights_t rights_inheriting) {
   struct uvwasi_fd_wrap_t* entry;
 
-  if (table == NULL || wrap == NULL || id >= table->size)
+  if (table == NULL || wrap == NULL)
     return UVWASI_EINVAL;
+  if (id >= table->size)
+    return UVWASI_EBADF;
 
   entry = &table->fds[id];
 
@@ -393,8 +395,10 @@ uvwasi_errno_t uvwasi_fd_table_remove(struct uvwasi_fd_table_t* table,
                                       const uvwasi_fd_t id) {
   struct uvwasi_fd_wrap_t* entry;
 
-  if (table == NULL || id >= table->size)
+  if (table == NULL)
     return UVWASI_EINVAL;
+  if (id >= table->size)
+    return UVWASI_EBADF;
 
   entry = &table->fds[id];
 
