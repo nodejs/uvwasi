@@ -767,7 +767,7 @@ uvwasi_errno_t uvwasi_fd_prestat_get(uvwasi_t* uvwasi,
     return UVWASI_EINVAL;
 
   buf->pr_type = UVWASI_PREOPENTYPE_DIR;
-  buf->u.dir.pr_name_len = strlen(wrap->path);
+  buf->u.dir.pr_name_len = strlen(wrap->path) + 1;
   return UVWASI_ESUCCESS;
 }
 

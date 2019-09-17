@@ -166,7 +166,7 @@ int main(void) {
   assert(r == 0);
   assert(prestat.pr_type == UVWASI_PREOPENTYPE_DIR);
   assert(prestat.u.dir.pr_name_len ==
-         strlen(init_options.preopens[0].mapped_path));
+         strlen(init_options.preopens[0].mapped_path) + 1);
 
   char prestat_buf[prestat.u.dir.pr_name_len + 1];
   r = uvwasi_fd_prestat_dir_name(uvw, dirfd, prestat_buf, sizeof(prestat_buf));
