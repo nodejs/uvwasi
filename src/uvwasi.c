@@ -58,7 +58,7 @@ static uvwasi_errno_t uvwasi__resolve_path(const struct uvwasi_fd_wrap_t* fd,
     memcpy(abs_path, path, abs_size);
   } else {
     /* Resolve the relative path to fd's real path. */
-    abs_size = path_len + strlen(fd->real_path) + 1; /* +1 for the "/" */
+    abs_size = path_len + strlen(fd->real_path) + 2;
     abs_path = malloc(abs_size);
     if (abs_path == NULL) {
       err = UVWASI_ENOMEM;
@@ -66,7 +66,7 @@ static uvwasi_errno_t uvwasi__resolve_path(const struct uvwasi_fd_wrap_t* fd,
     }
 
     r = snprintf(abs_path, abs_size, "%s/%s", fd->real_path, path);
-    if (r != abs_size - 1) {
+    if (r <= 0) {
       err = uvwasi__translate_uv_error(uv_translate_sys_error(errno));
       goto exit;
     }
