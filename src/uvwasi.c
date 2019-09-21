@@ -862,7 +862,7 @@ uvwasi_errno_t uvwasi_fd_read(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  r = uv_fs_read(NULL, &req, wrap->fd, bufs, iovs_len, 0, NULL);
+  r = uv_fs_read(NULL, &req, wrap->fd, bufs, iovs_len, -1, NULL);
   uvread = req.result;
   uv_fs_req_cleanup(&req);
   free(bufs);
