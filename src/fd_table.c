@@ -124,16 +124,12 @@ static uvwasi_errno_t uvwasi__get_type_and_rights(uv_file fd,
   } else if (S_ISSOCK(mode)) {
     handle_type = uv_guess_handle(fd);
 
-    if (handle_type == UV_TCP) {
+    if (handle_type == UV_TCP)
       *type = UVWASI_FILETYPE_SOCKET_STREAM;
-    } else if (handle_type == UV_UDP) {
+    else if (handle_type == UV_UDP)
       *type = UVWASI_FILETYPE_SOCKET_DGRAM;
-    } else {
+    else
       *type = UVWASI_FILETYPE_UNKNOWN;
-      *rights_base = 0;
-      *rights_inheriting = 0;
-      return UVWASI_EINVAL;
-    }
 
     *rights_base = UVWASI__RIGHTS_SOCKET_BASE;
     *rights_inheriting = UVWASI__RIGHTS_SOCKET_INHERITING;
