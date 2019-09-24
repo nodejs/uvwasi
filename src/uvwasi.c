@@ -348,24 +348,37 @@ uvwasi_errno_t uvwasi_args_sizes_get(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_clock_res_get(uvwasi_t* uvwasi,
                                     uvwasi_clockid_t clock_id,
                                     uvwasi_timestamp_t* resolution) {
+#ifndef _WIN32
+  struct timespec ts;
+  clockid_t clk;
+#endif /* _WIN32 */
+
   if (uvwasi == NULL || resolution == NULL)
     return UVWASI_EINVAL;
 
-  /*
-  if (clock_id == UVWASI_CLOCK_MONOTONIC) {
+  if (clock_id == UVWASI_CLOCK_MONOTONIC ||
+      clock_id == UVWASI_CLOCK_REALTIME) {
+    *resolution = 1;  // Nanosecond precision.
+    return UVWASI_ESUCCESS;
+  } else if (clock_id == UVWASI_CLOCK_PROCESS_CPUTIME_ID ||
+             clock_id == UVWASI_CLOCK_THREAD_CPUTIME_ID) {
+#ifndef _WIN32
+    if (clock_id == UVWASI_CLOCK_PROCESS_CPUTIME_ID)
+      clk = CLOCK_PROCESS_CPUTIME_ID;
+    else
+      clk = CLOCK_THREAD_CPUTIME_ID;
 
-  } else if (clock_id == UVWASI_CLOCK_PROCESS_CPUTIME_ID) {
+    if (clock_getres(clk, &ts) < 0)
+      return uvwasi__translate_uv_error(uv_translate_sys_error(errno));
 
-  } else if (clock_id == UVWASI_CLOCK_REALTIME) {
-
-  } else if (clock_id == UVWASI_CLOCK_THREAD_CPUTIME_ID) {
-
-  } else {
-    return UVWASI_EINVAL;
+    *resolution = (ts.tv_sec * NANOS_PER_SEC) + ts.tv_nsec;
+    return UVWASI_ESUCCESS;
+#else
+    return UVWASI_ENOSYS;
+#endif /* _WIN32 */
   }
-  */
 
-  return UVWASI_ENOTSUP;
+  return UVWASI_EINVAL;
 }
 
 
@@ -391,6 +404,7 @@ uvwasi_errno_t uvwasi_clock_time_get(uvwasi_t* uvwasi,
     return UVWASI_ESUCCESS;
   } else if (clock_id == UVWASI_CLOCK_PROCESS_CPUTIME_ID ||
              clock_id == UVWASI_CLOCK_THREAD_CPUTIME_ID) {
+    /* TODO(cjihrig): Implement these two clocks. */
     return UVWASI_ENOSYS;
   }
 
