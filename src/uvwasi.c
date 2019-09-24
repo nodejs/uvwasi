@@ -373,24 +373,28 @@ uvwasi_errno_t uvwasi_clock_time_get(uvwasi_t* uvwasi,
                                      uvwasi_clockid_t clock_id,
                                      uvwasi_timestamp_t precision,
                                      uvwasi_timestamp_t* time) {
+  uv_timeval64_t tv;
+  int r;
+
   if (uvwasi == NULL || time == NULL)
     return UVWASI_EINVAL;
 
-  /*
   if (clock_id == UVWASI_CLOCK_MONOTONIC) {
-
-  } else if (clock_id == UVWASI_CLOCK_PROCESS_CPUTIME_ID) {
-
+    *time = uv_hrtime();
+    return UVWASI_ESUCCESS;
   } else if (clock_id == UVWASI_CLOCK_REALTIME) {
+    r = uv_gettimeofday(&tv);
+    if (r != 0)
+      return uvwasi__translate_uv_error(r);
 
-  } else if (clock_id == UVWASI_CLOCK_THREAD_CPUTIME_ID) {
-
-  } else {
-    return UVWASI_EINVAL;
+    *time = (tv.tv_sec * NANOS_PER_SEC) + (tv.tv_usec * 1000);
+    return UVWASI_ESUCCESS;
+  } else if (clock_id == UVWASI_CLOCK_PROCESS_CPUTIME_ID ||
+             clock_id == UVWASI_CLOCK_THREAD_CPUTIME_ID) {
+    return UVWASI_ENOSYS;
   }
-  */
 
-  return UVWASI_ENOTSUP;
+  return UVWASI_EINVAL;
 }
 
 
