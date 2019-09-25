@@ -282,8 +282,7 @@ uvwasi_errno_t uvwasi_fd_table_init(struct uvwasi_fd_table_t* table,
 
   return UVWASI_ESUCCESS;
 error_exit:
-  free(table->fds);
-  table->fds = NULL;
+  uvwasi_fd_table_free(table);
   return err;
 }
 
