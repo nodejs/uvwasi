@@ -31,8 +31,8 @@ typedef struct uvwasi_options_s {
   size_t preopenc;
   uvwasi_preopen_t* preopens;
   size_t argc;
-  const char** argv;
-  const char** envp;
+  char** argv;
+  char** envp;
 } uvwasi_options_t;
 
 

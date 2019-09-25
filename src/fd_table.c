@@ -356,7 +356,7 @@ uvwasi_errno_t uvwasi_fd_table_insert_fd(struct uvwasi_fd_table_t* table,
   r = uvwasi__fd_table_insert(table,
                               fd,
                               path,
-                              path, /* TODO(cjihrig): Fix this double path. */
+                              path,
                               type,
                               rights_base & max_base,
                               rights_inheriting & max_inheriting,

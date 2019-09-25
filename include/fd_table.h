@@ -22,7 +22,7 @@ struct uvwasi_fd_wrap_t {
   uv_file fd;
   char path[PATH_MAX_BYTES];
   char real_path[PATH_MAX_BYTES];
-  uvwasi_filetype_t type; /* TODO(cjihrig): It probably isn't safe to cache. */
+  uvwasi_filetype_t type;
   uvwasi_rights_t rights_base;
   uvwasi_rights_t rights_inheriting;
   int preopen;

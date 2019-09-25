@@ -1515,9 +1515,7 @@ uvwasi_errno_t uvwasi_path_symlink(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  /* TODO(cjihrig): Need to NULL terminate old_path. */
-
-  /* Windows support may require settings the flags option. */
+  /* Windows support may require setting the flags option. */
   r = uv_fs_symlink(NULL, &req, old_path, resolved_new_path, 0, NULL);
   uv_fs_req_cleanup(&req);
   if (r != 0)
