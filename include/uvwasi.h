@@ -9,6 +9,19 @@ extern "C" {
 #include "uv_mapping.h"
 #include "fd_table.h"
 
+#define UVWASI_VERSION_MAJOR 0
+#define UVWASI_VERSION_MINOR 0
+#define UVWASI_VERSION_PATCH 1
+#define UVWASI_VERSION_HEX ((UVWASI_VERSION_MAJOR << 16) | \
+                            (UVWASI_VERSION_MINOR <<  8) | \
+                            (UVWASI_VERSION_PATCH))
+#define UVWASI_STRINGIFY(v) UVWASI_STRINGIFY_HELPER(v)
+#define UVWASI_STRINGIFY_HELPER(v) #v
+#define UVWASI_VERSION_STRING UVWASI_STRINGIFY(UVWASI_VERSION_MAJOR) "." \
+                              UVWASI_STRINGIFY(UVWASI_VERSION_MINOR) "." \
+                              UVWASI_STRINGIFY(UVWASI_VERSION_PATCH)
+
+
 typedef struct uvwasi_s {
   struct uvwasi_fd_table_t fds;
   size_t argc;

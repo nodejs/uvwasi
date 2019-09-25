@@ -25,6 +25,10 @@ int main(void) {
   size_t env_buf_size;
   size_t i;
 
+  printf("uvwasi version: %s (%d)\n",
+         UVWASI_VERSION_STRING,
+         UVWASI_VERSION_HEX);
+
   uvw = &uvwasi;
   init_options.fd_table_size = 3;
   init_options.argc = 3;
