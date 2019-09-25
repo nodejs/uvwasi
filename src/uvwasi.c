@@ -516,6 +516,7 @@ uvwasi_errno_t uvwasi_fd_allocate(uvwasi_t* uvwasi,
                                   uvwasi_fd_t fd,
                                   uvwasi_filesize_t offset,
                                   uvwasi_filesize_t len) {
+  /* TODO(cjihrig): Implement this. */
   return UVWASI_ENOTSUP;
 }
 
@@ -596,6 +597,7 @@ uvwasi_errno_t uvwasi_fd_fdstat_get(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_fd_fdstat_set_flags(uvwasi_t* uvwasi,
                                           uvwasi_fd_t fd,
                                           uvwasi_fdflags_t flags) {
+  /* TODO(cjihrig): Implement this. */
   return UVWASI_ENOTSUP;
 }
 
@@ -907,6 +909,7 @@ uvwasi_errno_t uvwasi_fd_readdir(uvwasi_t* uvwasi,
                                  size_t buf_len,
                                  uvwasi_dircookie_t cookie,
                                  size_t* bufused) {
+  /* TODO(cjihrig): Implement this. */
   return UVWASI_ENOTSUP;
 }
 
@@ -1565,6 +1568,7 @@ uvwasi_errno_t uvwasi_poll_oneoff(uvwasi_t* uvwasi,
                                   uvwasi_event_t* out,
                                   size_t nsubscriptions,
                                   size_t* nevents) {
+  /* TODO(cjihrig): Implement this. */
   return UVWASI_ENOTSUP;
 }
 
@@ -1621,6 +1625,8 @@ uvwasi_errno_t uvwasi_sock_recv(uvwasi_t* uvwasi,
                                 uvwasi_riflags_t ri_flags,
                                 size_t* ro_datalen,
                                 uvwasi_roflags_t* ro_flags) {
+  /* TODO(cjihrig): Waiting to implement, pending
+                    https://github.com/WebAssembly/WASI/issues/4 */
   return UVWASI_ENOTSUP;
 }
 
@@ -1631,6 +1637,8 @@ uvwasi_errno_t uvwasi_sock_send(uvwasi_t* uvwasi,
                                 size_t si_data_len,
                                 uvwasi_siflags_t si_flags,
                                 size_t* so_datalen) {
+  /* TODO(cjihrig): Waiting to implement, pending
+                    https://github.com/WebAssembly/WASI/issues/4 */
   return UVWASI_ENOTSUP;
 }
 
@@ -1638,5 +1646,7 @@ uvwasi_errno_t uvwasi_sock_send(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_sock_shutdown(uvwasi_t* uvwasi,
                                     uvwasi_fd_t sock,
                                     uvwasi_sdflags_t how) {
+  /* TODO(cjihrig): Waiting to implement, pending
+                    https://github.com/WebAssembly/WASI/issues/4 */
   return UVWASI_ENOTSUP;
 }
