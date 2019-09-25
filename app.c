@@ -191,7 +191,8 @@ int main(void) {
                                    strlen("test_dir") + 1);
   assert(r == 0);
 
-  uvwasi_proc_exit(uvw, 75);
+  uvwasi_destroy(uvw);  /* Clean up memory. */
+  uvwasi_proc_exit(uvw, 75);  /* proc_exit() actually still works. */
 
   return 0;
 }

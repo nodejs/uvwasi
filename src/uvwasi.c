@@ -305,6 +305,15 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   return UVWASI_ESUCCESS;
 
 exit:
+  uvwasi_destroy(uvwasi);
+  return err;
+}
+
+
+void uvwasi_destroy(uvwasi_t* uvwasi) {
+  if (uvwasi == NULL)
+    return;
+
   uvwasi_fd_table_free(&uvwasi->fds);
   free(uvwasi->argv_buf);
   free(uvwasi->argv);
@@ -314,7 +323,6 @@ exit:
   uvwasi->argv = NULL;
   uvwasi->env_buf = NULL;
   uvwasi->env = NULL;
-  return err;
 }
 
 

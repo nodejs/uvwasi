@@ -37,6 +37,7 @@ typedef struct uvwasi_options_s {
 
 
 uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options);
+void uvwasi_destroy(uvwasi_t* uvwasi);
 
 uvwasi_errno_t uvwasi_args_get(uvwasi_t* uvwasi, char** argv, char* argv_buf);
 uvwasi_errno_t uvwasi_args_sizes_get(uvwasi_t* uvwasi,
