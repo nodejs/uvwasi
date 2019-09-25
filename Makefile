@@ -1,11 +1,10 @@
-_HEADERS=uvwasi.h fd_table.h uv_mapping.h wasi_types.h
 _OBJ=uvwasi.o fd_table.o uv_mapping.o
 IDIR=./include
 SDIR=./src
 OUTDIR=./out
 CC=gcc
 CFLAGS+=-Wall -Wsign-compare -I$(IDIR)
-HEADERS=$(patsubst %,$(IDIR)/%,$(_HEADERS))
+HEADERS=$(wildcard $(IDIR)/*.h)
 LIBS=-luv
 ODIR=$(OUTDIR)/obj
 OBJ=$(patsubst %,$(ODIR)/%,$(_OBJ))
