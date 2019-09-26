@@ -25,9 +25,8 @@ int main(void) {
   size_t env_buf_size;
   size_t i;
 
-  printf("uvwasi version: %s (%d)\n",
-         UVWASI_VERSION_STRING,
-         UVWASI_VERSION_HEX);
+  assert(UVWASI_VERSION_HEX == 1);
+  assert(strcmp(UVWASI_VERSION_STRING, "0.0.1") == 0);
 
   uvw = &uvwasi;
   init_options.fd_table_size = 3;
@@ -75,6 +74,7 @@ int main(void) {
   const char* path = "../uvwasi/./foo.txt";
   uvwasi_oflags_t o_flags = UVWASI_O_CREAT;
   uvwasi_rights_t fs_rights_base = UVWASI_RIGHT_FD_DATASYNC |
+                                   UVWASI_RIGHT_FD_FDSTAT_SET_FLAGS |
                                    UVWASI_RIGHT_FD_FILESTAT_GET |
                                    UVWASI_RIGHT_FD_FILESTAT_SET_SIZE |
                                    UVWASI_RIGHT_FD_ADVISE |
@@ -127,17 +127,22 @@ int main(void) {
   assert(r == 0);
   assert(fdstat_buf.fs_filetype == UVWASI_FILETYPE_REGULAR_FILE);
   assert(fdstat_buf.fs_rights_inheriting == 0);
-  assert(fdstat_buf.fs_flags == 0);
-  printf("uvwasi_fd_fdstat_get()\n");
-  printf("\tstats.fs_rights_base = %llu\n", fdstat_buf.fs_rights_base);
+  uvwasi_rights_t old_rights_base = fdstat_buf.fs_rights_base;
+  uvwasi_fdflags_t old_flags = fdstat_buf.fs_flags;
+
+  r = uvwasi_fd_fdstat_set_flags(uvw, fd, UVWASI_FDFLAG_NONBLOCK);
+  assert(r == 0);
 
   r = uvwasi_fd_fdstat_get(uvw, fd, &fdstat_buf);
   assert(r == 0);
   assert(fdstat_buf.fs_filetype == UVWASI_FILETYPE_REGULAR_FILE);
   assert(fdstat_buf.fs_rights_inheriting == 0);
+  assert(fdstat_buf.fs_rights_base == old_rights_base);
+#ifdef _WIN32
   assert(fdstat_buf.fs_flags == 0);
-  printf("uvwasi_fd_fdstat_get()\n");
-  printf("\tstats.fs_rights_base = %llu\n", fdstat_buf.fs_rights_base);
+#else
+  assert(fdstat_buf.fs_flags != old_flags);
+#endif /* _WIN32 */
 
   uvwasi_iovec_t* iovs;
   size_t iovs_len;

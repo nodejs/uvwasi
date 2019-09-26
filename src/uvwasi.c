@@ -388,7 +388,7 @@ uvwasi_errno_t uvwasi_clock_res_get(uvwasi_t* uvwasi,
 
   if (clock_id == UVWASI_CLOCK_MONOTONIC ||
       clock_id == UVWASI_CLOCK_REALTIME) {
-    *resolution = 1;  // Nanosecond precision.
+    *resolution = 1;  /* Nanosecond precision. */
     return UVWASI_ESUCCESS;
   } else if (clock_id == UVWASI_CLOCK_PROCESS_CPUTIME_ID ||
              clock_id == UVWASI_CLOCK_THREAD_CPUTIME_ID) {
@@ -598,6 +598,7 @@ uvwasi_errno_t uvwasi_fd_fdstat_get(uvwasi_t* uvwasi,
                                     uvwasi_fdstat_t* buf) {
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
+  int r;
 
   if (uvwasi == NULL || buf == NULL)
     return UVWASI_EINVAL;
@@ -609,8 +610,14 @@ uvwasi_errno_t uvwasi_fd_fdstat_get(uvwasi_t* uvwasi,
   buf->fs_filetype = wrap->type;
   buf->fs_rights_base = wrap->rights_base;
   buf->fs_rights_inheriting = wrap->rights_inheriting;
-  /* TODO(cjihrig): Missing support. Use F_GETFL on non-Windows. */
-  buf->fs_flags = 0;
+#ifdef _WIN32
+  buf->fs_flags = 0;  /* TODO(cjihrig): Missing Windows support. */
+#else
+  r = fcntl(wrap->fd, F_GETFL);
+  if (r < 0)
+    return uvwasi__translate_uv_error(uv_translate_sys_error(errno));
+  buf->fs_flags = r;
+#endif /* _WIN32 */
 
   return UVWASI_ESUCCESS;
 }
@@ -619,8 +626,57 @@ uvwasi_errno_t uvwasi_fd_fdstat_get(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_fd_fdstat_set_flags(uvwasi_t* uvwasi,
                                           uvwasi_fd_t fd,
                                           uvwasi_fdflags_t flags) {
-  /* TODO(cjihrig): Implement this. */
-  return UVWASI_ENOTSUP;
+#ifdef _WIN32
+  /* TODO(cjihrig): Missing Windows support. */
+  return UVWASI_ENOSYS;
+#else
+  struct uvwasi_fd_wrap_t* wrap;
+  uvwasi_errno_t err;
+  int mapped_flags;
+  int r;
+
+  if (uvwasi == NULL)
+    return UVWASI_EINVAL;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds,
+                            fd,
+                            &wrap,
+                            UVWASI_RIGHT_FD_FDSTAT_SET_FLAGS,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  mapped_flags = 0;
+
+  if ((flags & UVWASI_FDFLAG_APPEND) == UVWASI_FDFLAG_APPEND)
+    mapped_flags |= O_APPEND;
+
+  if ((flags & UVWASI_FDFLAG_DSYNC) == UVWASI_FDFLAG_DSYNC)
+#ifdef O_DSYNC
+    mapped_flags |= O_DSYNC;
+#else
+    mapped_flags |= O_SYNC;
+#endif /* O_DSYNC */
+
+  if ((flags & UVWASI_FDFLAG_NONBLOCK) == UVWASI_FDFLAG_NONBLOCK)
+    mapped_flags |= O_NONBLOCK;
+
+  if ((flags & UVWASI_FDFLAG_RSYNC) == UVWASI_FDFLAG_RSYNC)
+#ifdef O_RSYNC
+    mapped_flags |= O_RSYNC;
+#else
+    mapped_flags |= O_SYNC;
+#endif /* O_RSYNC */
+
+  if ((flags & UVWASI_FDFLAG_SYNC) == UVWASI_FDFLAG_SYNC)
+    mapped_flags |= O_SYNC;
+
+  r = fcntl(wrap->fd, F_SETFL, mapped_flags);
+  if (r < 0)
+    return uvwasi__translate_uv_error(uv_translate_sys_error(errno));
+
+  return UVWASI_ESUCCESS;
+#endif /* _WIN32 */
 }
 
 
