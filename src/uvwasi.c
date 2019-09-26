@@ -34,11 +34,12 @@ static uvwasi_errno_t uvwasi__resolve_path(const struct uvwasi_fd_wrap_t* fd,
   /* TODO(cjihrig): path_len is treated as a size. Need to verify if path_len is
      really a string length or a size. Also need to verify if it is null
      terminated. */
-  /* TODO(cjihrig): flags is currently unused. */
+  uv_fs_t realpath_req;
   uvwasi_errno_t err;
   char* abs_path;
   char* tok;
   char* ptr;
+  int realpath_size;
   int abs_size;
   int input_is_absolute;
   int r;
@@ -94,6 +95,27 @@ static uvwasi_errno_t uvwasi__resolve_path(const struct uvwasi_fd_wrap_t* fd,
     }
 
     ptr += r;
+  }
+
+  if ((flags & UVWASI_LOOKUP_SYMLINK_FOLLOW) == UVWASI_LOOKUP_SYMLINK_FOLLOW) {
+    r = uv_fs_realpath(NULL, &realpath_req, resolved_path, NULL);
+    if (r == 0) {
+      realpath_size = strlen(realpath_req.ptr) + 1;
+      if (realpath_size > PATH_MAX_BYTES) {
+        err = UVWASI_ENOBUFS;
+        uv_fs_req_cleanup(&realpath_req);
+        goto exit;
+      }
+
+      memcpy(resolved_path, realpath_req.ptr, realpath_size);
+    } else if (r != UV_ENOENT) {
+      /* Report errors except ENOENT. */
+      err = uvwasi__translate_uv_error(r);
+      uv_fs_req_cleanup(&realpath_req);
+      goto exit;
+    }
+
+    uv_fs_req_cleanup(&realpath_req);
   }
 
   /* Verify that the resolved path is still in the sandbox. */
