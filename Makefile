@@ -10,7 +10,7 @@ ODIR=$(OUTDIR)/obj
 OBJ=$(patsubst %,$(ODIR)/%,$(_OBJ))
 MKDIRP = mkdir -p
 
-$(ODIR)/%.o: $(SDIR)/%.c $(HEADERS)
+$(ODIR)/%.o: $(SDIR)/%.c $(HEADERS) | out
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 app: $(OBJ) app.c
@@ -21,4 +21,5 @@ app: $(OBJ) app.c
 clean:
 	rm -rf $(OUTDIR)
 
-$(shell $(MKDIRP) $(ODIR))
+out:
+	@$(MKDIRP) $(ODIR)
