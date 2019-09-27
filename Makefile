@@ -13,8 +13,8 @@ MKDIRP = mkdir -p
 $(ODIR)/%.o: $(SDIR)/%.c $(HEADERS) | out
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-app: $(OBJ) app.c
-	$(CC) -o $(OUTDIR)/$@ $^ $(CFLAGS) $(LIBS)
+$(OUTDIR)/app: $(OBJ) app.c
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 .PHONY: clean
 
