@@ -74,6 +74,7 @@ int main(void) {
   const char* path = "../uvwasi/./foo.txt";
   uvwasi_oflags_t o_flags = UVWASI_O_CREAT;
   uvwasi_rights_t fs_rights_base = UVWASI_RIGHT_FD_DATASYNC |
+                                   UVWASI_RIGHT_FD_ALLOCATE |
                                    UVWASI_RIGHT_FD_FDSTAT_SET_FLAGS |
                                    UVWASI_RIGHT_FD_FILESTAT_GET |
                                    UVWASI_RIGHT_FD_FILESTAT_SET_SIZE |
@@ -122,6 +123,13 @@ int main(void) {
   assert(stats.st_atim > 0);
   assert(stats.st_mtim > 0);
   assert(stats.st_ctim > 0);
+
+  r = uvwasi_fd_allocate(uvw, fd, 9, 141);
+  assert(r == 0);
+
+  r = uvwasi_fd_filestat_get(uvw, fd, &stats);
+  assert(r == 0);
+  assert(stats.st_size == 150);
 
   r = uvwasi_fd_fdstat_get(uvw, fd, &fdstat_buf);
   assert(r == 0);

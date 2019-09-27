@@ -538,8 +538,46 @@ uvwasi_errno_t uvwasi_fd_allocate(uvwasi_t* uvwasi,
                                   uvwasi_fd_t fd,
                                   uvwasi_filesize_t offset,
                                   uvwasi_filesize_t len) {
-  /* TODO(cjihrig): Implement this. */
-  return UVWASI_ENOTSUP;
+#if !defined(__POSIX__)
+  uv_fs_t req;
+  uint64_t st_size;
+#endif /* !__POSIX__ */
+  struct uvwasi_fd_wrap_t* wrap;
+  uvwasi_errno_t err;
+  int r;
+
+  if (uvwasi == NULL)
+    return UVWASI_EINVAL;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds,
+                            fd,
+                            &wrap,
+                            UVWASI_RIGHT_FD_ALLOCATE,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  /* Try to use posix_fallocate(). If that's not an option, fall back to the
+     race condition prone combination of fstat() + ftruncate(). */
+#if defined(__POSIX__)
+  r = posix_fallocate(wrap->fd, offset, len);
+  if (r != 0)
+    return uvwasi__translate_uv_error(uv_translate_sys_error(r));
+#else
+  r = uv_fs_fstat(NULL, &req, wrap->fd, NULL);
+  st_size = req.statbuf.st_size;
+  uv_fs_req_cleanup(&req);
+  if (r != 0)
+    return uvwasi__translate_uv_error(r);
+
+  if (st_size < offset + len) {
+    r = uv_fs_ftruncate(NULL, &req, wrap->fd, offset + len, NULL);
+    if (r != 0)
+      return uvwasi__translate_uv_error(r);
+  }
+#endif /* __POSIX__ */
+
+  return UVWASI_ESUCCESS;
 }
 
 
