@@ -444,15 +444,15 @@ uvwasi_errno_t uvwasi_clock_time_get(uvwasi_t* uvwasi,
 
 
 uvwasi_errno_t uvwasi_environ_get(uvwasi_t* uvwasi,
-                                  char** environ,
+                                  char** environment,
                                   char* environ_buf) {
   size_t i;
 
-  if (uvwasi == NULL || environ == NULL || environ_buf == NULL)
+  if (uvwasi == NULL || environment == NULL || environ_buf == NULL)
     return UVWASI_EINVAL;
 
   for (i = 0; i < uvwasi->envc; ++i) {
-    environ[i] = environ_buf + (uvwasi->env[i] - uvwasi->env_buf);
+    environment[i] = environ_buf + (uvwasi->env[i] - uvwasi->env_buf);
   }
 
   memcpy(environ_buf, uvwasi->env_buf, uvwasi->env_buf_size);

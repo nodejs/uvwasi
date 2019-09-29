@@ -64,7 +64,7 @@ uvwasi_errno_t uvwasi_clock_time_get(uvwasi_t* uvwasi,
                                      uvwasi_timestamp_t precision,
                                      uvwasi_timestamp_t* time);
 uvwasi_errno_t uvwasi_environ_get(uvwasi_t* uvwasi,
-                                  char** environ,
+                                  char** environment,
                                   char* environ_buf);
 uvwasi_errno_t uvwasi_environ_sizes_get(uvwasi_t* uvwasi,
                                         size_t* environ_count,
