@@ -52,9 +52,10 @@ int main(void) {
   assert(r == 0);
   assert(envc > 0);
   assert(env_buf_size > 0);
-  char buf[env_buf_size > argv_buf_size ? env_buf_size : argv_buf_size];
+  char* buf = malloc(env_buf_size > argv_buf_size ? env_buf_size : argv_buf_size);
 
   char** args_get_argv = calloc(argc, sizeof(char*));
+  assert(args_get_argv != NULL);
   r = uvwasi_args_get(uvw, args_get_argv, buf);
   assert(r == 0);
   assert(strcmp(args_get_argv[0], init_options.argv[0]) == 0);
@@ -63,10 +64,12 @@ int main(void) {
 
 
   char** env_get_env = calloc(envc, sizeof(char*));
+  assert(env_get_env != NULL);
   r = uvwasi_environ_get(uvw, env_get_env, buf);
   assert(r == 0);
   for (i = 0; i < envc; ++i)
     assert(strlen(env_get_env[i]) > 0);
+  free(buf);
 
   uvwasi_fd_t dirfd = 3;
   uvwasi_lookupflags_t dirflags = 1;
@@ -184,10 +187,13 @@ int main(void) {
   assert(prestat.u.dir.pr_name_len ==
          strlen(init_options.preopens[0].mapped_path) + 1);
 
-  char prestat_buf[prestat.u.dir.pr_name_len + 1];
-  r = uvwasi_fd_prestat_dir_name(uvw, dirfd, prestat_buf, sizeof(prestat_buf));
+  size_t prestat_buf_size = prestat.u.dir.pr_name_len + 1;
+  char* prestat_buf = malloc(prestat_buf_size);
+  assert(prestat_buf != NULL);
+  r = uvwasi_fd_prestat_dir_name(uvw, dirfd, prestat_buf, prestat_buf_size);
   assert(r == 0);
   assert(strcmp(prestat_buf, init_options.preopens[0].mapped_path) == 0);
+  free(prestat_buf);
 
   r = uvwasi_path_create_directory(uvw,
                                    dirfd,
