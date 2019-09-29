@@ -104,7 +104,9 @@ static uvwasi_errno_t uvwasi__get_type_and_rights(uv_file fd,
                                            uvwasi_rights_t* rights_inheriting) {
   uv_fs_t req;
   uint64_t mode;
+#ifdef S_ISSOCK
   uv_handle_type handle_type;
+#endif
   int read_or_write_only;
   int r;
 
@@ -114,14 +116,15 @@ static uvwasi_errno_t uvwasi__get_type_and_rights(uv_file fd,
   if (r != 0)
     return uvwasi__translate_uv_error(r);
 
-  if (S_ISREG(mode)) {
+  if ((mode & S_IFMT) == S_IFREG) {
     *type = UVWASI_FILETYPE_REGULAR_FILE;
     *rights_base = UVWASI__RIGHTS_REGULAR_FILE_BASE;
     *rights_inheriting = UVWASI__RIGHTS_REGULAR_FILE_INHERITING;
-  } else if (S_ISDIR(mode)) {
+  } else if ((mode & S_IFMT) == S_IFDIR) {
     *type = UVWASI_FILETYPE_DIRECTORY;
     *rights_base = UVWASI__RIGHTS_DIRECTORY_BASE;
     *rights_inheriting = UVWASI__RIGHTS_DIRECTORY_INHERITING;
+#ifdef S_ISSOCK
   } else if (S_ISSOCK(mode)) {
     handle_type = uv_guess_handle(fd);
 
@@ -134,15 +137,20 @@ static uvwasi_errno_t uvwasi__get_type_and_rights(uv_file fd,
 
     *rights_base = UVWASI__RIGHTS_SOCKET_BASE;
     *rights_inheriting = UVWASI__RIGHTS_SOCKET_INHERITING;
+#endif
+#ifdef S_ISFIFO
   } else if (S_ISFIFO(mode)) {
     *type = UVWASI_FILETYPE_SOCKET_STREAM;
     *rights_base = UVWASI__RIGHTS_SOCKET_BASE;
     *rights_inheriting = UVWASI__RIGHTS_SOCKET_INHERITING;
+#endif
+#ifdef S_ISBLK
   } else if (S_ISBLK(mode)) {
     *type = UVWASI_FILETYPE_BLOCK_DEVICE;
     *rights_base = UVWASI__RIGHTS_BLOCK_DEVICE_BASE;
     *rights_inheriting = UVWASI__RIGHTS_BLOCK_DEVICE_INHERITING;
-  } else if (S_ISCHR(mode)) {
+#endif
+  } else if ((mode & S_IFMT) == S_IFCHR) {
     *type = UVWASI_FILETYPE_CHARACTER_DEVICE;
 
     if (uv_guess_handle(fd) == UV_TTY) {
