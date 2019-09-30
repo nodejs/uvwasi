@@ -208,6 +208,18 @@ int main(void) {
                                    strlen("test_dir") + 1);
   assert(r == 0);
 
+  char readdir_buf[2048];
+  size_t bufused;
+  uvwasi_dircookie_t cookie;
+  cookie = UVWASI_DIRCOOKIE_START;
+  r = uvwasi_fd_readdir(uvw,
+                        dirfd,
+                        readdir_buf,
+                        sizeof(readdir_buf),
+                        cookie,
+                        &bufused);
+  assert(r == 0);
+
   uvwasi_destroy(uvw);  /* Clean up memory. */
   uvwasi_proc_exit(uvw, 75);  /* proc_exit() actually still works. */
 

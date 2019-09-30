@@ -9,11 +9,14 @@
 # define SLASH_STR "/"
 # define IS_SLASH(c) ((c) == '/')
 #else
+# include <dirent.h>
 # include <processthreadsapi.h>
 # define SLASH '\\'
 # define SLASH_STR "\\"
 # define IS_SLASH(c) ((c) == '/' || (c) == '\\')
 #endif /* _WIN32 */
+
+#define UVWASI__READDIR_NUM_ENTRIES 1
 
 #include "uvwasi.h"
 #include "uv.h"
@@ -1026,8 +1029,127 @@ uvwasi_errno_t uvwasi_fd_readdir(uvwasi_t* uvwasi,
                                  size_t buf_len,
                                  uvwasi_dircookie_t cookie,
                                  size_t* bufused) {
-  /* TODO(cjihrig): Implement this. */
-  return UVWASI_ENOTSUP;
+  /* TODO(cjihrig): Support Windows where seekdir() and telldir() are used. */
+  /* TODO(cjihrig): Avoid opening and closing the directory on each call. */
+  struct uvwasi_fd_wrap_t* wrap;
+  uvwasi_dirent_t dirent;
+  uv_dirent_t dirents[UVWASI__READDIR_NUM_ENTRIES];
+  uv_dir_t* dir;
+  uv_fs_t req;
+  uvwasi_errno_t err;
+  size_t name_len;
+  size_t available;
+  size_t tell;
+  size_t size_to_cp;
+  int i;
+  int r;
+
+  if (uvwasi == NULL || buf == NULL || bufused == NULL)
+    return UVWASI_EINVAL;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds,
+                            fd,
+                            &wrap,
+                            UVWASI_RIGHT_FD_READDIR,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  /* Open the directory. */
+  r = uv_fs_opendir(NULL, &req, wrap->real_path, NULL);
+  if (r != 0)
+    return uvwasi__translate_uv_error(r);
+
+  /* Setup for reading the directory. */
+  dir = req.ptr;
+  dir->dirents = dirents;
+  dir->nentries = UVWASI__READDIR_NUM_ENTRIES;
+  uv_fs_req_cleanup(&req);
+
+  /* Seek to the proper location in the directory. */
+  if (cookie != UVWASI_DIRCOOKIE_START)
+    seekdir(dir->dir, cookie);
+
+  /* Read the directory entries into the provided buffer. */
+  err = UVWASI_ESUCCESS;
+  *bufused = 0;
+  while (0 != (r = uv_fs_readdir(NULL, &req, dir, NULL))) {
+    if (r < 0) {
+      err = uvwasi__translate_uv_error(r);
+      uv_fs_req_cleanup(&req);
+      goto exit;
+    }
+
+    for (i = 0; i < r; i++) {
+      /* TODO(cjihrig): This should probably be serialized to the buffer
+         consistently across platforms. In other words, d_next should always
+         be 8 bytes, d_ino should always be 8 bytes, d_namlen should always be
+         4 bytes, and d_type should always be 1 byte. */
+      tell = telldir(dir->dir);
+      if (tell < 0) {
+        err = uvwasi__translate_uv_error(uv_translate_sys_error(errno));
+        uv_fs_req_cleanup(&req);
+        goto exit;
+      }
+
+      name_len = strlen(dirents[i].name);
+      dirent.d_next = tell;
+      /* TODO(cjihrig): Missing ino libuv (and Windows) support. fstat()? */
+      dirent.d_ino = 0;
+      dirent.d_namlen = name_len;
+
+      switch (dirents[i].type) {
+        case UV_DIRENT_FILE:
+          dirent.d_type = UVWASI_FILETYPE_REGULAR_FILE;
+          break;
+        case UV_DIRENT_DIR:
+          dirent.d_type = UVWASI_FILETYPE_DIRECTORY;
+          break;
+        case UV_DIRENT_SOCKET:
+          dirent.d_type = UVWASI_FILETYPE_SOCKET_STREAM;
+          break;
+        case UV_DIRENT_LINK:
+          dirent.d_type = UVWASI_FILETYPE_SYMBOLIC_LINK;
+          break;
+        case UV_DIRENT_CHAR:
+          dirent.d_type = UVWASI_FILETYPE_CHARACTER_DEVICE;
+          break;
+        case UV_DIRENT_BLOCK:
+          dirent.d_type = UVWASI_FILETYPE_BLOCK_DEVICE;
+          break;
+        case UV_DIRENT_FIFO:
+        case UV_DIRENT_UNKNOWN:
+        default:
+          dirent.d_type = UVWASI_FILETYPE_UNKNOWN;
+          break;
+      }
+
+      /* Write dirent to the buffer. */
+      available = buf_len - *bufused;
+      size_to_cp = sizeof(dirent) > available ? available : sizeof(dirent);
+      memcpy(buf + *bufused, &dirent, size_to_cp);
+      *bufused += size_to_cp;
+      /* Write the entry name to the buffer. */
+      available = buf_len - *bufused;
+      size_to_cp = name_len > available ? available : name_len;
+      memcpy(buf + *bufused, &dirents[i].name, size_to_cp);
+      *bufused += size_to_cp;
+    }
+
+    uv_fs_req_cleanup(&req);
+
+    if (*bufused >= buf_len)
+      break;
+  }
+
+exit:
+  /* Close the directory. */
+  r = uv_fs_closedir(NULL, &req, dir, NULL);
+  uv_fs_req_cleanup(&req);
+  if (r != 0)
+    return uvwasi__translate_uv_error(r);
+
+  return err;
 }
 
 
