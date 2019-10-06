@@ -5,11 +5,11 @@
 # include <sched.h>
 # include <sys/types.h>
 # include <unistd.h>
+# include <dirent.h>
 # define SLASH '/'
 # define SLASH_STR "/"
 # define IS_SLASH(c) ((c) == '/')
 #else
-# include <dirent.h>
 # include <processthreadsapi.h>
 # define SLASH '\\'
 # define SLASH_STR "\\"
