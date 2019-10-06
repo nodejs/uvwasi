@@ -49,9 +49,15 @@ typedef struct uvwasi_options_s {
 } uvwasi_options_t;
 
 
+// Embedder API.
 uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options);
 void uvwasi_destroy(uvwasi_t* uvwasi);
+uvwasi_errno_t uvwasi_embedder_remap_fd(uvwasi_t* uvwasi,
+                                        const uvwasi_fd_t fd,
+                                        uv_file new_host_fd);
 
+
+// WASI system call API.
 uvwasi_errno_t uvwasi_args_get(uvwasi_t* uvwasi, char** argv, char* argv_buf);
 uvwasi_errno_t uvwasi_args_sizes_get(uvwasi_t* uvwasi,
                                      size_t* argc,

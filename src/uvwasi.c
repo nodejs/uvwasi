@@ -352,6 +352,24 @@ void uvwasi_destroy(uvwasi_t* uvwasi) {
 }
 
 
+uvwasi_errno_t uvwasi_embedder_remap_fd(uvwasi_t* uvwasi,
+                                        const uvwasi_fd_t fd,
+                                        uv_file new_host_fd) {
+  struct uvwasi_fd_wrap_t* wrap;
+  uvwasi_errno_t err;
+
+  if (uvwasi == NULL)
+    return UVWASI_EINVAL;
+
+  err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, 0, 0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  wrap->fd = new_host_fd;
+  return UVWASI_ESUCCESS;
+}
+
+
 uvwasi_errno_t uvwasi_args_get(uvwasi_t* uvwasi, char** argv, char* argv_buf) {
   size_t i;
 
