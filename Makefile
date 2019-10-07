@@ -14,7 +14,7 @@ $(ODIR)/%.o: $(SDIR)/%.c $(HEADERS) | out
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(OUTDIR)/app: $(OBJ) app.c
-	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+	$(CC) -o $@ $^ $(CFLAGS) -L/home/travis/build/cjihrig/uvwasi/libuv-v1.32.0/libuv-install/lib $(LIBS)
 
 .PHONY: clean
 

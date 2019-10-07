@@ -1,0 +1,24 @@
+language: C
+
+env:
+  - UV_DEP_VERSION
+
+before_install:
+  - export UV_DEP_VERSION=1.32.0
+  - export LIBUV_DIR=$TRAVIS_BUILD_DIR/libuv-v$UV_DEP_VERSION
+  - export LIBUV_INSTALL_DIR=$LIBUV_DIR/libuv-install
+  - export CUSTOM_CFLAGS=-I$LIBUV_INSTALL_DIR/include
+  - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$LIBUV_INSTALL_DIR/lib
+
+install:
+- wget -4 https://dist.libuv.org/dist/v$UV_DEP_VERSION/libuv-v$UV_DEP_VERSION.tar.gz;
+  tar xzf libuv-v$UV_DEP_VERSION.tar.gz;
+  pushd $LIBUV_DIR;
+  sh autogen.sh;
+  ./configure --prefix=$LIBUV_INSTALL_DIR;
+  make;
+  make install;
+  popd;
+  ls -la $LIBUV_INSTALL_DIR/lib
+
+script: CFLAGS=$CUSTOM_CFLAGS make && ./out/app
