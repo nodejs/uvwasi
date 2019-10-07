@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* API: https://github.com/WebAssembly/WASI/blob/master/design/WASI-core.md */
+/* API: https://github.com/WebAssembly/WASI/blob/master/phases/unstable/docs/wasi_unstable_preview0.md */
 
 typedef uint8_t uvwasi_advice_t;
 #define UVWASI_ADVICE_DONTNEED   0
