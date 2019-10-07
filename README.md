@@ -2434,3 +2434,20 @@ Possible values:
 [WASI]: https://github.com/WebAssembly/WASI
 [libuv]: https://github.com/libuv/libuv
 [wasi_unstable_preview0]: https://github.com/WebAssembly/WASI/blob/master/phases/old/docs/wasi_unstable_preview0.md
+
+### Building
+```console
+$ make
+```
+
+### Testing
+[Check](https://libcheck.github.io/check/) is used for testing and need to be
+[installed](https://libcheck.github.io/check/web/install.html).
+
+```console
+$ make check
+Running suite(s): UVWASI
+ fd_table
+ uv_mapping
+100%: Checks: 3, Failures: 0, Errors: 0
+```

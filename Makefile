@@ -20,6 +20,11 @@ $(OUTDIR)/app: $(OBJ) app.c
 
 clean:
 	rm -rf $(OUTDIR)
+	$(MAKE) -C tests $@
 
 out:
 	@$(MKDIRP) $(ODIR)
+
+.PHONY: check
+check:
+	@$(MAKE) -C tests $@
