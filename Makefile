@@ -26,5 +26,5 @@ out:
 	@$(MKDIRP) $(ODIR)
 
 .PHONY: check
-check:
+check: $(OBJ) | out
 	@$(MAKE) -C tests $@

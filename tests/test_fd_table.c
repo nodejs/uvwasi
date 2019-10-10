@@ -3,7 +3,14 @@
 #include <check.h>
 
 START_TEST(test_uvwasi_fd_table_init) {
-  ck_assert_int_eq(4, 4);
+  uvwasi_errno_t ret = uvwasi_fd_table_init(NULL, 10);
+  ck_assert_msg(ret == UVWASI_EINVAL,
+                "Expected UVWASI_EINVAL if fd_table_t is NULL");
+
+  struct uvwasi_fd_table_t table;
+  ret = uvwasi_fd_table_init(&table, 2);
+  ck_assert_msg(ret == UVWASI_EINVAL,
+                "Expected UVWASI_EINVAL but was was %d", ret);
 }
 END_TEST
 
