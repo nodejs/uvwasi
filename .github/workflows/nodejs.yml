@@ -4,12 +4,10 @@ on: [push]
 
 jobs:
   build:
-
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
         operating-system: [ubuntu-latest, windows-latest, macOS-latest]
-
     steps:
       - uses: actions/checkout@v1
       - name: Use Node.js ${{ matrix.node-version }}
@@ -19,6 +17,7 @@ jobs:
       - name: build it
         run: |
           npx envinfo
+          cmake .
           cmake --build . --target uvwasi
         env:
           CI: true
