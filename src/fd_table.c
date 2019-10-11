@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include "uv.h"
 #include "fd_table.h"
