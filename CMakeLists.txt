@@ -4,6 +4,14 @@ project (uvwasi)
 
 set(LIBUV_VERSION 1.32.0)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/out)
+
+if (CMAKE_C_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+  list(APPEND uvwasi_cflags -fvisibility=hidden --std=gnu89)
+  list(APPEND uvwasi_cflags -Wall -Wsign-compare -Wextra -Wstrict-prototypes)
+  list(APPEND uvwasi_cflags -Wno-unused-parameter)
+endif()
+
 if (APPLE)
    set(CMAKE_MACOSX_RPATH ON)
 endif (APPLE)
@@ -35,6 +43,7 @@ set(SOURCES
 )
 
 add_executable(uvwasi ${SOURCES})
+target_compile_options(uvwasi PRIVATE ${uvwasi_cflags})
 
 target_include_directories(${PROJECT_NAME}
     PRIVATE

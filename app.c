@@ -73,7 +73,7 @@ int main(void) {
 
   uvwasi_fd_t dirfd = 3;
   uvwasi_lookupflags_t dirflags = 1;
-  const char* path = "../build/./foo.txt";
+  const char* path = "../uvwasi/./foo.txt";
   uvwasi_oflags_t o_flags = UVWASI_O_CREAT;
   uvwasi_rights_t fs_rights_base = UVWASI_RIGHT_FD_DATASYNC |
                                    UVWASI_RIGHT_FD_ALLOCATE |
