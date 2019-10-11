@@ -2,17 +2,18 @@ cmake_minimum_required(VERSION 3.11)
 
 project (uvwasi)
 
-include(FetchContent)
+set(LIBUV_VERSION 1.32.0)
 
 if (APPLE)
    set(CMAKE_MACOSX_RPATH ON)
 endif (APPLE)
 
+include(FetchContent)
 ## https://libuv.org
 FetchContent_Declare(
         libuv
         GIT_REPOSITORY https://github.com/libuv/libuv.git
-        GIT_TAG v1.32.0)
+        GIT_TAG v${LIBUV_VERSION})
 
 FetchContent_GetProperties(libuv)
 if(NOT libuv_POPULATED)
