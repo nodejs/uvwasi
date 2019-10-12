@@ -100,7 +100,6 @@ int main(void) {
                        fs_flags,
                        &fd);
   assert(r == 0);
-  assert(fd >= 0);
 
   r = uvwasi_fd_sync(uvw, fd);
   assert(r == 0);

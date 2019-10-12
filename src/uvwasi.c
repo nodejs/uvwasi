@@ -660,7 +660,9 @@ uvwasi_errno_t uvwasi_fd_fdstat_get(uvwasi_t* uvwasi,
                                     uvwasi_fdstat_t* buf) {
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
+#ifndef _WIN32
   int r;
+#endif
 
   if (uvwasi == NULL || buf == NULL)
     return UVWASI_EINVAL;
@@ -1059,8 +1061,8 @@ uvwasi_errno_t uvwasi_fd_readdir(uvwasi_t* uvwasi,
   uvwasi_errno_t err;
   size_t name_len;
   size_t available;
-  size_t tell;
   size_t size_to_cp;
+  long tell;
   int i;
   int r;
 
@@ -1086,9 +1088,12 @@ uvwasi_errno_t uvwasi_fd_readdir(uvwasi_t* uvwasi,
   dir->nentries = UVWASI__READDIR_NUM_ENTRIES;
   uv_fs_req_cleanup(&req);
 
+#ifndef _WIN32
+  /* TODO(cjihrig): Need a Windows equivalent of this logic. */
   /* Seek to the proper location in the directory. */
   if (cookie != UVWASI_DIRCOOKIE_START)
     seekdir(dir->dir, cookie);
+#endif
 
   /* Read the directory entries into the provided buffer. */
   err = UVWASI_ESUCCESS;
@@ -1105,15 +1110,19 @@ uvwasi_errno_t uvwasi_fd_readdir(uvwasi_t* uvwasi,
          consistently across platforms. In other words, d_next should always
          be 8 bytes, d_ino should always be 8 bytes, d_namlen should always be
          4 bytes, and d_type should always be 1 byte. */
+#ifndef _WIN32
       tell = telldir(dir->dir);
       if (tell < 0) {
         err = uvwasi__translate_uv_error(uv_translate_sys_error(errno));
         uv_fs_req_cleanup(&req);
         goto exit;
       }
+#else
+      tell = 0; /* TODO(cjihrig): Need to support Windows. */
+#endif /* _WIN32 */
 
       name_len = strlen(dirents[i].name);
-      dirent.d_next = tell;
+      dirent.d_next = (uvwasi_dircookie_t) tell;
       /* TODO(cjihrig): Missing ino libuv (and Windows) support. fstat()? */
       dirent.d_ino = 0;
       dirent.d_namlen = name_len;
