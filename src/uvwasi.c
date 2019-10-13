@@ -10,7 +10,6 @@
 # define SLASH_STR "/"
 # define IS_SLASH(c) ((c) == '/')
 #else
-# include <processthreadsapi.h>
 # define SLASH '\\'
 # define SLASH_STR "\\"
 # define IS_SLASH(c) ((c) == '/' || (c) == '\\')
