@@ -17,8 +17,12 @@ jobs:
       - name: Environment Information
         run: npx envinfo
       - name: Build and Test
+        if: matrix.os != 'windows-latest'
         run: |
           cmake .
           cmake --build . --target check
-        env:
-          CI: true
+      - name: Build and Test
+        if: matrix.os == 'windows-latest'
+        run: |
+          cmake -G "CodeBlocks - NMake Makefiles" .
+          cmake --build . --target check
