@@ -18,7 +18,6 @@ jobs:
         run: |
           npx envinfo
           cmake .
-          cmake --build . --target uvwasi
+          cmake --build . --target check
         env:
           CI: true
-          
