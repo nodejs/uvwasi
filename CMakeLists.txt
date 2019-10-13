@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.11)
 project (uvwasi LANGUAGES C)
 
-set(LIBUV_VERSION 1.32.0)
+# This can be a commit hash or tag
+set(LIBUV_VERSION v1.32.0)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/out)
 
@@ -20,7 +21,7 @@ include(FetchContent)
 FetchContent_Declare(
         libuv
         GIT_REPOSITORY https://github.com/libuv/libuv.git
-        GIT_TAG v${LIBUV_VERSION})
+        GIT_TAG ${LIBUV_VERSION})
 
 FetchContent_GetProperties(libuv)
 if(NOT libuv_POPULATED)
@@ -68,6 +69,6 @@ foreach(file ${test_files})
 endforeach()
 
 add_custom_target(check
-    COMMAND ctest -R test-
+    COMMAND ctest -C Debug -R test-
     DEPENDS ${test_list}
 )
