@@ -16,12 +16,12 @@ jobs:
           node-version: 12.x
       - name: Environment Information
         run: npx envinfo
-      - name: Build and Test
+      - name: Build and Test on ubuntu and macOS
         if: matrix.os != 'windows-latest'
         run: |
           cmake .
           cmake --build . --target check
-      - name: Build and Test
+      - name: Build and Test on windows
         if: matrix.os == 'windows-latest'
         run: |
           cmake -G "CodeBlocks - NMake Makefiles" .
