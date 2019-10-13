@@ -16,7 +16,7 @@ jobs:
           node-version: 12.x
       - name: Environment Information
         run: npx envinfo
-      - name: build it
+      - name: Build and Test
         run: |
           cmake .
           cmake --build . --target check

@@ -1155,12 +1155,12 @@ uvwasi_errno_t uvwasi_fd_readdir(uvwasi_t* uvwasi,
       /* Write dirent to the buffer. */
       available = buf_len - *bufused;
       size_to_cp = sizeof(dirent) > available ? available : sizeof(dirent);
-      memcpy(buf + *bufused, &dirent, size_to_cp);
+      memcpy((char*)buf + *bufused, &dirent, size_to_cp);
       *bufused += size_to_cp;
       /* Write the entry name to the buffer. */
       available = buf_len - *bufused;
       size_to_cp = name_len > available ? available : name_len;
-      memcpy(buf + *bufused, &dirents[i].name, size_to_cp);
+      memcpy((char*)buf + *bufused, &dirents[i].name, size_to_cp);
       *bufused += size_to_cp;
     }
 
