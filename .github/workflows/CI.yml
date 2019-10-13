@@ -14,9 +14,10 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 12.x
+      - name: Environment Information
+        run: npx envinfo
       - name: build it
         run: |
-          npx envinfo
           cmake .
           cmake --build . --target check
         env:
