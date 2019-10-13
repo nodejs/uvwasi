@@ -255,9 +255,11 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
 
   env_count = 0;
   env_buf_size = 0;
-  while (options->envp[env_count] != NULL) {
-    env_buf_size += strlen(options->envp[env_count]) + 1;
-    env_count++;
+  if (options->envp != NULL) {
+    while (options->envp[env_count] != NULL) {
+      env_buf_size += strlen(options->envp[env_count]) + 1;
+      env_count++;
+    }
   }
 
   uvwasi->envc = env_count;
