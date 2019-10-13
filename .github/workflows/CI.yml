@@ -24,5 +24,6 @@ jobs:
       - name: Build and Test on windows
         if: matrix.os == 'windows-latest'
         run: |
+          "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           cmake -G "CodeBlocks - NMake Makefiles" .
           cmake --build . --target check
