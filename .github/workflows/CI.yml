@@ -16,14 +16,6 @@ jobs:
           node-version: 12.x
       - name: Environment Information
         run: npx envinfo
-      - name: Build and Test on ubuntu and macOS
-        if: matrix.os != 'windows-latest'
-        run: |
+      - name: Build and Test
           cmake .
-          cmake --build . --target check
-      - name: Build and Test on windows
-        if: matrix.os == 'windows-latest'
-        run: |
-          "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          cmake -G "CodeBlocks - NMake Makefiles" .
           cmake --build . --target check

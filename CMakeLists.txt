@@ -69,6 +69,6 @@ foreach(file ${test_files})
 endforeach()
 
 add_custom_target(check
-    COMMAND ctest -R test-
+    COMMAND ctest -C Debug -R test-
     DEPENDS ${test_list}
 )
