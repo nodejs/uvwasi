@@ -17,5 +17,6 @@ jobs:
       - name: Environment Information
         run: npx envinfo
       - name: Build and Test
+        run: |
           cmake .
           cmake --build . --target check
