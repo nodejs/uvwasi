@@ -1878,10 +1878,6 @@ uvwasi_errno_t uvwasi_proc_raise(uvwasi_t* uvwasi, uvwasi_signal_t sig) {
 
 
 uvwasi_errno_t uvwasi_random_get(uvwasi_t* uvwasi, void* buf, size_t buf_len) {
-  return UVWASI_ENOTSUP;
-  /* uv_random() ships with libuv 1.33.0. Uncomment this implementation after
-     1.33.0 is available.
-
   int r;
 
   if (uvwasi == NULL || buf == NULL)
@@ -1892,7 +1888,6 @@ uvwasi_errno_t uvwasi_random_get(uvwasi_t* uvwasi, void* buf, size_t buf_len) {
     return uvwasi__translate_uv_error(r);
 
   return UVWASI_ESUCCESS;
-  */
 }
 
 

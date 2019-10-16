@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.11)
 project (uvwasi LANGUAGES C)
 
 # This can be a commit hash or tag
-set(LIBUV_VERSION v1.32.0)
+set(LIBUV_VERSION v1.33.0)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/out)
 
