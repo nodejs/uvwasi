@@ -46,6 +46,9 @@ static uvwasi_errno_t uvwasi__resolve_path(const struct uvwasi_fd_wrap_t* fd,
   int abs_size;
   int input_is_absolute;
   int r;
+#ifdef _WIN32
+  int i;
+#endif /* _WIN32 */
 
   err = UVWASI_ESUCCESS;
   input_is_absolute = uvwasi__is_absolute_path(path, path_len);
@@ -76,7 +79,13 @@ static uvwasi_errno_t uvwasi__resolve_path(const struct uvwasi_fd_wrap_t* fd,
     }
   }
 
-  /* TODO(cjihrig): On Windows, convert all slashes to backslashes. */
+#ifdef _WIN32
+  /* On Windows, convert slashes to backslashes. */
+  for (i = 0; i < abs_size; ++i) {
+    if (abs_path[i] == '/')
+      abs_path[i] = SLASH;
+  }
+#endif /* _WIN32 */
 
   ptr = resolved_path;
   tok = strtok(abs_path, SLASH_STR);
@@ -91,7 +100,14 @@ static uvwasi_errno_t uvwasi__resolve_path(const struct uvwasi_fd_wrap_t* fd,
       continue;
     }
 
+#ifdef _WIN32
+    /* On Windows, prevent a leading slash in the path. */
+    if (ptr == resolved_path)
+      r = sprintf(ptr, "%s", tok);
+    else
+#endif /* _WIN32 */
     r = sprintf(ptr, "%c%s", SLASH, tok);
+
     if (r < 1) { /* At least one character should have been written. */
       err = uvwasi__translate_uv_error(uv_translate_sys_error(errno));
       goto exit;
@@ -212,7 +228,6 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   size_t offset;
   size_t env_count;
   size_t env_buf_size;
-  int flags;
   size_t i;
   int r;
 
@@ -297,8 +312,6 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   if (err != UVWASI_ESUCCESS)
     goto exit;
 
-  flags = UV_FS_O_CREAT;
-
   for (i = 0; i < options->preopenc; ++i) {
     r = uv_fs_realpath(NULL,
                        &realpath_req,
@@ -310,7 +323,7 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
       goto exit;
     }
 
-    r = uv_fs_open(NULL, &open_req, realpath_req.ptr, flags, 0666, NULL);
+    r = uv_fs_open(NULL, &open_req, realpath_req.ptr, 0, 0666, NULL);
     if (r < 0) {
       err = uvwasi__translate_uv_error(r);
       uv_fs_req_cleanup(&realpath_req);
