@@ -60,7 +60,11 @@ endif()
 add_library(uvwasi_a STATIC ${uvwasi_sources})
 target_compile_options(uvwasi_a PRIVATE ${uvwasi_cflags})
 target_include_directories(uvwasi_a PRIVATE ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(uvwasi_a PUBLIC uv_a cverage_config)
+if (CODE_COVERAGE)
+        target_link_libraries(uvwasi_a PRIVATE uv_a)
+    else()
+        target_link_libraries(uvwasi_a PUBLIC uv_a cverage_config)
+endif ()
 
 
 ## Demo app target.
