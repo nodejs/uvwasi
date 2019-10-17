@@ -23,6 +23,7 @@ jobs:
       - name: Test Coverage
         if: matrix.os == 'ubuntu-latest'
         run: |
+          sudo apt update && sudo apt install lcov -y
           cmake -DCODE_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug .
           cmake --build . --target check
           cd CMakeFiles
