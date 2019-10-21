@@ -10,12 +10,6 @@ jobs:
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v1
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: 12.x
-      - name: Environment Information
-        run: npx envinfo
       - name: Test Coverage
         run: |
           sudo apt update && sudo apt install lcov -y
@@ -23,6 +17,6 @@ jobs:
           cmake --build . --target check
           cd CMakeFiles
           lcov --directory . --capture --output-file coverage.info
-          bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"
+          genhtml coverage.info
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
