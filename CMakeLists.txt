@@ -37,12 +37,34 @@ set(uvwasi_sources
     src/uvwasi.c
 )
 
+# Code Coverage Configuration
+add_library(coverage_config INTERFACE)
+
+option(CODE_COVERAGE "Enable coverage reporting" OFF)
+if(CODE_COVERAGE AND CMAKE_C_COMPILER_ID MATCHES "AppleClang|GNU|Clang")
+    # Add required flags (GCC & LLVM/Clang)
+    target_compile_options(coverage_config INTERFACE
+        -O0        # no optimization
+        -g         # generate debug info
+        --coverage # sets all required flags
+    )
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
+        target_link_options(coverage_config INTERFACE --coverage)
+    else()
+        target_link_libraries(coverage_config INTERFACE --coverage)
+    endif()
+endif()
+
 
 ## Static library target.
 add_library(uvwasi_a STATIC ${uvwasi_sources})
 target_compile_options(uvwasi_a PRIVATE ${uvwasi_cflags})
 target_include_directories(uvwasi_a PRIVATE ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(uvwasi_a PRIVATE uv_a)
+if(CODE_COVERAGE)
+    target_link_libraries(uvwasi_a PUBLIC uv_a coverage_config)
+else()
+    target_link_libraries(uvwasi_a PRIVATE uv_a)
+endif()
 
 
 ## Demo app target.
