@@ -179,39 +179,6 @@ int main(void) {
   r = uvwasi_path_unlink_file(uvw, dirfd, path, strlen(path) + 1);
   assert(r == 0);
 
-  uvwasi_prestat_t prestat;
-  r = uvwasi_fd_prestat_get(uvw, dirfd, &prestat);
-  assert(r == 0);
-  assert(prestat.pr_type == UVWASI_PREOPENTYPE_DIR);
-  assert(prestat.u.dir.pr_name_len ==
-         strlen(init_options.preopens[0].mapped_path) + 1);
-
-  size_t prestat_buf_size = prestat.u.dir.pr_name_len + 1;
-  char* prestat_buf = malloc(prestat_buf_size);
-  assert(prestat_buf != NULL);
-  r = uvwasi_fd_prestat_dir_name(uvw, dirfd, prestat_buf, prestat_buf_size);
-  assert(r == 0);
-  assert(strcmp(prestat_buf, init_options.preopens[0].mapped_path) == 0);
-  free(prestat_buf);
-
-  r = uvwasi_path_create_directory(uvw,
-                                   dirfd,
-                                   "test_dir",
-                                   strlen("test_dir") + 1);
-  assert(r == 0);
-
-  r = uvwasi_path_create_directory(uvw,
-                                   dirfd,
-                                   "../test_dir",
-                                   strlen("../test_dir") + 1);
-  assert(r == UVWASI_ENOTCAPABLE);
-
-  r = uvwasi_path_remove_directory(uvw,
-                                   dirfd,
-                                   "test_dir",
-                                   strlen("test_dir") + 1);
-  assert(r == 0);
-
   char readdir_buf[2048];
   size_t bufused;
   uvwasi_dircookie_t cookie;
