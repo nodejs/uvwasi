@@ -33,19 +33,6 @@ int main(void) {
   err = uvwasi_init(&uvwasi, &init_options);
   assert(err == 0);
 
-  /* Verify uvwasi_path_create_directory() argument validation. */
-  err = uvwasi_path_create_directory(NULL,
-                                     3,
-                                     "test_dir",
-                                     strlen("test_dir") + 1);
-  assert(err == UVWASI_EINVAL);
-
-  err = uvwasi_path_create_directory(&uvwasi,
-                                     3,
-                                     NULL,
-                                     strlen("test_dir") + 1);
-  assert(err == UVWASI_EINVAL);
-
   /* Verify uvwasi_path_create_directory() happy path. */
   err = uvwasi_path_create_directory(&uvwasi,
                                      3,
@@ -66,19 +53,6 @@ int main(void) {
                                      "../test_dir",
                                      strlen("../test_dir") + 1);
   assert(err == UVWASI_ENOTCAPABLE);
-
-  /* Verify uvwasi_path_remove_directory() argument validation. */
-  err = uvwasi_path_remove_directory(NULL,
-                                     3,
-                                     "test_dir",
-                                     strlen("test_dir") + 1);
-  assert(err == UVWASI_EINVAL);
-
-  err = uvwasi_path_remove_directory(&uvwasi,
-                                     3,
-                                     NULL,
-                                     strlen("test_dir") + 1);
-  assert(err == UVWASI_EINVAL);
 
   /* Verify uvwasi_path_remove_directory() happy path. */
   err = uvwasi_path_remove_directory(&uvwasi,
