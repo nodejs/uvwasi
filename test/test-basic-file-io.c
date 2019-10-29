@@ -1,0 +1,160 @@
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+#include "uvwasi.h"
+
+#define TEST_TMP_DIR "./out/tmp"
+
+int main(void) {
+  const char* path = "./path-open-create-file.txt";
+  uvwasi_fd_t fd;
+  uvwasi_t uvwasi;
+  uvwasi_options_t init_options;
+  uvwasi_rights_t fs_rights_base;
+  uvwasi_ciovec_t* ciovecs;
+  uvwasi_iovec_t* iovecs;
+  uvwasi_filestat_t stats;
+  uvwasi_filesize_t seek_position;
+  uvwasi_errno_t err;
+  uv_fs_t req;
+  void* buf;
+  size_t ciovec_size;
+  size_t iovec_size;
+  size_t nio;
+  size_t i;
+  int r;
+
+  r = uv_fs_mkdir(NULL, &req, TEST_TMP_DIR, 0777, NULL);
+  uv_fs_req_cleanup(&req);
+  assert(r == 0 || r == UV_EEXIST);
+
+  init_options.fd_table_size = 3;
+  init_options.argc = 0;
+  init_options.argv = NULL;
+  init_options.envp = NULL;
+  init_options.preopenc = 1;
+  init_options.preopens = calloc(1, sizeof(uvwasi_preopen_t));
+  init_options.preopens[0].mapped_path = "/var";
+  init_options.preopens[0].real_path = TEST_TMP_DIR;
+
+  err = uvwasi_init(&uvwasi, &init_options);
+  assert(err == 0);
+
+  /* Create a file. */
+  fs_rights_base = UVWASI_RIGHT_FD_FILESTAT_GET |
+                   UVWASI_RIGHT_FD_FILESTAT_SET_SIZE |
+                   UVWASI_RIGHT_FD_READ |
+                   UVWASI_RIGHT_FD_SEEK |
+                   UVWASI_RIGHT_FD_TELL |
+                   UVWASI_RIGHT_FD_WRITE |
+                   UVWASI_RIGHT_PATH_UNLINK_FILE;
+  err = uvwasi_path_open(&uvwasi,
+                         3,
+                         1,
+                         path,
+                         strlen(path) + 1,
+                         UVWASI_O_CREAT,
+                         fs_rights_base,
+                         0,
+                         0,
+                         &fd);
+  assert(err == 0);
+
+  /* Set the size of the file to zero. */
+  err = uvwasi_fd_filestat_set_size(&uvwasi, fd, 0);
+  assert(err == 0);
+
+  /* Stat the file and verify the size. */
+  err = uvwasi_fd_filestat_get(&uvwasi, fd, &stats);
+  assert(err == 0);
+  assert(stats.st_dev > 0);
+  assert(stats.st_ino > 0);
+  assert(stats.st_nlink == 1);
+  assert(stats.st_size == 0);
+  assert(stats.st_filetype == UVWASI_FILETYPE_REGULAR_FILE);
+  assert(stats.st_atim > 0);
+  assert(stats.st_mtim > 0);
+  assert(stats.st_ctim > 0);
+
+  /* Resize the file to 1024 bytes. */
+  err = uvwasi_fd_filestat_set_size(&uvwasi, fd, 1024);
+  assert(err == 0);
+
+  /* Stat the file again to verify the changed size. */
+  err = uvwasi_fd_filestat_get(&uvwasi, fd, &stats);
+  assert(err == 0);
+  assert(stats.st_size == 1024);
+
+  /* Reset the file size to zero again. */
+  err = uvwasi_fd_filestat_set_size(&uvwasi, fd, 0);
+  assert(err == 0);
+  err = uvwasi_fd_filestat_get(&uvwasi, fd, &stats);
+  assert(err == 0);
+  assert(stats.st_size == 0);
+
+  /* Write data to the file. */
+  ciovec_size = 2;
+  nio = 0;
+  ciovecs = calloc(ciovec_size, sizeof(*ciovecs));
+  assert(ciovecs != NULL);
+  for (i = 0; i < ciovec_size; ++i) {
+    ciovecs[i].buf_len = 4;
+    buf = malloc(ciovecs[i].buf_len);
+    assert(buf != NULL);
+    memset(buf, i, ciovecs[i].buf_len);
+    ciovecs[i].buf = buf;
+  }
+  err = uvwasi_fd_write(&uvwasi, fd, ciovecs, ciovec_size, &nio);
+  assert(err == 0);
+  assert(nio == 8);
+
+  /* Seek back to the beginning of the file. */
+  err = uvwasi_fd_seek(&uvwasi, fd, 0, UVWASI_WHENCE_SET, &seek_position);
+  assert(err == 0);
+  assert(seek_position == 0);
+
+  /* Read the data back from the file. */
+  iovec_size = 2;
+  iovecs = calloc(iovec_size, sizeof(*iovecs));
+  assert(iovecs != NULL);
+  nio = 0;
+  for (i = 0; i < iovec_size; ++i) {
+    iovecs[i].buf_len = 4;
+    iovecs[i].buf = malloc(iovecs[i].buf_len);
+    assert(iovecs[i].buf != NULL);
+  }
+
+  err = uvwasi_fd_read(&uvwasi, fd, iovecs, iovec_size, &nio);
+  assert(err == 0);
+  assert(nio == 8);
+
+  /* Tell the position of the fd. */
+  err = uvwasi_fd_tell(&uvwasi, fd, &seek_position);
+  assert(err == 0);
+  assert(seek_position == nio);
+
+  /* Close the file. */
+  err = uvwasi_fd_close(&uvwasi, fd);
+  assert(err == 0);
+
+  /* Unlink the file. */
+  err = uvwasi_path_unlink_file(&uvwasi, 3, path, strlen(path) + 1);
+  assert(err == 0);
+
+  /* Clean things up. */
+  uvwasi_destroy(&uvwasi);
+
+  for (i = 0; i < ciovec_size; ++i) {
+    buf = (void*) ciovecs[i].buf;
+    free(buf);
+  }
+
+  free(ciovecs);
+
+  for (i = 0; i < iovec_size; ++i)
+    free(iovecs[i].buf);
+
+  free(iovecs);
+
+  return 0;
+}
