@@ -14,6 +14,7 @@ int main(void) {
   uvwasi_ciovec_t* ciovecs;
   uvwasi_iovec_t* iovecs;
   uvwasi_filestat_t stats;
+  uvwasi_filestat_t stats2;
   uvwasi_filesize_t seek_position;
   uvwasi_errno_t err;
   uv_fs_t req;
@@ -41,10 +42,12 @@ int main(void) {
   assert(err == 0);
 
   /* Create a file. */
-  fs_rights_base = UVWASI_RIGHT_FD_FILESTAT_GET |
+  fs_rights_base = UVWASI_RIGHT_FD_DATASYNC |
+                   UVWASI_RIGHT_FD_FILESTAT_GET |
                    UVWASI_RIGHT_FD_FILESTAT_SET_SIZE |
                    UVWASI_RIGHT_FD_READ |
                    UVWASI_RIGHT_FD_SEEK |
+                   UVWASI_RIGHT_FD_SYNC |
                    UVWASI_RIGHT_FD_TELL |
                    UVWASI_RIGHT_FD_WRITE |
                    UVWASI_RIGHT_PATH_UNLINK_FILE;
@@ -133,9 +136,33 @@ int main(void) {
   assert(err == 0);
   assert(seek_position == nio);
 
+  /* Sync the fd. There isn't a great way to test these calls though. */
+  err = uvwasi_fd_sync(&uvwasi, fd);
+  assert(err == 0);
+  err = uvwasi_fd_datasync(&uvwasi, fd);
+  assert(err == 0);
+
   /* Close the file. */
   err = uvwasi_fd_close(&uvwasi, fd);
   assert(err == 0);
+
+  /* Stat the file by name. */
+  err = uvwasi_path_filestat_get(&uvwasi,
+                                 3,
+                                 0,
+                                 path,
+                                 strlen(path) + 1,
+                                 &stats2);
+  assert(err == 0);
+  assert(stats2.st_dev == stats.st_dev);
+  assert(stats2.st_ino == stats.st_ino);
+  assert(stats2.st_nlink == 1);
+  assert(stats2.st_size == 8);
+  /* TODO(cjihrig): st_filetype is currently wrong.
+  assert(stats2.st_filetype == UVWASI_FILETYPE_REGULAR_FILE); */
+  assert(stats2.st_atim > 0);
+  assert(stats2.st_mtim > 0);
+  assert(stats2.st_ctim > 0);
 
   /* Unlink the file. */
   err = uvwasi_path_unlink_file(&uvwasi, 3, path, strlen(path) + 1);
