@@ -1,6 +1,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+
+#ifndef _WIN32
+# include <sys/types.h>
+#endif /* _WIN32 */
+
 #include "uv.h"
 #include "fd_table.h"
 #include "wasi_types.h"
@@ -103,69 +108,60 @@ static uvwasi_errno_t uvwasi__get_type_and_rights(uv_file fd,
                                            uvwasi_rights_t* rights_base,
                                            uvwasi_rights_t* rights_inheriting) {
   uv_fs_t req;
-  uint64_t mode;
-#ifdef S_ISSOCK
-  uv_handle_type handle_type;
-#endif
+  uvwasi_filetype_t filetype;
   int read_or_write_only;
   int r;
 
   r = uv_fs_fstat(NULL, &req, fd, NULL);
-  mode = req.statbuf.st_mode;
+  filetype = uvwasi__stat_to_filetype(&req.statbuf);
   uv_fs_req_cleanup(&req);
   if (r != 0)
     return uvwasi__translate_uv_error(r);
 
-  if ((mode & S_IFMT) == S_IFREG) {
-    *type = UVWASI_FILETYPE_REGULAR_FILE;
-    *rights_base = UVWASI__RIGHTS_REGULAR_FILE_BASE;
-    *rights_inheriting = UVWASI__RIGHTS_REGULAR_FILE_INHERITING;
-  } else if ((mode & S_IFMT) == S_IFDIR) {
-    *type = UVWASI_FILETYPE_DIRECTORY;
-    *rights_base = UVWASI__RIGHTS_DIRECTORY_BASE;
-    *rights_inheriting = UVWASI__RIGHTS_DIRECTORY_INHERITING;
-#ifdef S_ISSOCK
-  } else if (S_ISSOCK(mode)) {
-    handle_type = uv_guess_handle(fd);
+  *type = filetype;
+  switch (filetype) {
+    case UVWASI_FILETYPE_REGULAR_FILE:
+      *rights_base = UVWASI__RIGHTS_REGULAR_FILE_BASE;
+      *rights_inheriting = UVWASI__RIGHTS_REGULAR_FILE_INHERITING;
+      break;
 
-    if (handle_type == UV_TCP)
-      *type = UVWASI_FILETYPE_SOCKET_STREAM;
-    else if (handle_type == UV_UDP)
-      *type = UVWASI_FILETYPE_SOCKET_DGRAM;
-    else
-      *type = UVWASI_FILETYPE_UNKNOWN;
+    case UVWASI_FILETYPE_DIRECTORY:
+      *rights_base = UVWASI__RIGHTS_DIRECTORY_BASE;
+      *rights_inheriting = UVWASI__RIGHTS_DIRECTORY_INHERITING;
+      break;
 
-    *rights_base = UVWASI__RIGHTS_SOCKET_BASE;
-    *rights_inheriting = UVWASI__RIGHTS_SOCKET_INHERITING;
-#endif
-#ifdef S_ISFIFO
-  } else if (S_ISFIFO(mode)) {
-    *type = UVWASI_FILETYPE_SOCKET_STREAM;
-    *rights_base = UVWASI__RIGHTS_SOCKET_BASE;
-    *rights_inheriting = UVWASI__RIGHTS_SOCKET_INHERITING;
-#endif
-#ifdef S_ISBLK
-  } else if (S_ISBLK(mode)) {
-    *type = UVWASI_FILETYPE_BLOCK_DEVICE;
-    *rights_base = UVWASI__RIGHTS_BLOCK_DEVICE_BASE;
-    *rights_inheriting = UVWASI__RIGHTS_BLOCK_DEVICE_INHERITING;
-#endif
-  } else if ((mode & S_IFMT) == S_IFCHR) {
-    *type = UVWASI_FILETYPE_CHARACTER_DEVICE;
+    /* uvwasi__stat_to_filetype() cannot differentiate socket types. It only
+       returns UVWASI_FILETYPE_SOCKET_STREAM. */
+    case UVWASI_FILETYPE_SOCKET_STREAM:
+      if (uv_guess_handle(fd) == UV_UDP)
+        *type = UVWASI_FILETYPE_SOCKET_DGRAM;
 
-    if (uv_guess_handle(fd) == UV_TTY) {
-      *rights_base = UVWASI__RIGHTS_TTY_BASE;
-      *rights_inheriting = UVWASI__RIGHTS_TTY_INHERITING;
-    } else {
-      *rights_base = UVWASI__RIGHTS_CHARACTER_DEVICE_BASE;
-      *rights_inheriting = UVWASI__RIGHTS_CHARACTER_DEVICE_INHERITING;
-    }
-  } else {
-    *type = UVWASI_FILETYPE_UNKNOWN;
-    *rights_base = 0;
-    *rights_inheriting = 0;
-    return UVWASI_EINVAL;
+      *rights_base = UVWASI__RIGHTS_SOCKET_BASE;
+      *rights_inheriting = UVWASI__RIGHTS_SOCKET_INHERITING;
+      break;
+
+    case UVWASI_FILETYPE_CHARACTER_DEVICE:
+      if (uv_guess_handle(fd) == UV_TTY) {
+        *rights_base = UVWASI__RIGHTS_TTY_BASE;
+        *rights_inheriting = UVWASI__RIGHTS_TTY_INHERITING;
+      } else {
+        *rights_base = UVWASI__RIGHTS_CHARACTER_DEVICE_BASE;
+        *rights_inheriting = UVWASI__RIGHTS_CHARACTER_DEVICE_INHERITING;
+      }
+      break;
+
+    case UVWASI_FILETYPE_BLOCK_DEVICE:
+      *rights_base = UVWASI__RIGHTS_BLOCK_DEVICE_BASE;
+      *rights_inheriting = UVWASI__RIGHTS_BLOCK_DEVICE_INHERITING;
+      break;
+
+    default:
+      *rights_base = 0;
+      *rights_inheriting = 0;
   }
+
+  if (*type == UVWASI_FILETYPE_UNKNOWN)
+    return UVWASI_EINVAL;
 
   /* Disable read/write bits depending on access mode. */
   read_or_write_only = flags & (UV_FS_O_RDONLY | UV_FS_O_WRONLY | UV_FS_O_RDWR);

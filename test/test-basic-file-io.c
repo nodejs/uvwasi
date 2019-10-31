@@ -158,8 +158,7 @@ int main(void) {
   assert(stats2.st_ino == stats.st_ino);
   assert(stats2.st_nlink == 1);
   assert(stats2.st_size == 8);
-  /* TODO(cjihrig): st_filetype is currently wrong.
-  assert(stats2.st_filetype == UVWASI_FILETYPE_REGULAR_FILE); */
+  assert(stats2.st_filetype == UVWASI_FILETYPE_REGULAR_FILE);
   assert(stats2.st_atim > 0);
   assert(stats2.st_mtim > 0);
   assert(stats2.st_ctim > 0);
