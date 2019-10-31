@@ -1397,9 +1397,7 @@ uvwasi_errno_t uvwasi_path_filestat_get(uvwasi_t* uvwasi,
   buf->st_ino = req.statbuf.st_ino;
   buf->st_nlink = req.statbuf.st_nlink;
   buf->st_size = req.statbuf.st_size;
-  /* TODO(cjihrig): The next line is wrong. It is currently setting the filetype
-     to the type of the fd argument (most likely a directory). */
-  buf->st_filetype = wrap->type;
+  buf->st_filetype = uvwasi__stat_to_filetype(&req.statbuf);
   buf->st_atim = uvwasi__timespec_to_timestamp(&req.statbuf.st_atim);
   buf->st_mtim = uvwasi__timespec_to_timestamp(&req.statbuf.st_mtim);
   buf->st_ctim = uvwasi__timespec_to_timestamp(&req.statbuf.st_ctim);

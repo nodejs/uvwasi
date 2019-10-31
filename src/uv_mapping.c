@@ -1,3 +1,9 @@
+#include <sys/stat.h>
+
+#ifndef _WIN32
+# include <sys/types.h>
+#endif /* _WIN32 */
+
 #include "uv.h"
 #include "wasi_types.h"
 #include "uv_mapping.h"
@@ -167,4 +173,40 @@ int uvwasi__translate_to_uv_signal(uvwasi_signal_t sig) {
 uvwasi_timestamp_t uvwasi__timespec_to_timestamp(const uv_timespec_t* ts) {
   /* TODO(cjihrig): Handle overflow. */
   return (uvwasi_timestamp_t) ts->tv_sec * NANOS_PER_SEC + ts->tv_nsec;
+}
+
+
+uvwasi_filetype_t uvwasi__stat_to_filetype(const uv_stat_t* stat) {
+  uint64_t mode;
+
+  mode = stat->st_mode;
+
+  if ((mode & S_IFMT) == S_IFREG)
+    return UVWASI_FILETYPE_REGULAR_FILE;
+
+  if ((mode & S_IFMT) == S_IFDIR)
+    return UVWASI_FILETYPE_DIRECTORY;
+
+  if ((mode & S_IFMT) == S_IFCHR)
+    return UVWASI_FILETYPE_CHARACTER_DEVICE;
+
+  if ((mode & S_IFMT) == S_IFLNK)
+    return UVWASI_FILETYPE_SYMBOLIC_LINK;
+
+#ifdef S_ISSOCK
+  if (S_ISSOCK(mode))
+    return UVWASI_FILETYPE_SOCKET_STREAM;
+#endif /* S_ISSOCK */
+
+#ifdef S_ISFIFO
+  if (S_ISFIFO(mode))
+    return UVWASI_FILETYPE_SOCKET_STREAM;
+#endif /* S_ISFIFO */
+
+#ifdef S_ISBLK
+  if (S_ISBLK(mode))
+    return UVWASI_FILETYPE_BLOCK_DEVICE;
+#endif /* S_ISBLK */
+
+  return UVWASI_FILETYPE_UNKNOWN;
 }
