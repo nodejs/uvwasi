@@ -810,14 +810,7 @@ uvwasi_errno_t uvwasi_fd_filestat_get(uvwasi_t* uvwasi,
     return uvwasi__translate_uv_error(r);
   }
 
-  buf->st_dev = req.statbuf.st_dev;
-  buf->st_ino = req.statbuf.st_ino;
-  buf->st_nlink = req.statbuf.st_nlink;
-  buf->st_size = req.statbuf.st_size;
-  buf->st_filetype = wrap->type;
-  buf->st_atim = uvwasi__timespec_to_timestamp(&req.statbuf.st_atim);
-  buf->st_mtim = uvwasi__timespec_to_timestamp(&req.statbuf.st_mtim);
-  buf->st_ctim = uvwasi__timespec_to_timestamp(&req.statbuf.st_ctim);
+  uvwasi__stat_to_filestat(&req.statbuf, buf);
   uv_fs_req_cleanup(&req);
 
   return UVWASI_ESUCCESS;
@@ -1393,14 +1386,7 @@ uvwasi_errno_t uvwasi_path_filestat_get(uvwasi_t* uvwasi,
     return uvwasi__translate_uv_error(r);
   }
 
-  buf->st_dev = req.statbuf.st_dev;
-  buf->st_ino = req.statbuf.st_ino;
-  buf->st_nlink = req.statbuf.st_nlink;
-  buf->st_size = req.statbuf.st_size;
-  buf->st_filetype = uvwasi__stat_to_filetype(&req.statbuf);
-  buf->st_atim = uvwasi__timespec_to_timestamp(&req.statbuf.st_atim);
-  buf->st_mtim = uvwasi__timespec_to_timestamp(&req.statbuf.st_mtim);
-  buf->st_ctim = uvwasi__timespec_to_timestamp(&req.statbuf.st_ctim);
+  uvwasi__stat_to_filestat(&req.statbuf, buf);
   uv_fs_req_cleanup(&req);
 
   return UVWASI_ESUCCESS;
