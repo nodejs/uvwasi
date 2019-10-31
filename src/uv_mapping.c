@@ -210,3 +210,15 @@ uvwasi_filetype_t uvwasi__stat_to_filetype(const uv_stat_t* stat) {
 
   return UVWASI_FILETYPE_UNKNOWN;
 }
+
+
+void uvwasi__stat_to_filestat(const uv_stat_t* stat, uvwasi_filestat_t* fs) {
+  fs->st_dev = stat->st_dev;
+  fs->st_ino = stat->st_ino;
+  fs->st_nlink = stat->st_nlink;
+  fs->st_size = stat->st_size;
+  fs->st_filetype = uvwasi__stat_to_filetype(stat);
+  fs->st_atim = uvwasi__timespec_to_timestamp(&stat->st_atim);
+  fs->st_mtim = uvwasi__timespec_to_timestamp(&stat->st_mtim);
+  fs->st_ctim = uvwasi__timespec_to_timestamp(&stat->st_ctim);
+}
