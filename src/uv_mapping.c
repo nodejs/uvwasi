@@ -8,6 +8,22 @@
 #include "wasi_types.h"
 #include "uv_mapping.h"
 
+#if !defined(S_ISREG) && defined(S_IFMT) && defined(S_IFREG)
+# define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
+#endif
+
+#if !defined(S_ISDIR) && defined(S_IFMT) && defined(S_IFDIR)
+# define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#endif
+
+#if !defined(S_ISCHR) && defined(S_IFMT) && defined(S_IFCHR)
+# define S_ISCHR(m) (((m) & S_IFMT) == S_IFCHR)
+#endif
+
+#if !defined(S_ISLNK) && defined(S_IFMT) && defined(S_IFLNK)
+# define S_ISLNK(m) (((m) & S_IFMT) == S_IFLNK)
+#endif
+
 
 uvwasi_errno_t uvwasi__translate_uv_error(int err) {
   switch (err) {
@@ -181,16 +197,16 @@ uvwasi_filetype_t uvwasi__stat_to_filetype(const uv_stat_t* stat) {
 
   mode = stat->st_mode;
 
-  if ((mode & S_IFMT) == S_IFREG)
+  if (S_ISREG(mode))
     return UVWASI_FILETYPE_REGULAR_FILE;
 
-  if ((mode & S_IFMT) == S_IFDIR)
+  if (S_ISDIR(mode))
     return UVWASI_FILETYPE_DIRECTORY;
 
-  if ((mode & S_IFMT) == S_IFCHR)
+  if (S_ISCHR(mode))
     return UVWASI_FILETYPE_CHARACTER_DEVICE;
 
-  if ((mode & S_IFMT) == S_IFLNK)
+  if (S_ISLNK(mode))
     return UVWASI_FILETYPE_SYMBOLIC_LINK;
 
 #ifdef S_ISSOCK
