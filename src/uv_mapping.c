@@ -67,7 +67,10 @@ uvwasi_errno_t uvwasi__translate_uv_error(int err) {
     case UV_ENOSYS:          return UVWASI_ENOSYS;
     case UV_ENOTCONN:        return UVWASI_ENOTCONN;
     case UV_ENOTDIR:         return UVWASI_ENOTDIR;
+    /* On at least some AIX machines, ENOTEMPTY and EEXIST are equivalent. */
+#if ENOTEMPTY != EEXIST
     case UV_ENOTEMPTY:       return UVWASI_ENOTEMPTY;
+#endif /* ENOTEMPTY != EEXIST */
     case UV_ENOTSOCK:        return UVWASI_ENOTSOCK;
     case UV_ENOTSUP:         return UVWASI_ENOTSUP;
     case UV_ENXIO:           return UVWASI_ENXIO;
