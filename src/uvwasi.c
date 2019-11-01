@@ -1599,14 +1599,24 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
                                   fs_rights_base,
                                   fs_rights_inheriting,
                                   &wrap);
-  if (err != UVWASI_ESUCCESS) {
-    uv_fs_close(NULL, &req, r, NULL);
-    uv_fs_req_cleanup(&req);
-    return err;
+  if (err != UVWASI_ESUCCESS)
+    goto close_file_and_error_exit;
+
+  /* Not all platforms support UV_FS_O_DIRECTORY, so enforce it here as well. */
+  if ((o_flags & UVWASI_O_DIRECTORY) != 0 &&
+      wrap.type != UVWASI_FILETYPE_DIRECTORY) {
+    uvwasi_fd_table_remove(&uvwasi->fds, wrap.id);
+    err = UVWASI_ENOTDIR;
+    goto close_file_and_error_exit;
   }
 
   *fd = wrap.id;
   return UVWASI_ESUCCESS;
+
+close_file_and_error_exit:
+  uv_fs_close(NULL, &req, r, NULL);
+  uv_fs_req_cleanup(&req);
+  return err;
 }
 
 
