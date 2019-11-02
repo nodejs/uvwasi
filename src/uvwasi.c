@@ -6,6 +6,7 @@
 # include <sys/types.h>
 # include <unistd.h>
 # include <dirent.h>
+# include <time.h>
 # define SLASH '/'
 # define SLASH_STR "/"
 # define IS_SLASH(c) ((c) == '/')
@@ -452,6 +453,10 @@ uvwasi_errno_t uvwasi_clock_time_get(uvwasi_t* uvwasi,
                                      uvwasi_clockid_t clock_id,
                                      uvwasi_timestamp_t precision,
                                      uvwasi_timestamp_t* time) {
+#ifndef _WIN32
+  struct timespec ts;
+  clockid_t clk;
+#endif /* _WIN32 */
   uv_timeval64_t tv;
   int r;
 
@@ -470,8 +475,21 @@ uvwasi_errno_t uvwasi_clock_time_get(uvwasi_t* uvwasi,
     return UVWASI_ESUCCESS;
   } else if (clock_id == UVWASI_CLOCK_PROCESS_CPUTIME_ID ||
              clock_id == UVWASI_CLOCK_THREAD_CPUTIME_ID) {
-    /* TODO(cjihrig): Implement these two clocks. */
+#ifndef _WIN32
+    if (clock_id == UVWASI_CLOCK_PROCESS_CPUTIME_ID)
+      clk = CLOCK_PROCESS_CPUTIME_ID;
+    else
+      clk = CLOCK_THREAD_CPUTIME_ID;
+
+    r = clock_gettime(clk, &ts);
+    if (r != 0)
+      return uvwasi__translate_uv_error(uv_translate_sys_error(errno));
+
+    *time = (ts.tv_sec * NANOS_PER_SEC) + ts.tv_nsec;
+    return UVWASI_ESUCCESS;
+#else
     return UVWASI_ENOSYS;
+#endif /* _WIN32 */
   }
 
   return UVWASI_EINVAL;
