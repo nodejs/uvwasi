@@ -7,12 +7,12 @@
 /* API: https://github.com/WebAssembly/WASI/blob/master/phases/unstable/docs/wasi_unstable_preview0.md */
 
 typedef uint8_t uvwasi_advice_t;
-#define UVWASI_ADVICE_DONTNEED   0
-#define UVWASI_ADVICE_NOREUSE    1
-#define UVWASI_ADVICE_NORMAL     2
-#define UVWASI_ADVICE_RANDOM     3
-#define UVWASI_ADVICE_SEQUENTIAL 4
-#define UVWASI_ADVICE_WILLNEED   5
+#define UVWASI_ADVICE_NORMAL     0
+#define UVWASI_ADVICE_SEQUENTIAL 1
+#define UVWASI_ADVICE_RANDOM     2
+#define UVWASI_ADVICE_WILLNEED   3
+#define UVWASI_ADVICE_DONTNEED   4
+#define UVWASI_ADVICE_NOREUSE    5
 
 typedef struct uvwasi_ciovec_s {
   const void* buf;
@@ -20,9 +20,9 @@ typedef struct uvwasi_ciovec_s {
 } uvwasi_ciovec_t;
 
 typedef uint32_t uvwasi_clockid_t;
-#define UVWASI_CLOCK_MONOTONIC          0
-#define UVWASI_CLOCK_PROCESS_CPUTIME_ID 1
-#define UVWASI_CLOCK_REALTIME           2
+#define UVWASI_CLOCK_REALTIME           0
+#define UVWASI_CLOCK_MONOTONIC          1
+#define UVWASI_CLOCK_PROCESS_CPUTIME_ID 2
 #define UVWASI_CLOCK_THREAD_CPUTIME_ID  3
 
 typedef uint64_t uvwasi_device_t;
@@ -208,8 +208,8 @@ typedef uint64_t uvwasi_rights_t;                /* Bitfield */
 #define UVWASI_RIGHT_FD_FILESTAT_SET_SIZE    (1 << 22)
 #define UVWASI_RIGHT_FD_FILESTAT_SET_TIMES   (1 << 23)
 #define UVWASI_RIGHT_PATH_SYMLINK            (1 << 24)
-#define UVWASI_RIGHT_PATH_UNLINK_FILE        (1 << 25)
-#define UVWASI_RIGHT_PATH_REMOVE_DIRECTORY   (1 << 26)
+#define UVWASI_RIGHT_PATH_REMOVE_DIRECTORY   (1 << 25)
+#define UVWASI_RIGHT_PATH_UNLINK_FILE        (1 << 26)
 #define UVWASI_RIGHT_POLL_FD_READWRITE       (1 << 27)
 #define UVWASI_RIGHT_SOCK_SHUTDOWN           (1 << 28)
 
@@ -223,32 +223,36 @@ typedef uint8_t uvwasi_sdflags_t;                /* Bitfield */
 typedef uint16_t uvwasi_siflags_t;               /* Bitfield */
 
 typedef uint8_t uvwasi_signal_t;
-#define UVWASI_SIGABRT    0
-#define UVWASI_SIGALRM    1
-#define UVWASI_SIGBUS     2
-#define UVWASI_SIGCHLD    3
-#define UVWASI_SIGCONT    4
-#define UVWASI_SIGFPE     5
-#define UVWASI_SIGHUP     6
-#define UVWASI_SIGILL     7
-#define UVWASI_SIGINT     8
+#define UVWASI_SIGHUP     1
+#define UVWASI_SIGINT     2
+#define UVWASI_SIGQUIT    3
+#define UVWASI_SIGILL     4
+#define UVWASI_SIGTRAP    5
+#define UVWASI_SIGABRT    6
+#define UVWASI_SIGBUS     7
+#define UVWASI_SIGFPE     8
 #define UVWASI_SIGKILL    9
-#define UVWASI_SIGPIPE   10
-#define UVWASI_SIGQUIT   11
-#define UVWASI_SIGSEGV   12
-#define UVWASI_SIGSTOP   13
-#define UVWASI_SIGSYS    14
+#define UVWASI_SIGUSR1   10
+#define UVWASI_SIGSEGV   11
+#define UVWASI_SIGUSR2   12
+#define UVWASI_SIGPIPE   13
+#define UVWASI_SIGALRM   14
 #define UVWASI_SIGTERM   15
-#define UVWASI_SIGTRAP   16
-#define UVWASI_SIGTSTP   17
-#define UVWASI_SIGTTIN   18
-#define UVWASI_SIGTTOU   19
-#define UVWASI_SIGURG    20
-#define UVWASI_SIGUSR1   21
-#define UVWASI_SIGUSR2   22
-#define UVWASI_SIGVTALRM 23
-#define UVWASI_SIGXCPU   24
-#define UVWASI_SIGXFSZ   25
+#define UVWASI_SIGCHLD   16
+#define UVWASI_SIGCONT   17
+#define UVWASI_SIGSTOP   18
+#define UVWASI_SIGTSTP   19
+#define UVWASI_SIGTTIN   20
+#define UVWASI_SIGTTOU   21
+#define UVWASI_SIGURG    22
+#define UVWASI_SIGXCPU   23
+#define UVWASI_SIGXFSZ   24
+#define UVWASI_SIGVTALRM 25
+#define UVWASI_SIGPROF   26
+#define UVWASI_SIGWINCH  27
+#define UVWASI_SIGPOLL   28
+#define UVWASI_SIGPWR    29
+#define UVWASI_SIGSYS    30
 
 typedef uint16_t uvwasi_subclockflags_t;         /* Bitfield */
 #define UVWASI_SUBSCRIPTION_CLOCK_ABSTIME (1 << 0)
