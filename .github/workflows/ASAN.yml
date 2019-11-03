@@ -1,0 +1,18 @@
+name: uvwasi asan
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v1
+      - name: Test ASAN
+        continue-on-error: true
+        run: |
+          cmake -DASAN=ON -DCMAKE_BUILD_TYPE=Debug .
+          cmake --build . --target check
+          cmake --build . --target app
