@@ -248,24 +248,26 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   uvwasi->argc = options->argc;
   uvwasi->argv_buf_size = args_size;
 
-  uvwasi->argv_buf = malloc(args_size);
-  if (uvwasi->argv_buf == NULL) {
-    err = UVWASI_ENOMEM;
-    goto exit;
-  }
+  if (args_size > 0) {
+    uvwasi->argv_buf = malloc(args_size);
+    if (uvwasi->argv_buf == NULL) {
+      err = UVWASI_ENOMEM;
+      goto exit;
+    }
 
-  uvwasi->argv = calloc(options->argc, sizeof(char*));
-  if (uvwasi->argv == NULL) {
-    err = UVWASI_ENOMEM;
-    goto exit;
-  }
+    uvwasi->argv = calloc(options->argc, sizeof(char*));
+    if (uvwasi->argv == NULL) {
+      err = UVWASI_ENOMEM;
+      goto exit;
+    }
 
-  offset = 0;
-  for (i = 0; i < options->argc; ++i) {
-    size = strlen(options->argv[i]) + 1;
-    memcpy(uvwasi->argv_buf + offset, options->argv[i], size);
-    uvwasi->argv[i] = uvwasi->argv_buf + offset;
-    offset += size;
+    offset = 0;
+    for (i = 0; i < options->argc; ++i) {
+      size = strlen(options->argv[i]) + 1;
+      memcpy(uvwasi->argv_buf + offset, options->argv[i], size);
+      uvwasi->argv[i] = uvwasi->argv_buf + offset;
+      offset += size;
+    }
   }
 
   env_count = 0;
@@ -280,25 +282,26 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   uvwasi->envc = env_count;
   uvwasi->env_buf_size = env_buf_size;
 
-  /* TODO(cjihrig): Audit allocation sites for zero-sized allocations. */
-  uvwasi->env_buf = malloc(env_buf_size);
-  if (uvwasi->env_buf == NULL) {
-    err = UVWASI_ENOMEM;
-    goto exit;
-  }
+  if (env_buf_size > 0) {
+    uvwasi->env_buf = malloc(env_buf_size);
+    if (uvwasi->env_buf == NULL) {
+      err = UVWASI_ENOMEM;
+      goto exit;
+    }
 
-  uvwasi->env = calloc(env_count, sizeof(char*));
-  if (uvwasi->env == NULL) {
-    err = UVWASI_ENOMEM;
-    goto exit;
-  }
+    uvwasi->env = calloc(env_count, sizeof(char*));
+    if (uvwasi->env == NULL) {
+      err = UVWASI_ENOMEM;
+      goto exit;
+    }
 
-  offset = 0;
-  for (i = 0; i < env_count; ++i) {
-    size = strlen(options->envp[i]) + 1;
-    memcpy(uvwasi->env_buf + offset, options->envp[i], size);
-    uvwasi->env[i] = uvwasi->env_buf + offset;
-    offset += size;
+    offset = 0;
+    for (i = 0; i < env_count; ++i) {
+      size = strlen(options->envp[i]) + 1;
+      memcpy(uvwasi->env_buf + offset, options->envp[i], size);
+      uvwasi->env[i] = uvwasi->env_buf + offset;
+      offset += size;
+    }
   }
 
   for (i = 0; i < options->preopenc; ++i) {
