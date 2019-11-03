@@ -54,6 +54,7 @@ dkms.conf
 out/
 
 .idea/
+cmake-build-debug/
 CMakeCache.txt
 CMakeFiles
 CTestTestfile.cmake
