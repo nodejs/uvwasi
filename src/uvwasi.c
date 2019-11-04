@@ -22,6 +22,7 @@
 #include "uv.h"
 #include "uv_mapping.h"
 #include "fd_table.h"
+#include "clocks.h"
 
 
 static int uvwasi__is_absolute_path(const char* path, size_t path_len) {
@@ -418,37 +419,21 @@ uvwasi_errno_t uvwasi_args_sizes_get(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_clock_res_get(uvwasi_t* uvwasi,
                                     uvwasi_clockid_t clock_id,
                                     uvwasi_timestamp_t* resolution) {
-#ifndef _WIN32
-  struct timespec ts;
-  clockid_t clk;
-#endif /* _WIN32 */
-
   if (uvwasi == NULL || resolution == NULL)
     return UVWASI_EINVAL;
 
-  if (clock_id == UVWASI_CLOCK_MONOTONIC ||
-      clock_id == UVWASI_CLOCK_REALTIME) {
-    *resolution = 1;  /* Nanosecond precision. */
-    return UVWASI_ESUCCESS;
-  } else if (clock_id == UVWASI_CLOCK_PROCESS_CPUTIME_ID ||
-             clock_id == UVWASI_CLOCK_THREAD_CPUTIME_ID) {
-#ifndef _WIN32
-    if (clock_id == UVWASI_CLOCK_PROCESS_CPUTIME_ID)
-      clk = CLOCK_PROCESS_CPUTIME_ID;
-    else
-      clk = CLOCK_THREAD_CPUTIME_ID;
-
-    if (clock_getres(clk, &ts) < 0)
-      return uvwasi__translate_uv_error(uv_translate_sys_error(errno));
-
-    *resolution = (ts.tv_sec * NANOS_PER_SEC) + ts.tv_nsec;
-    return UVWASI_ESUCCESS;
-#else
-    return UVWASI_ENOSYS;
-#endif /* _WIN32 */
+  switch (clock_id) {
+    case UVWASI_CLOCK_MONOTONIC:
+    case UVWASI_CLOCK_REALTIME:
+      *resolution = 1;  /* Nanosecond precision. */
+      return UVWASI_ESUCCESS;
+    case UVWASI_CLOCK_PROCESS_CPUTIME_ID:
+      return uvwasi__clock_getres_process_cputime(resolution);
+    case UVWASI_CLOCK_THREAD_CPUTIME_ID:
+      return uvwasi__clock_getres_thread_cputime(resolution);
+    default:
+      return UVWASI_EINVAL;
   }
-
-  return UVWASI_EINVAL;
 }
 
 
@@ -456,46 +441,22 @@ uvwasi_errno_t uvwasi_clock_time_get(uvwasi_t* uvwasi,
                                      uvwasi_clockid_t clock_id,
                                      uvwasi_timestamp_t precision,
                                      uvwasi_timestamp_t* time) {
-#ifndef _WIN32
-  struct timespec ts;
-  clockid_t clk;
-#endif /* _WIN32 */
-  uv_timeval64_t tv;
-  int r;
-
   if (uvwasi == NULL || time == NULL)
     return UVWASI_EINVAL;
 
-  if (clock_id == UVWASI_CLOCK_MONOTONIC) {
-    *time = uv_hrtime();
-    return UVWASI_ESUCCESS;
-  } else if (clock_id == UVWASI_CLOCK_REALTIME) {
-    r = uv_gettimeofday(&tv);
-    if (r != 0)
-      return uvwasi__translate_uv_error(r);
-
-    *time = (tv.tv_sec * NANOS_PER_SEC) + (tv.tv_usec * 1000);
-    return UVWASI_ESUCCESS;
-  } else if (clock_id == UVWASI_CLOCK_PROCESS_CPUTIME_ID ||
-             clock_id == UVWASI_CLOCK_THREAD_CPUTIME_ID) {
-#ifndef _WIN32
-    if (clock_id == UVWASI_CLOCK_PROCESS_CPUTIME_ID)
-      clk = CLOCK_PROCESS_CPUTIME_ID;
-    else
-      clk = CLOCK_THREAD_CPUTIME_ID;
-
-    r = clock_gettime(clk, &ts);
-    if (r != 0)
-      return uvwasi__translate_uv_error(uv_translate_sys_error(errno));
-
-    *time = (ts.tv_sec * NANOS_PER_SEC) + ts.tv_nsec;
-    return UVWASI_ESUCCESS;
-#else
-    return UVWASI_ENOSYS;
-#endif /* _WIN32 */
+  switch (clock_id) {
+    case UVWASI_CLOCK_MONOTONIC:
+      *time = uv_hrtime();
+      return UVWASI_ESUCCESS;
+    case UVWASI_CLOCK_REALTIME:
+      return uvwasi__clock_gettime_realtime(time);
+    case UVWASI_CLOCK_PROCESS_CPUTIME_ID:
+      return uvwasi__clock_gettime_process_cputime(time);
+    case UVWASI_CLOCK_THREAD_CPUTIME_ID:
+      return uvwasi__clock_gettime_thread_cputime(time);
+    default:
+      return UVWASI_EINVAL;
   }
-
-  return UVWASI_EINVAL;
 }
 
 
