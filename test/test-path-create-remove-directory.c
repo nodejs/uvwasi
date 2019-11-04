@@ -75,5 +75,6 @@ int main(void) {
                                      strlen("../test_dir") + 1);
   assert(err == UVWASI_ENOTCAPABLE);
   uvwasi_destroy(&uvwasi);
+  free(init_options.preopens);
   return 0;
 }
