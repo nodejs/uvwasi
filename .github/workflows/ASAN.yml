@@ -11,7 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Test ASAN
-        continue-on-error: true
         run: |
           cmake -DASAN=ON -DCMAKE_BUILD_TYPE=Debug .
           cmake --build . --target check
