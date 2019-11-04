@@ -181,6 +181,7 @@ int main(void) {
     free(iovecs[i].buf);
 
   free(iovecs);
+  free(init_options.preopens);
 
   return 0;
 }

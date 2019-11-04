@@ -42,6 +42,9 @@ int main(void) {
   assert(strcmp(args_get_argv[2], init_options.argv[2]) == 0);
 
   uvwasi_destroy(&uvwasi);
+  free(init_options.argv);
+  free(args_get_argv);
+  free(buf);
 
   return 0;
 }
