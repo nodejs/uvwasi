@@ -32,6 +32,7 @@ endif()
 
 ## uvwasi source code files.
 set(uvwasi_sources
+    src/clocks.c
     src/fd_table.c
     src/uv_mapping.c
     src/uvwasi.c
