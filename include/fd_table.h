@@ -27,6 +27,7 @@ struct uvwasi_fd_wrap_t {
   uvwasi_rights_t rights_inheriting;
   int preopen;
   int valid;
+  uv_mutex_t mutex;
 };
 
 struct uvwasi_fd_table_t {
