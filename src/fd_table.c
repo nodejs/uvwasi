@@ -190,6 +190,7 @@ static uvwasi_errno_t uvwasi__fd_table_insert(struct uvwasi_fd_table_t* table,
   uint32_t new_size;
   int index;
   uint32_t i;
+  int r;
 
   uv_rwlock_wrlock(&table->rwlock);
 
@@ -226,6 +227,13 @@ static uvwasi_errno_t uvwasi__fd_table_insert(struct uvwasi_fd_table_t* table,
   }
 
   entry = &table->fds[index];
+
+  r = uv_mutex_init(&entry->mutex);
+  if (r != 0) {
+    err = uvwasi__translate_uv_error(r);
+    goto exit;
+  }
+
   entry->id = index;
   entry->fd = fd;
   strcpy(entry->path, mapped_path);
@@ -456,6 +464,7 @@ uvwasi_errno_t uvwasi_fd_table_remove(struct uvwasi_fd_table_t* table,
     goto exit;
   }
 
+  uv_mutex_destroy(&entry->mutex);
   entry->valid = 0;
   table->used--;
   err = UVWASI_ESUCCESS;
