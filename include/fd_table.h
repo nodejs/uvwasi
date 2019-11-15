@@ -33,6 +33,7 @@ struct uvwasi_fd_table_t {
   struct uvwasi_fd_wrap_t* fds;
   uint32_t size;
   uint32_t used;
+  uv_rwlock_t rwlock;
 };
 
 uvwasi_errno_t uvwasi_fd_table_init(struct uvwasi_fd_table_t* table,

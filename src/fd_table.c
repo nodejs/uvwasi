@@ -186,16 +186,21 @@ static uvwasi_errno_t uvwasi__fd_table_insert(struct uvwasi_fd_table_t* table,
                                               struct uvwasi_fd_wrap_t** wrap) {
   struct uvwasi_fd_wrap_t* entry;
   struct uvwasi_fd_wrap_t* new_fds;
+  uvwasi_errno_t err;
   uint32_t new_size;
   int index;
   uint32_t i;
+
+  uv_rwlock_wrlock(&table->rwlock);
 
   /* Check that there is room for a new item. If there isn't, grow the table. */
   if (table->used >= table->size) {
     new_size = table->size * 2;
     new_fds = realloc(table->fds, new_size * sizeof(*new_fds));
-    if (new_fds == NULL)
-      return UVWASI_ENOMEM;
+    if (new_fds == NULL) {
+      err = UVWASI_ENOMEM;
+      goto exit;
+    }
 
     for (i = table->size; i < new_size; ++i)
       new_fds[i].valid = 0;
@@ -214,8 +219,10 @@ static uvwasi_errno_t uvwasi__fd_table_insert(struct uvwasi_fd_table_t* table,
     }
 
     /* index should never be -1. */
-    if (index == -1)
-      return UVWASI_ENOSPC;
+    if (index == -1) {
+      err = UVWASI_ENOSPC;
+      goto exit;
+    }
   }
 
   entry = &table->fds[index];
@@ -233,7 +240,10 @@ static uvwasi_errno_t uvwasi__fd_table_insert(struct uvwasi_fd_table_t* table,
   if (wrap != NULL)
     *wrap = entry;
 
-  return UVWASI_ESUCCESS;
+  err = UVWASI_ESUCCESS;
+exit:
+  uv_rwlock_wrunlock(&table->rwlock);
+  return err;
 }
 
 
@@ -245,17 +255,25 @@ uvwasi_errno_t uvwasi_fd_table_init(struct uvwasi_fd_table_t* table,
   uvwasi_rights_t inheriting;
   uvwasi_errno_t err;
   uvwasi_fd_t i;
+  int r;
 
   /* Require an initial size of at least three to store the stdio FDs. */
   if (table == NULL || init_size < 3)
     return UVWASI_EINVAL;
 
+  table->fds = NULL;
+  r = uv_rwlock_init(&table->rwlock);
+  if (r != 0)
+    return uvwasi__translate_uv_error(r);
+
   table->used = 0;
   table->size = init_size;
   table->fds = calloc(init_size, sizeof(struct uvwasi_fd_wrap_t));
 
-  if (table->fds == NULL)
-    return UVWASI_ENOMEM;
+  if (table->fds == NULL) {
+    err = UVWASI_ENOMEM;
+    goto error_exit;
+  }
 
   /* Create the stdio FDs. */
   for (i = 0; i < 3; ++i) {
@@ -300,6 +318,7 @@ void uvwasi_fd_table_free(struct uvwasi_fd_table_t* table) {
   table->fds = NULL;
   table->size = 0;
   table->used = 0;
+  uv_rwlock_destroy(&table->rwlock);
 }
 
 
@@ -381,42 +400,66 @@ uvwasi_errno_t uvwasi_fd_table_get(const struct uvwasi_fd_table_t* table,
                                    uvwasi_rights_t rights_base,
                                    uvwasi_rights_t rights_inheriting) {
   struct uvwasi_fd_wrap_t* entry;
+  uvwasi_errno_t err;
 
   if (table == NULL || wrap == NULL)
     return UVWASI_EINVAL;
-  if (id >= table->size)
-    return UVWASI_EBADF;
+
+  uv_rwlock_rdlock((uv_rwlock_t *)&table->rwlock);
+
+  if (id >= table->size) {
+    err = UVWASI_EBADF;
+    goto exit;
+  }
 
   entry = &table->fds[id];
 
-  if (entry->valid != 1 || entry->id != id)
-    return UVWASI_EBADF;
+  if (entry->valid != 1 || entry->id != id) {
+    err = UVWASI_EBADF;
+    goto exit;
+  }
 
   /* Validate that the fd has the necessary rights. */
   if ((~entry->rights_base & rights_base) != 0 ||
-      (~entry->rights_inheriting & rights_inheriting) != 0)
-    return UVWASI_ENOTCAPABLE;
+      (~entry->rights_inheriting & rights_inheriting) != 0) {
+    err = UVWASI_ENOTCAPABLE;
+    goto exit;
+  }
 
   *wrap = entry;
-  return UVWASI_ESUCCESS;
+  err = UVWASI_ESUCCESS;
+exit:
+  uv_rwlock_rdunlock((uv_rwlock_t *)&table->rwlock);
+  return err;
 }
 
 
 uvwasi_errno_t uvwasi_fd_table_remove(struct uvwasi_fd_table_t* table,
                                       const uvwasi_fd_t id) {
   struct uvwasi_fd_wrap_t* entry;
+  uvwasi_errno_t err;
 
   if (table == NULL)
     return UVWASI_EINVAL;
-  if (id >= table->size)
-    return UVWASI_EBADF;
+
+  uv_rwlock_wrlock(&table->rwlock);
+
+  if (id >= table->size) {
+    err = UVWASI_EBADF;
+    goto exit;
+  }
 
   entry = &table->fds[id];
 
-  if (entry->valid != 1 || entry->id != id)
-    return UVWASI_EBADF;
+  if (entry->valid != 1 || entry->id != id) {
+    err = UVWASI_EBADF;
+    goto exit;
+  }
 
   entry->valid = 0;
   table->used--;
-  return UVWASI_ESUCCESS;
+  err = UVWASI_ESUCCESS;
+exit:
+  uv_rwlock_wrunlock(&table->rwlock);
+  return err;
 }
