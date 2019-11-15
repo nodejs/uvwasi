@@ -1178,6 +1178,9 @@ uvwasi_errno_t uvwasi_fd_renumber(uvwasi_t* uvwasi,
   if (uvwasi == NULL)
     return UVWASI_EINVAL;
 
+  if (from == to)
+    return UVWASI_ESUCCESS;
+
   err = uvwasi_fd_table_get(&uvwasi->fds, from, &from_wrap, 0, 0);
   if (err != UVWASI_ESUCCESS)
     return err;
