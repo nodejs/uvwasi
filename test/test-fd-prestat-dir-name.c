@@ -49,6 +49,7 @@ int main(void) {
   assert(err == 0);
   assert(strcmp(prestat_buf, init_options.preopens[0].mapped_path) == 0);
   free(prestat_buf);
+  free(init_options.preopens);
   uvwasi_destroy(&uvwasi);
   return 0;
 }
