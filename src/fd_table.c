@@ -434,6 +434,7 @@ uvwasi_errno_t uvwasi_fd_table_get(const struct uvwasi_fd_table_t* table,
     goto exit;
   }
 
+  uv_mutex_lock(&entry->mutex);
   *wrap = entry;
   err = UVWASI_ESUCCESS;
 exit:
