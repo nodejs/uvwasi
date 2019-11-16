@@ -382,6 +382,7 @@ uvwasi_errno_t uvwasi_embedder_remap_fd(uvwasi_t* uvwasi,
     return err;
 
   wrap->fd = new_host_fd;
+  uv_mutex_unlock(&wrap->mutex);
   return UVWASI_ESUCCESS;
 }
 
@@ -540,12 +541,15 @@ uvwasi_errno_t uvwasi_fd_advise(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
+  err = UVWASI_ESUCCESS;
+
 #ifdef POSIX_FADV_NORMAL
   r = posix_fadvise(wrap->fd, offset, len, mapped_advice);
   if (r != 0)
-    return uvwasi__translate_uv_error(uv_translate_sys_error(r));
+    err = uvwasi__translate_uv_error(uv_translate_sys_error(r));
 #endif /* POSIX_FADV_NORMAL */
-  return UVWASI_ESUCCESS;
+  uv_mutex_unlock(&wrap->mutex);
+  return err;
 }
 
 
@@ -576,23 +580,32 @@ uvwasi_errno_t uvwasi_fd_allocate(uvwasi_t* uvwasi,
      race condition prone combination of fstat() + ftruncate(). */
 #if defined(__POSIX__)
   r = posix_fallocate(wrap->fd, offset, len);
-  if (r != 0)
-    return uvwasi__translate_uv_error(uv_translate_sys_error(r));
+  if (r != 0) {
+    err = uvwasi__translate_uv_error(uv_translate_sys_error(r));
+    goto exit;
+  }
 #else
   r = uv_fs_fstat(NULL, &req, wrap->fd, NULL);
   st_size = req.statbuf.st_size;
   uv_fs_req_cleanup(&req);
-  if (r != 0)
-    return uvwasi__translate_uv_error(r);
+  if (r != 0) {
+    err = uvwasi__translate_uv_error(r);
+    goto exit;
+  }
 
   if (st_size < offset + len) {
     r = uv_fs_ftruncate(NULL, &req, wrap->fd, offset + len, NULL);
-    if (r != 0)
-      return uvwasi__translate_uv_error(r);
+    if (r != 0) {
+      err = uvwasi__translate_uv_error(r);
+      goto exit;
+    }
   }
 #endif /* __POSIX__ */
 
-  return UVWASI_ESUCCESS;
+  err = UVWASI_ESUCCESS;
+exit:
+  uv_mutex_unlock(&wrap->mutex);
+  return err;
 }
 
 
@@ -610,6 +623,7 @@ uvwasi_errno_t uvwasi_fd_close(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
     return err;
 
   r = uv_fs_close(NULL, &req, wrap->fd, NULL);
+  uv_mutex_unlock(&wrap->mutex);
   uv_fs_req_cleanup(&req);
 
   if (r != 0)
@@ -637,6 +651,7 @@ uvwasi_errno_t uvwasi_fd_datasync(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
     return err;
 
   r = uv_fs_fdatasync(NULL, &req, wrap->fd, NULL);
+  uv_mutex_unlock(&wrap->mutex);
   uv_fs_req_cleanup(&req);
 
   if (r != 0)
@@ -669,11 +684,15 @@ uvwasi_errno_t uvwasi_fd_fdstat_get(uvwasi_t* uvwasi,
   buf->fs_flags = 0;  /* TODO(cjihrig): Missing Windows support. */
 #else
   r = fcntl(wrap->fd, F_GETFL);
-  if (r < 0)
-    return uvwasi__translate_uv_error(uv_translate_sys_error(errno));
+  if (r < 0) {
+    err = uvwasi__translate_uv_error(uv_translate_sys_error(errno));
+    uv_mutex_unlock(&wrap->mutex);
+    return err;
+  }
   buf->fs_flags = r;
 #endif /* _WIN32 */
 
+  uv_mutex_unlock(&wrap->mutex);
   return UVWASI_ESUCCESS;
 }
 
@@ -728,9 +747,12 @@ uvwasi_errno_t uvwasi_fd_fdstat_set_flags(uvwasi_t* uvwasi,
 
   r = fcntl(wrap->fd, F_SETFL, mapped_flags);
   if (r < 0)
-    return uvwasi__translate_uv_error(uv_translate_sys_error(errno));
+    err = uvwasi__translate_uv_error(uv_translate_sys_error(errno));
+  else
+    err = UVWASI_ESUCCESS;
 
-  return UVWASI_ESUCCESS;
+  uv_mutex_unlock(&wrap->mutex);
+  return err;
 #endif /* _WIN32 */
 }
 
@@ -751,16 +773,23 @@ uvwasi_errno_t uvwasi_fd_fdstat_set_rights(uvwasi_t* uvwasi,
     return err;
 
   /* Check for attempts to add new permissions. */
-  if ((fs_rights_base | wrap->rights_base) > wrap->rights_base)
-    return UVWASI_ENOTCAPABLE;
+  if ((fs_rights_base | wrap->rights_base) > wrap->rights_base) {
+    err = UVWASI_ENOTCAPABLE;
+    goto exit;
+  }
+
   if ((fs_rights_inheriting | wrap->rights_inheriting) >
       wrap->rights_inheriting) {
-    return UVWASI_ENOTCAPABLE;
+    err = UVWASI_ENOTCAPABLE;
+    goto exit;
   }
 
   wrap->rights_base = fs_rights_base;
   wrap->rights_inheriting = fs_rights_inheriting;
-  return UVWASI_ESUCCESS;
+  err = UVWASI_ESUCCESS;
+exit:
+  uv_mutex_unlock(&wrap->mutex);
+  return err;
 }
 
 
@@ -785,14 +814,16 @@ uvwasi_errno_t uvwasi_fd_filestat_get(uvwasi_t* uvwasi,
 
   r = uv_fs_fstat(NULL, &req, wrap->fd, NULL);
   if (r != 0) {
-    uv_fs_req_cleanup(&req);
-    return uvwasi__translate_uv_error(r);
+    err = uvwasi__translate_uv_error(r);
+    goto exit;
   }
 
   uvwasi__stat_to_filestat(&req.statbuf, buf);
+  err = UVWASI_ESUCCESS;
+exit:
+  uv_mutex_unlock(&wrap->mutex);
   uv_fs_req_cleanup(&req);
-
-  return UVWASI_ESUCCESS;
+  return err;
 }
 
 
@@ -817,6 +848,7 @@ uvwasi_errno_t uvwasi_fd_filestat_set_size(uvwasi_t* uvwasi,
     return err;
 
   r = uv_fs_ftruncate(NULL, &req, wrap->fd, st_size, NULL);
+  uv_mutex_unlock(&wrap->mutex);
   uv_fs_req_cleanup(&req);
 
   if (r != 0)
@@ -855,6 +887,7 @@ uvwasi_errno_t uvwasi_fd_filestat_set_times(uvwasi_t* uvwasi,
 
   /* TODO(cjihrig): st_atim and st_mtim should not be unconditionally passed. */
   r = uv_fs_futime(NULL, &req, wrap->fd, st_atim, st_mtim, NULL);
+  uv_mutex_unlock(&wrap->mutex);
   uv_fs_req_cleanup(&req);
 
   if (r != 0)
@@ -889,10 +922,13 @@ uvwasi_errno_t uvwasi_fd_pread(uvwasi_t* uvwasi,
     return err;
 
   err = uvwasi__setup_iovs(&bufs, iovs, iovs_len);
-  if (err != UVWASI_ESUCCESS)
+  if (err != UVWASI_ESUCCESS) {
+    uv_mutex_unlock(&wrap->mutex);
     return err;
+  }
 
   r = uv_fs_read(NULL, &req, wrap->fd, bufs, iovs_len, offset, NULL);
+  uv_mutex_unlock(&wrap->mutex);
   uvread = req.result;
   uv_fs_req_cleanup(&req);
   free(bufs);
@@ -917,12 +953,17 @@ uvwasi_errno_t uvwasi_fd_prestat_get(uvwasi_t* uvwasi,
   err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, 0, 0);
   if (err != UVWASI_ESUCCESS)
     return err;
-  if (wrap->preopen != 1)
-    return UVWASI_EINVAL;
+  if (wrap->preopen != 1) {
+    err = UVWASI_EINVAL;
+    goto exit;
+  }
 
   buf->pr_type = UVWASI_PREOPENTYPE_DIR;
   buf->u.dir.pr_name_len = strlen(wrap->path) + 1;
-  return UVWASI_ESUCCESS;
+  err = UVWASI_ESUCCESS;
+exit:
+  uv_mutex_unlock(&wrap->mutex);
+  return err;
 }
 
 
@@ -940,15 +981,22 @@ uvwasi_errno_t uvwasi_fd_prestat_dir_name(uvwasi_t* uvwasi,
   err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, 0, 0);
   if (err != UVWASI_ESUCCESS)
     return err;
-  if (wrap->preopen != 1)
-    return UVWASI_EBADF;
+  if (wrap->preopen != 1) {
+    err = UVWASI_EBADF;
+    goto exit;
+  }
 
   size = strlen(wrap->path) + 1;
-  if (size > path_len)
-    return UVWASI_ENOBUFS;
+  if (size > path_len) {
+    err = UVWASI_ENOBUFS;
+    goto exit;
+  }
 
   memcpy(path, wrap->path, size);
-  return UVWASI_ESUCCESS;
+  err = UVWASI_ESUCCESS;
+exit:
+  uv_mutex_unlock(&wrap->mutex);
+  return err;
 }
 
 
@@ -977,10 +1025,13 @@ uvwasi_errno_t uvwasi_fd_pwrite(uvwasi_t* uvwasi,
     return err;
 
   err = uvwasi__setup_ciovs(&bufs, iovs, iovs_len);
-  if (err != UVWASI_ESUCCESS)
+  if (err != UVWASI_ESUCCESS) {
+    uv_mutex_unlock(&wrap->mutex);
     return err;
+  }
 
   r = uv_fs_write(NULL, &req, wrap->fd, bufs, iovs_len, offset, NULL);
+  uv_mutex_unlock(&wrap->mutex);
   uvwritten = req.result;
   uv_fs_req_cleanup(&req);
   free(bufs);
@@ -1013,10 +1064,13 @@ uvwasi_errno_t uvwasi_fd_read(uvwasi_t* uvwasi,
     return err;
 
   err = uvwasi__setup_iovs(&bufs, iovs, iovs_len);
-  if (err != UVWASI_ESUCCESS)
+  if (err != UVWASI_ESUCCESS) {
+    uv_mutex_unlock(&wrap->mutex);
     return err;
+  }
 
   r = uv_fs_read(NULL, &req, wrap->fd, bufs, iovs_len, -1, NULL);
+  uv_mutex_unlock(&wrap->mutex);
   uvread = req.result;
   uv_fs_req_cleanup(&req);
   free(bufs);
@@ -1063,8 +1117,10 @@ uvwasi_errno_t uvwasi_fd_readdir(uvwasi_t* uvwasi,
 
   /* Open the directory. */
   r = uv_fs_opendir(NULL, &req, wrap->real_path, NULL);
-  if (r != 0)
+  if (r != 0) {
+    uv_mutex_unlock(&wrap->mutex);
     return uvwasi__translate_uv_error(r);
+  }
 
   /* Setup for reading the directory. */
   dir = req.ptr;
@@ -1158,6 +1214,7 @@ uvwasi_errno_t uvwasi_fd_readdir(uvwasi_t* uvwasi,
 exit:
   /* Close the directory. */
   r = uv_fs_closedir(NULL, &req, dir, NULL);
+  uv_mutex_unlock(&wrap->mutex);
   uv_fs_req_cleanup(&req);
   if (r != 0)
     return uvwasi__translate_uv_error(r);
@@ -1186,17 +1243,23 @@ uvwasi_errno_t uvwasi_fd_renumber(uvwasi_t* uvwasi,
     return err;
 
   err = uvwasi_fd_table_get(&uvwasi->fds, to, &to_wrap, 0, 0);
-  if (err != UVWASI_ESUCCESS)
+  if (err != UVWASI_ESUCCESS) {
+    uv_mutex_unlock(&from_wrap->mutex);
     return err;
+  }
 
   r = uv_fs_close(NULL, &req, to_wrap->fd, NULL);
   uv_fs_req_cleanup(&req);
-  if (r != 0)
+  if (r != 0) {
+    uv_mutex_unlock(&from_wrap->mutex);
+    uv_mutex_unlock(&to_wrap->mutex);
     return uvwasi__translate_uv_error(r);
+  }
 
   memcpy(to_wrap, from_wrap, sizeof(*to_wrap));
   to_wrap->id = to;
-
+  uv_mutex_unlock(&from_wrap->mutex);
+  uv_mutex_unlock(&to_wrap->mutex);
   return uvwasi_fd_table_remove(&uvwasi->fds, from);
 }
 
@@ -1216,7 +1279,9 @@ uvwasi_errno_t uvwasi_fd_seek(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  return uvwasi__lseek(wrap->fd, offset, whence, newoffset);
+  err = uvwasi__lseek(wrap->fd, offset, whence, newoffset);
+  uv_mutex_unlock(&wrap->mutex);
+  return err;
 }
 
 
@@ -1238,6 +1303,7 @@ uvwasi_errno_t uvwasi_fd_sync(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
     return err;
 
   r = uv_fs_fsync(NULL, &req, wrap->fd, NULL);
+  uv_mutex_unlock(&wrap->mutex);
   uv_fs_req_cleanup(&req);
 
   if (r != 0)
@@ -1260,7 +1326,9 @@ uvwasi_errno_t uvwasi_fd_tell(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  return uvwasi__lseek(wrap->fd, 0, UVWASI_WHENCE_CUR, offset);
+  err = uvwasi__lseek(wrap->fd, 0, UVWASI_WHENCE_CUR, offset);
+  uv_mutex_unlock(&wrap->mutex);
+  return err;
 }
 
 
@@ -1284,10 +1352,13 @@ uvwasi_errno_t uvwasi_fd_write(uvwasi_t* uvwasi,
     return err;
 
   err = uvwasi__setup_ciovs(&bufs, iovs, iovs_len);
-  if (err != UVWASI_ESUCCESS)
+  if (err != UVWASI_ESUCCESS) {
+    uv_mutex_unlock(&wrap->mutex);
     return err;
+  }
 
   r = uv_fs_write(NULL, &req, wrap->fd, bufs, iovs_len, -1, NULL);
+  uv_mutex_unlock(&wrap->mutex);
   uvwritten = req.result;
   uv_fs_req_cleanup(&req);
   free(bufs);
@@ -1323,15 +1394,20 @@ uvwasi_errno_t uvwasi_path_create_directory(uvwasi_t* uvwasi,
 
   err = uvwasi__resolve_path(wrap, path, path_len, resolved_path, 0);
   if (err != UVWASI_ESUCCESS)
-    return err;
+    goto exit;
 
   r = uv_fs_mkdir(NULL, &req, resolved_path, 0777, NULL);
   uv_fs_req_cleanup(&req);
 
-  if (r != 0)
-    return uvwasi__translate_uv_error(r);
+  if (r != 0) {
+    err = uvwasi__translate_uv_error(r);
+    goto exit;
+  }
 
-  return UVWASI_ESUCCESS;
+  err = UVWASI_ESUCCESS;
+exit:
+  uv_mutex_unlock(&wrap->mutex);
+  return err;
 }
 
 
@@ -1360,18 +1436,21 @@ uvwasi_errno_t uvwasi_path_filestat_get(uvwasi_t* uvwasi,
 
   err = uvwasi__resolve_path(wrap, path, path_len, resolved_path, flags);
   if (err != UVWASI_ESUCCESS)
-    return err;
+    goto exit;
 
   r = uv_fs_stat(NULL, &req, resolved_path, NULL);
   if (r != 0) {
     uv_fs_req_cleanup(&req);
-    return uvwasi__translate_uv_error(r);
+    err = uvwasi__translate_uv_error(r);
+    goto exit;
   }
 
   uvwasi__stat_to_filestat(&req.statbuf, buf);
   uv_fs_req_cleanup(&req);
-
-  return UVWASI_ESUCCESS;
+  err = UVWASI_ESUCCESS;
+exit:
+  uv_mutex_unlock(&wrap->mutex);
+  return err;
 }
 
 
@@ -1408,16 +1487,21 @@ uvwasi_errno_t uvwasi_path_filestat_set_times(uvwasi_t* uvwasi,
 
   err = uvwasi__resolve_path(wrap, path, path_len, resolved_path, flags);
   if (err != UVWASI_ESUCCESS)
-    return err;
+    goto exit;
 
   /* TODO(cjihrig): st_atim and st_mtim should not be unconditionally passed. */
   r = uv_fs_utime(NULL, &req, resolved_path, st_atim, st_mtim, NULL);
   uv_fs_req_cleanup(&req);
 
-  if (r != 0)
-    return uvwasi__translate_uv_error(r);
+  if (r != 0) {
+    err = uvwasi__translate_uv_error(r);
+    goto exit;
+  }
 
-  return UVWASI_ESUCCESS;
+  err = UVWASI_ESUCCESS;
+exit:
+  uv_mutex_unlock(&wrap->mutex);
+  return err;
 }
 
 
@@ -1440,21 +1524,36 @@ uvwasi_errno_t uvwasi_path_link(uvwasi_t* uvwasi,
   if (uvwasi == NULL || old_path == NULL || new_path == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
-                            old_fd,
-                            &old_wrap,
-                            UVWASI_RIGHT_PATH_LINK_SOURCE,
-                            0);
-  if (err != UVWASI_ESUCCESS)
-    return err;
+  if (old_fd == new_fd) {
+    err = uvwasi_fd_table_get(&uvwasi->fds,
+                              old_fd,
+                              &old_wrap,
+                              UVWASI_RIGHT_PATH_LINK_SOURCE |
+                              UVWASI_RIGHT_PATH_LINK_TARGET,
+                              0);
+    if (err != UVWASI_ESUCCESS)
+      return err;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
-                            new_fd,
-                            &new_wrap,
-                            UVWASI_RIGHT_PATH_LINK_TARGET,
-                            0);
-  if (err != UVWASI_ESUCCESS)
-    return err;
+    new_wrap = old_wrap;
+  } else {
+    err = uvwasi_fd_table_get(&uvwasi->fds,
+                              old_fd,
+                              &old_wrap,
+                              UVWASI_RIGHT_PATH_LINK_SOURCE,
+                              0);
+    if (err != UVWASI_ESUCCESS)
+      return err;
+
+    err = uvwasi_fd_table_get(&uvwasi->fds,
+                              new_fd,
+                              &new_wrap,
+                              UVWASI_RIGHT_PATH_LINK_TARGET,
+                              0);
+    if (err != UVWASI_ESUCCESS) {
+      uv_mutex_unlock(&old_wrap->mutex);
+      return err;
+    }
+  }
 
   err = uvwasi__resolve_path(old_wrap,
                              old_path,
@@ -1462,7 +1561,7 @@ uvwasi_errno_t uvwasi_path_link(uvwasi_t* uvwasi,
                              resolved_old_path,
                              old_flags);
   if (err != UVWASI_ESUCCESS)
-    return err;
+    goto exit;
 
   err = uvwasi__resolve_path(new_wrap,
                              new_path,
@@ -1470,14 +1569,21 @@ uvwasi_errno_t uvwasi_path_link(uvwasi_t* uvwasi,
                              resolved_new_path,
                              0);
   if (err != UVWASI_ESUCCESS)
-    return err;
+    goto exit;
 
   r = uv_fs_link(NULL, &req, resolved_old_path, resolved_new_path, NULL);
   uv_fs_req_cleanup(&req);
-  if (r != 0)
-    return uvwasi__translate_uv_error(r);
+  if (r != 0) {
+    err = uvwasi__translate_uv_error(r);
+    goto exit;
+  }
 
-  return UVWASI_ESUCCESS;
+  err = UVWASI_ESUCCESS;
+exit:
+  uv_mutex_unlock(&old_wrap->mutex);
+  if (old_fd != new_fd)
+    uv_mutex_unlock(&new_wrap->mutex);
+  return err;
 }
 
 
@@ -1565,14 +1671,18 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
                              path_len,
                              resolved_path,
                              dirflags);
-  if (err != UVWASI_ESUCCESS)
+  if (err != UVWASI_ESUCCESS) {
+    uv_mutex_unlock(&dirfd_wrap->mutex);
     return err;
+  }
 
   r = uv_fs_open(NULL, &req, resolved_path, flags, 0666, NULL);
   uv_fs_req_cleanup(&req);
 
-  if (r < 0)
+  if (r < 0) {
+    uv_mutex_unlock(&dirfd_wrap->mutex);
     return uvwasi__translate_uv_error(r);
+  }
 
   err = uvwasi_fd_table_insert_fd(&uvwasi->fds,
                                   r,
@@ -1581,18 +1691,22 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
                                   fs_rights_base,
                                   fs_rights_inheriting,
                                   &wrap);
-  if (err != UVWASI_ESUCCESS)
+  if (err != UVWASI_ESUCCESS) {
+    uv_mutex_unlock(&dirfd_wrap->mutex);
     goto close_file_and_error_exit;
+  }
 
   /* Not all platforms support UV_FS_O_DIRECTORY, so enforce it here as well. */
   if ((o_flags & UVWASI_O_DIRECTORY) != 0 &&
       wrap.type != UVWASI_FILETYPE_DIRECTORY) {
+    uv_mutex_unlock(&dirfd_wrap->mutex);
     uvwasi_fd_table_remove(&uvwasi->fds, wrap.id);
     err = UVWASI_ENOTDIR;
     goto close_file_and_error_exit;
   }
 
   *fd = wrap.id;
+  uv_mutex_unlock(&dirfd_wrap->mutex);
   return UVWASI_ESUCCESS;
 
 close_file_and_error_exit:
@@ -1628,10 +1742,13 @@ uvwasi_errno_t uvwasi_path_readlink(uvwasi_t* uvwasi,
     return err;
 
   err = uvwasi__resolve_path(wrap, path, path_len, resolved_path, 0);
-  if (err != UVWASI_ESUCCESS)
+  if (err != UVWASI_ESUCCESS) {
+    uv_mutex_unlock(&wrap->mutex);
     return err;
+  }
 
   r = uv_fs_readlink(NULL, &req, resolved_path, NULL);
+  uv_mutex_unlock(&wrap->mutex);
   if (r != 0) {
     uv_fs_req_cleanup(&req);
     return uvwasi__translate_uv_error(r);
@@ -1673,10 +1790,13 @@ uvwasi_errno_t uvwasi_path_remove_directory(uvwasi_t* uvwasi,
     return err;
 
   err = uvwasi__resolve_path(wrap, path, path_len, resolved_path, 0);
-  if (err != UVWASI_ESUCCESS)
+  if (err != UVWASI_ESUCCESS) {
+    uv_mutex_unlock(&wrap->mutex);
     return err;
+  }
 
   r = uv_fs_rmdir(NULL, &req, resolved_path, NULL);
+  uv_mutex_unlock(&wrap->mutex);
   uv_fs_req_cleanup(&req);
 
   if (r != 0)
@@ -1704,21 +1824,35 @@ uvwasi_errno_t uvwasi_path_rename(uvwasi_t* uvwasi,
   if (uvwasi == NULL || old_path == NULL || new_path == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
-                            old_fd,
-                            &old_wrap,
-                            UVWASI_RIGHT_PATH_RENAME_SOURCE,
-                            0);
-  if (err != UVWASI_ESUCCESS)
-    return err;
+  if (old_fd == new_fd) {
+    err = uvwasi_fd_table_get(&uvwasi->fds,
+                              old_fd,
+                              &old_wrap,
+                              UVWASI_RIGHT_PATH_RENAME_SOURCE |
+                              UVWASI_RIGHT_PATH_RENAME_TARGET,
+                              0);
+    if (err != UVWASI_ESUCCESS)
+      return err;
+    new_wrap = old_wrap;
+  } else {
+    err = uvwasi_fd_table_get(&uvwasi->fds,
+                              old_fd,
+                              &old_wrap,
+                              UVWASI_RIGHT_PATH_RENAME_SOURCE,
+                              0);
+    if (err != UVWASI_ESUCCESS)
+      return err;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
-                            new_fd,
-                            &new_wrap,
-                            UVWASI_RIGHT_PATH_RENAME_TARGET,
-                            0);
-  if (err != UVWASI_ESUCCESS)
-    return err;
+    err = uvwasi_fd_table_get(&uvwasi->fds,
+                              new_fd,
+                              &new_wrap,
+                              UVWASI_RIGHT_PATH_RENAME_TARGET,
+                              0);
+    if (err != UVWASI_ESUCCESS) {
+      uv_mutex_unlock(&old_wrap->mutex);
+      return err;
+    }
+  }
 
   err = uvwasi__resolve_path(old_wrap,
                              old_path,
@@ -1726,7 +1860,7 @@ uvwasi_errno_t uvwasi_path_rename(uvwasi_t* uvwasi,
                              resolved_old_path,
                              0);
   if (err != UVWASI_ESUCCESS)
-    return err;
+    goto exit;
 
   err = uvwasi__resolve_path(new_wrap,
                              new_path,
@@ -1734,14 +1868,22 @@ uvwasi_errno_t uvwasi_path_rename(uvwasi_t* uvwasi,
                              resolved_new_path,
                              0);
   if (err != UVWASI_ESUCCESS)
-    return err;
+    goto exit;
 
   r = uv_fs_rename(NULL, &req, resolved_old_path, resolved_new_path, NULL);
   uv_fs_req_cleanup(&req);
-  if (r != 0)
-    return uvwasi__translate_uv_error(r);
+  if (r != 0) {
+    err = uvwasi__translate_uv_error(r);
+    goto exit;
+  }
 
-  return UVWASI_ESUCCESS;
+  err = UVWASI_ESUCCESS;
+exit:
+  uv_mutex_unlock(&old_wrap->mutex);
+  if (old_fd != new_fd)
+    uv_mutex_unlock(&new_wrap->mutex);
+
+  return err;
 }
 
 
@@ -1773,11 +1915,14 @@ uvwasi_errno_t uvwasi_path_symlink(uvwasi_t* uvwasi,
                              new_path_len,
                              resolved_new_path,
                              0);
-  if (err != UVWASI_ESUCCESS)
+  if (err != UVWASI_ESUCCESS) {
+    uv_mutex_unlock(&wrap->mutex);
     return err;
+  }
 
   /* Windows support may require setting the flags option. */
   r = uv_fs_symlink(NULL, &req, old_path, resolved_new_path, 0, NULL);
+  uv_mutex_unlock(&wrap->mutex);
   uv_fs_req_cleanup(&req);
   if (r != 0)
     return uvwasi__translate_uv_error(r);
@@ -1808,10 +1953,13 @@ uvwasi_errno_t uvwasi_path_unlink_file(uvwasi_t* uvwasi,
     return err;
 
   err = uvwasi__resolve_path(wrap, path, path_len, resolved_path, 0);
-  if (err != UVWASI_ESUCCESS)
+  if (err != UVWASI_ESUCCESS) {
+    uv_mutex_unlock(&wrap->mutex);
     return err;
+  }
 
   r = uv_fs_unlink(NULL, &req, resolved_path, NULL);
+  uv_mutex_unlock(&wrap->mutex);
   uv_fs_req_cleanup(&req);
 
   if (r != 0)
