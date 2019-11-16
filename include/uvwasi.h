@@ -20,6 +20,7 @@ extern "C" {
 #define UVWASI_VERSION_STRING UVWASI_STRINGIFY(UVWASI_VERSION_MAJOR) "." \
                               UVWASI_STRINGIFY(UVWASI_VERSION_MINOR) "." \
                               UVWASI_STRINGIFY(UVWASI_VERSION_PATCH)
+#define UVWASI_VERSION_WASI "snapshot_0"
 
 
 typedef struct uvwasi_s {
