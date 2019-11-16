@@ -42,9 +42,9 @@ int main(void) {
 
 ## API
 
-The WASI API is versioned. This documentation is based on
-[wasi_unstable_preview0][]. `uvwasi` implements the WASI system call API with
-the following additions/modifications:
+The WASI API is versioned. This documentation is based on [snapshot_0][].
+`uvwasi` implements the WASI system call API with the following
+additions/modifications:
 
 - Each system call takes an additional `uvwasi_t*` as its first argument. The
   `uvwasi_t` is the sandbox under which system calls are issued. Each `uvwasi_t`
@@ -2438,4 +2438,4 @@ Possible values:
 
 [WASI]: https://github.com/WebAssembly/WASI
 [libuv]: https://github.com/libuv/libuv
-[wasi_unstable_preview0]: https://github.com/WebAssembly/WASI/blob/master/phases/old/docs/wasi_unstable_preview0.md
+[snapshot_0]: https://github.com/WebAssembly/WASI/blob/master/phases/old/snapshot_0/docs/wasi_unstable.md
