@@ -88,6 +88,11 @@ integer value.
 The major, minor, and patch versions of the `uvwasi` library encoded as a
 version string.
 
+### <a href="#version_wasi" name="version_wasi"></a>`UVWASI_VERSION_WASI`
+
+The version of the WASI API targeted by `uvwasi`.
+
+
 ### <a href="#uvwasi_t" name="uvwasi_t"></a>`uvwasi_t`
 
 An individual WASI sandbox instance.
