@@ -28,6 +28,7 @@ int main(void) {
   init_options.envp = NULL;
   init_options.preopenc = 0;
   init_options.preopens = NULL;
+  init_options.allocator = NULL;
   err = uvwasi_init(&uvw, &init_options);
   assert(err == 0);
 

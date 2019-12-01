@@ -19,10 +19,55 @@
 #define UVWASI__READDIR_NUM_ENTRIES 1
 
 #include "uvwasi.h"
+#include "uvwasi_alloc.h"
 #include "uv.h"
 #include "uv_mapping.h"
 #include "fd_table.h"
 #include "clocks.h"
+
+static void* default_malloc(size_t size, void* mem_user_data) {
+  return malloc(size);
+}
+
+static void default_free(void* ptr, void* mem_user_data) {
+  free(ptr);
+}
+
+static void* default_calloc(size_t nmemb, size_t size, void* mem_user_data) {
+  return calloc(nmemb, size);
+}
+
+static void* default_realloc(void* ptr, size_t size, void* mem_user_data) {
+  return realloc(ptr, size);
+}
+
+void* uvwasi__malloc(const uvwasi_t* uvwasi, size_t size) {
+  return uvwasi->allocator->malloc(size, uvwasi->allocator->mem_user_data);
+}
+
+void uvwasi__free(const uvwasi_t* uvwasi, void* ptr) {
+  uvwasi->allocator->free(ptr, uvwasi->allocator->mem_user_data);
+}
+
+void* uvwasi__calloc(const uvwasi_t* uvwasi, size_t nmemb, size_t size) {
+  return uvwasi->allocator->calloc(nmemb,
+                                   size,
+                                   uvwasi->allocator->mem_user_data);
+}
+
+void* uvwasi__realloc(const uvwasi_t* uvwasi, void* ptr, size_t size) {
+  return uvwasi->allocator->realloc(ptr,
+                                    size,
+                                    uvwasi->allocator->mem_user_data);
+}
+
+static const uvwasi_mem_t default_allocator = {
+  NULL,
+  default_malloc,
+  default_free,
+  default_calloc,
+  default_realloc,
+};
 
 
 static int uvwasi__is_absolute_path(const char* path, size_t path_len) {
@@ -31,7 +76,8 @@ static int uvwasi__is_absolute_path(const char* path, size_t path_len) {
 }
 
 
-static uvwasi_errno_t uvwasi__resolve_path(const struct uvwasi_fd_wrap_t* fd,
+static uvwasi_errno_t uvwasi__resolve_path(const uvwasi_t* uvwasi,
+                                           const struct uvwasi_fd_wrap_t* fd,
                                            const char* path,
                                            size_t path_len,
                                            char* resolved_path,
@@ -55,7 +101,7 @@ static uvwasi_errno_t uvwasi__resolve_path(const struct uvwasi_fd_wrap_t* fd,
   if (1 == input_is_absolute) {
     /* TODO(cjihrig): Revisit this. Copying is probably not necessary here. */
     abs_size = path_len;
-    abs_path = malloc(abs_size);
+    abs_path = uvwasi__malloc(uvwasi, abs_size);
     if (abs_path == NULL) {
       err = UVWASI_ENOMEM;
       goto exit;
@@ -65,7 +111,7 @@ static uvwasi_errno_t uvwasi__resolve_path(const struct uvwasi_fd_wrap_t* fd,
   } else {
     /* Resolve the relative path to fd's real path. */
     abs_size = path_len + strlen(fd->real_path) + 2;
-    abs_path = malloc(abs_size);
+    abs_path = uvwasi__malloc(uvwasi, abs_size);
     if (abs_path == NULL) {
       err = UVWASI_ENOMEM;
       goto exit;
@@ -143,7 +189,7 @@ static uvwasi_errno_t uvwasi__resolve_path(const struct uvwasi_fd_wrap_t* fd,
   }
 
 exit:
-  free(abs_path);
+  uvwasi__free(uvwasi, abs_path);
   return err;
 }
 
@@ -182,13 +228,17 @@ static uvwasi_errno_t uvwasi__lseek(uv_file fd,
 }
 
 
-static uvwasi_errno_t uvwasi__setup_iovs(uv_buf_t** buffers,
+static uvwasi_errno_t uvwasi__setup_iovs(const uvwasi_t* uvwasi,
+                                         uv_buf_t** buffers,
                                          const uvwasi_iovec_t* iovs,
                                          size_t iovs_len) {
   uv_buf_t* bufs;
   size_t i;
 
-  bufs = malloc(iovs_len * sizeof(*bufs));
+  if ((iovs_len * sizeof(*bufs)) / (sizeof(*bufs)) != iovs_len)
+    return UVWASI_ENOMEM;
+
+  bufs = uvwasi__malloc(uvwasi, iovs_len * sizeof(*bufs));
   if (bufs == NULL)
     return UVWASI_ENOMEM;
 
@@ -200,13 +250,17 @@ static uvwasi_errno_t uvwasi__setup_iovs(uv_buf_t** buffers,
 }
 
 
-static uvwasi_errno_t uvwasi__setup_ciovs(uv_buf_t** buffers,
+static uvwasi_errno_t uvwasi__setup_ciovs(const uvwasi_t* uvwasi,
+                                          uv_buf_t** buffers,
                                           const uvwasi_ciovec_t* iovs,
                                           size_t iovs_len) {
   uv_buf_t* bufs;
   size_t i;
 
-  bufs = malloc(iovs_len * sizeof(*bufs));
+  if ((iovs_len * sizeof(*bufs)) / (sizeof(*bufs)) != iovs_len)
+    return UVWASI_ENOMEM;
+
+  bufs = uvwasi__malloc(uvwasi, iovs_len * sizeof(*bufs));
   if (bufs == NULL)
     return UVWASI_ENOMEM;
 
@@ -233,6 +287,10 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   if (uvwasi == NULL || options == NULL || options->fd_table_size == 0)
     return UVWASI_EINVAL;
 
+  uvwasi->allocator = options->allocator;
+  if (uvwasi->allocator == NULL)
+    uvwasi->allocator = &default_allocator;
+
   uvwasi->argv_buf = NULL;
   uvwasi->argv = NULL;
   uvwasi->env_buf = NULL;
@@ -247,13 +305,13 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   uvwasi->argv_buf_size = args_size;
 
   if (args_size > 0) {
-    uvwasi->argv_buf = malloc(args_size);
+    uvwasi->argv_buf = uvwasi__malloc(uvwasi, args_size);
     if (uvwasi->argv_buf == NULL) {
       err = UVWASI_ENOMEM;
       goto exit;
     }
 
-    uvwasi->argv = calloc(options->argc, sizeof(char*));
+    uvwasi->argv = uvwasi__calloc(uvwasi, options->argc, sizeof(char*));
     if (uvwasi->argv == NULL) {
       err = UVWASI_ENOMEM;
       goto exit;
@@ -281,13 +339,13 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   uvwasi->env_buf_size = env_buf_size;
 
   if (env_buf_size > 0) {
-    uvwasi->env_buf = malloc(env_buf_size);
+    uvwasi->env_buf = uvwasi__malloc(uvwasi, env_buf_size);
     if (uvwasi->env_buf == NULL) {
       err = UVWASI_ENOMEM;
       goto exit;
     }
 
-    uvwasi->env = calloc(env_count, sizeof(char*));
+    uvwasi->env = uvwasi__calloc(uvwasi, env_count, sizeof(char*));
     if (uvwasi->env == NULL) {
       err = UVWASI_ENOMEM;
       goto exit;
@@ -310,7 +368,7 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
     }
   }
 
-  err = uvwasi_fd_table_init(&uvwasi->fds, options->fd_table_size);
+  err = uvwasi_fd_table_init(uvwasi, &uvwasi->fds, options->fd_table_size);
   if (err != UVWASI_ESUCCESS)
     goto exit;
 
@@ -333,7 +391,8 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
       goto exit;
     }
 
-    err = uvwasi_fd_table_insert_preopen(&uvwasi->fds,
+    err = uvwasi_fd_table_insert_preopen(uvwasi,
+                                         &uvwasi->fds,
                                          open_req.result,
                                          options->preopens[i].mapped_path,
                                          realpath_req.ptr);
@@ -356,11 +415,11 @@ void uvwasi_destroy(uvwasi_t* uvwasi) {
   if (uvwasi == NULL)
     return;
 
-  uvwasi_fd_table_free(&uvwasi->fds);
-  free(uvwasi->argv_buf);
-  free(uvwasi->argv);
-  free(uvwasi->env_buf);
-  free(uvwasi->env);
+  uvwasi_fd_table_free(uvwasi, &uvwasi->fds);
+  uvwasi__free(uvwasi, uvwasi->argv_buf);
+  uvwasi__free(uvwasi, uvwasi->argv);
+  uvwasi__free(uvwasi, uvwasi->env_buf);
+  uvwasi__free(uvwasi, uvwasi->env);
   uvwasi->argv_buf = NULL;
   uvwasi->argv = NULL;
   uvwasi->env_buf = NULL;
@@ -921,7 +980,7 @@ uvwasi_errno_t uvwasi_fd_pread(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  err = uvwasi__setup_iovs(&bufs, iovs, iovs_len);
+  err = uvwasi__setup_iovs(uvwasi, &bufs, iovs, iovs_len);
   if (err != UVWASI_ESUCCESS) {
     uv_mutex_unlock(&wrap->mutex);
     return err;
@@ -931,7 +990,7 @@ uvwasi_errno_t uvwasi_fd_pread(uvwasi_t* uvwasi,
   uv_mutex_unlock(&wrap->mutex);
   uvread = req.result;
   uv_fs_req_cleanup(&req);
-  free(bufs);
+  uvwasi__free(uvwasi, bufs);
 
   if (r < 0)
     return uvwasi__translate_uv_error(r);
@@ -1024,7 +1083,7 @@ uvwasi_errno_t uvwasi_fd_pwrite(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  err = uvwasi__setup_ciovs(&bufs, iovs, iovs_len);
+  err = uvwasi__setup_ciovs(uvwasi, &bufs, iovs, iovs_len);
   if (err != UVWASI_ESUCCESS) {
     uv_mutex_unlock(&wrap->mutex);
     return err;
@@ -1034,7 +1093,7 @@ uvwasi_errno_t uvwasi_fd_pwrite(uvwasi_t* uvwasi,
   uv_mutex_unlock(&wrap->mutex);
   uvwritten = req.result;
   uv_fs_req_cleanup(&req);
-  free(bufs);
+  uvwasi__free(uvwasi, bufs);
 
   if (r < 0)
     return uvwasi__translate_uv_error(r);
@@ -1063,7 +1122,7 @@ uvwasi_errno_t uvwasi_fd_read(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  err = uvwasi__setup_iovs(&bufs, iovs, iovs_len);
+  err = uvwasi__setup_iovs(uvwasi, &bufs, iovs, iovs_len);
   if (err != UVWASI_ESUCCESS) {
     uv_mutex_unlock(&wrap->mutex);
     return err;
@@ -1073,7 +1132,7 @@ uvwasi_errno_t uvwasi_fd_read(uvwasi_t* uvwasi,
   uv_mutex_unlock(&wrap->mutex);
   uvread = req.result;
   uv_fs_req_cleanup(&req);
-  free(bufs);
+  uvwasi__free(uvwasi, bufs);
 
   if (r < 0)
     return uvwasi__translate_uv_error(r);
@@ -1351,7 +1410,7 @@ uvwasi_errno_t uvwasi_fd_write(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  err = uvwasi__setup_ciovs(&bufs, iovs, iovs_len);
+  err = uvwasi__setup_ciovs(uvwasi, &bufs, iovs, iovs_len);
   if (err != UVWASI_ESUCCESS) {
     uv_mutex_unlock(&wrap->mutex);
     return err;
@@ -1361,7 +1420,7 @@ uvwasi_errno_t uvwasi_fd_write(uvwasi_t* uvwasi,
   uv_mutex_unlock(&wrap->mutex);
   uvwritten = req.result;
   uv_fs_req_cleanup(&req);
-  free(bufs);
+  uvwasi__free(uvwasi, bufs);
 
   if (r < 0)
     return uvwasi__translate_uv_error(r);
@@ -1392,7 +1451,7 @@ uvwasi_errno_t uvwasi_path_create_directory(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  err = uvwasi__resolve_path(wrap, path, path_len, resolved_path, 0);
+  err = uvwasi__resolve_path(uvwasi, wrap, path, path_len, resolved_path, 0);
   if (err != UVWASI_ESUCCESS)
     goto exit;
 
@@ -1434,7 +1493,12 @@ uvwasi_errno_t uvwasi_path_filestat_get(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  err = uvwasi__resolve_path(wrap, path, path_len, resolved_path, flags);
+  err = uvwasi__resolve_path(uvwasi,
+                             wrap,
+                             path,
+                             path_len,
+                             resolved_path,
+                             flags);
   if (err != UVWASI_ESUCCESS)
     goto exit;
 
@@ -1485,7 +1549,12 @@ uvwasi_errno_t uvwasi_path_filestat_set_times(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  err = uvwasi__resolve_path(wrap, path, path_len, resolved_path, flags);
+  err = uvwasi__resolve_path(uvwasi,
+                             wrap,
+                             path,
+                             path_len,
+                             resolved_path,
+                             flags);
   if (err != UVWASI_ESUCCESS)
     goto exit;
 
@@ -1555,7 +1624,8 @@ uvwasi_errno_t uvwasi_path_link(uvwasi_t* uvwasi,
     }
   }
 
-  err = uvwasi__resolve_path(old_wrap,
+  err = uvwasi__resolve_path(uvwasi,
+                             old_wrap,
                              old_path,
                              old_path_len,
                              resolved_old_path,
@@ -1563,7 +1633,8 @@ uvwasi_errno_t uvwasi_path_link(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     goto exit;
 
-  err = uvwasi__resolve_path(new_wrap,
+  err = uvwasi__resolve_path(uvwasi,
+                             new_wrap,
                              new_path,
                              new_path_len,
                              resolved_new_path,
@@ -1666,7 +1737,8 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  err = uvwasi__resolve_path(dirfd_wrap,
+  err = uvwasi__resolve_path(uvwasi,
+                             dirfd_wrap,
                              path,
                              path_len,
                              resolved_path,
@@ -1684,7 +1756,8 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
     return uvwasi__translate_uv_error(r);
   }
 
-  err = uvwasi_fd_table_insert_fd(&uvwasi->fds,
+  err = uvwasi_fd_table_insert_fd(uvwasi,
+                                  &uvwasi->fds,
                                   r,
                                   flags,
                                   resolved_path,
@@ -1741,7 +1814,7 @@ uvwasi_errno_t uvwasi_path_readlink(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  err = uvwasi__resolve_path(wrap, path, path_len, resolved_path, 0);
+  err = uvwasi__resolve_path(uvwasi, wrap, path, path_len, resolved_path, 0);
   if (err != UVWASI_ESUCCESS) {
     uv_mutex_unlock(&wrap->mutex);
     return err;
@@ -1789,7 +1862,7 @@ uvwasi_errno_t uvwasi_path_remove_directory(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  err = uvwasi__resolve_path(wrap, path, path_len, resolved_path, 0);
+  err = uvwasi__resolve_path(uvwasi, wrap, path, path_len, resolved_path, 0);
   if (err != UVWASI_ESUCCESS) {
     uv_mutex_unlock(&wrap->mutex);
     return err;
@@ -1854,7 +1927,8 @@ uvwasi_errno_t uvwasi_path_rename(uvwasi_t* uvwasi,
     }
   }
 
-  err = uvwasi__resolve_path(old_wrap,
+  err = uvwasi__resolve_path(uvwasi,
+                             old_wrap,
                              old_path,
                              old_path_len,
                              resolved_old_path,
@@ -1862,7 +1936,8 @@ uvwasi_errno_t uvwasi_path_rename(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     goto exit;
 
-  err = uvwasi__resolve_path(new_wrap,
+  err = uvwasi__resolve_path(uvwasi,
+                             new_wrap,
                              new_path,
                              new_path_len,
                              resolved_new_path,
@@ -1910,7 +1985,8 @@ uvwasi_errno_t uvwasi_path_symlink(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  err = uvwasi__resolve_path(wrap,
+  err = uvwasi__resolve_path(uvwasi,
+                             wrap,
                              new_path,
                              new_path_len,
                              resolved_new_path,
@@ -1952,7 +2028,7 @@ uvwasi_errno_t uvwasi_path_unlink_file(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  err = uvwasi__resolve_path(wrap, path, path_len, resolved_path, 0);
+  err = uvwasi__resolve_path(uvwasi, wrap, path, path_len, resolved_path, 0);
   if (err != UVWASI_ESUCCESS) {
     uv_mutex_unlock(&wrap->mutex);
     return err;

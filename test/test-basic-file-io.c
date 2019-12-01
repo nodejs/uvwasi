@@ -37,6 +37,7 @@ int main(void) {
   init_options.preopens = calloc(1, sizeof(uvwasi_preopen_t));
   init_options.preopens[0].mapped_path = "/var";
   init_options.preopens[0].real_path = TEST_TMP_DIR;
+  init_options.allocator = NULL;
 
   err = uvwasi_init(&uvwasi, &init_options);
   assert(err == 0);
