@@ -40,6 +40,7 @@ int main(void) {
   init_options.preopens = calloc(1, sizeof(uvwasi_preopen_t));
   init_options.preopens[0].mapped_path = "/var";
   init_options.preopens[0].real_path = ".";
+  init_options.allocator = NULL;
 
   r = uvwasi_init(uvw, &init_options);
   assert(r == 0);

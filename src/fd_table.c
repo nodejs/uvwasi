@@ -10,6 +10,7 @@
 #include "fd_table.h"
 #include "wasi_types.h"
 #include "uv_mapping.h"
+#include "uvwasi_alloc.h"
 
 
 #define UVWASI__RIGHTS_ALL (UVWASI_RIGHT_FD_DATASYNC |                        \
@@ -175,7 +176,8 @@ static uvwasi_errno_t uvwasi__get_type_and_rights(uv_file fd,
 }
 
 
-static uvwasi_errno_t uvwasi__fd_table_insert(struct uvwasi_fd_table_t* table,
+static uvwasi_errno_t uvwasi__fd_table_insert(uvwasi_t* uvwasi,
+                                              struct uvwasi_fd_table_t* table,
                                               uv_file fd,
                                               const char* mapped_path,
                                               const char* real_path,
@@ -197,7 +199,7 @@ static uvwasi_errno_t uvwasi__fd_table_insert(struct uvwasi_fd_table_t* table,
   /* Check that there is room for a new item. If there isn't, grow the table. */
   if (table->used >= table->size) {
     new_size = table->size * 2;
-    new_fds = realloc(table->fds, new_size * sizeof(*new_fds));
+    new_fds = uvwasi__realloc(uvwasi, table->fds, new_size * sizeof(*new_fds));
     if (new_fds == NULL) {
       err = UVWASI_ENOMEM;
       goto exit;
@@ -255,7 +257,8 @@ exit:
 }
 
 
-uvwasi_errno_t uvwasi_fd_table_init(struct uvwasi_fd_table_t* table,
+uvwasi_errno_t uvwasi_fd_table_init(uvwasi_t* uvwasi,
+                                    struct uvwasi_fd_table_t* table,
                                     uint32_t init_size) {
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_filetype_t type;
@@ -276,7 +279,9 @@ uvwasi_errno_t uvwasi_fd_table_init(struct uvwasi_fd_table_t* table,
 
   table->used = 0;
   table->size = init_size;
-  table->fds = calloc(init_size, sizeof(struct uvwasi_fd_wrap_t));
+  table->fds = uvwasi__calloc(uvwasi,
+                              init_size,
+                              sizeof(struct uvwasi_fd_wrap_t));
 
   if (table->fds == NULL) {
     err = UVWASI_ENOMEM;
@@ -293,7 +298,8 @@ uvwasi_errno_t uvwasi_fd_table_init(struct uvwasi_fd_table_t* table,
     if (err != UVWASI_ESUCCESS)
       goto error_exit;
 
-    err = uvwasi__fd_table_insert(table,
+    err = uvwasi__fd_table_insert(uvwasi,
+                                  table,
                                   i,
                                   "",
                                   "",
@@ -313,16 +319,16 @@ uvwasi_errno_t uvwasi_fd_table_init(struct uvwasi_fd_table_t* table,
 
   return UVWASI_ESUCCESS;
 error_exit:
-  uvwasi_fd_table_free(table);
+  uvwasi_fd_table_free(uvwasi, table);
   return err;
 }
 
 
-void uvwasi_fd_table_free(struct uvwasi_fd_table_t* table) {
+void uvwasi_fd_table_free(uvwasi_t* uvwasi, struct uvwasi_fd_table_t* table) {
   if (table == NULL)
     return;
 
-  free(table->fds);
+  uvwasi__free(uvwasi, table->fds);
   table->fds = NULL;
   table->size = 0;
   table->used = 0;
@@ -330,7 +336,8 @@ void uvwasi_fd_table_free(struct uvwasi_fd_table_t* table) {
 }
 
 
-uvwasi_errno_t uvwasi_fd_table_insert_preopen(struct uvwasi_fd_table_t* table,
+uvwasi_errno_t uvwasi_fd_table_insert_preopen(uvwasi_t* uvwasi,
+                                              struct uvwasi_fd_table_t* table,
                                               const uv_file fd,
                                               const char* path,
                                               const char* real_path) {
@@ -349,7 +356,8 @@ uvwasi_errno_t uvwasi_fd_table_insert_preopen(struct uvwasi_fd_table_t* table,
   if (type != UVWASI_FILETYPE_DIRECTORY)
     return UVWASI_ENOTDIR;
 
-  err = uvwasi__fd_table_insert(table,
+  err = uvwasi__fd_table_insert(uvwasi,
+                                table,
                                 fd,
                                 path,
                                 real_path,
@@ -365,7 +373,8 @@ uvwasi_errno_t uvwasi_fd_table_insert_preopen(struct uvwasi_fd_table_t* table,
 }
 
 
-uvwasi_errno_t uvwasi_fd_table_insert_fd(struct uvwasi_fd_table_t* table,
+uvwasi_errno_t uvwasi_fd_table_insert_fd(uvwasi_t* uvwasi,
+                                         struct uvwasi_fd_table_t* table,
                                          const uv_file fd,
                                          const int flags,
                                          const char* path,
@@ -385,7 +394,8 @@ uvwasi_errno_t uvwasi_fd_table_insert_fd(struct uvwasi_fd_table_t* table,
   if (r != UVWASI_ESUCCESS)
     return r;
 
-  r = uvwasi__fd_table_insert(table,
+  r = uvwasi__fd_table_insert(uvwasi,
+                              table,
                               fd,
                               path,
                               path,
