@@ -193,6 +193,20 @@ static uvwasi_errno_t uvwasi__fd_table_insert(uvwasi_t* uvwasi,
   int index;
   uint32_t i;
   int r;
+  size_t mp_len;
+  char* mp_copy;
+  size_t rp_len;
+  char* rp_copy;
+
+  mp_len = strlen(mapped_path);
+  rp_len = strlen(real_path);
+  mp_copy = uvwasi__malloc(uvwasi, mp_len + rp_len + 2);
+  if (mp_copy == NULL) return UVWASI_ENOMEM;
+  rp_copy = mp_copy + mp_len + 1;
+  memcpy(mp_copy, mapped_path, mp_len);
+  mp_copy[mp_len] = '\0';
+  memcpy(rp_copy, real_path, rp_len);
+  rp_copy[rp_len] = '\0';
 
   uv_rwlock_wrlock(&table->rwlock);
 
@@ -238,8 +252,8 @@ static uvwasi_errno_t uvwasi__fd_table_insert(uvwasi_t* uvwasi,
 
   entry->id = index;
   entry->fd = fd;
-  strcpy(entry->path, mapped_path);
-  strcpy(entry->real_path, real_path);
+  entry->path = mp_copy;
+  entry->real_path = rp_copy;
   entry->type = type;
   entry->rights_base = rights_base;
   entry->rights_inheriting = rights_inheriting;
@@ -325,8 +339,19 @@ error_exit:
 
 
 void uvwasi_fd_table_free(uvwasi_t* uvwasi, struct uvwasi_fd_table_t* table) {
+  struct uvwasi_fd_wrap_t* entry;
+  uint32_t i;
+
   if (table == NULL)
     return;
+
+  for (i = 0; i < table->size; i++) {
+    entry = &table->fds[i];
+    if (!entry->valid) continue;
+
+    uvwasi__free(uvwasi, entry->path);
+    uv_mutex_destroy(&entry->mutex);
+  }
 
   uvwasi__free(uvwasi, table->fds);
   table->fds = NULL;
@@ -453,7 +478,8 @@ exit:
 }
 
 
-uvwasi_errno_t uvwasi_fd_table_remove(struct uvwasi_fd_table_t* table,
+uvwasi_errno_t uvwasi_fd_table_remove(uvwasi_t* uvwasi,
+                                      struct uvwasi_fd_table_t* table,
                                       const uvwasi_fd_t id) {
   struct uvwasi_fd_wrap_t* entry;
   uvwasi_errno_t err;
@@ -475,6 +501,7 @@ uvwasi_errno_t uvwasi_fd_table_remove(struct uvwasi_fd_table_t* table,
     goto exit;
   }
 
+  uvwasi__free(uvwasi, entry->path);
   uv_mutex_destroy(&entry->mutex);
   entry->valid = 0;
   table->used--;

@@ -25,6 +25,16 @@
 #include "fd_table.h"
 #include "clocks.h"
 
+/* TODO(cjihrig): PATH_MAX_BYTES shouldn't be stack allocated. On Windows, paths
+   can be 32k long, and this PATH_MAX_BYTES is an artificial limitation. */
+#ifdef _WIN32
+/* MAX_PATH is in characters, not bytes. Make sure we have enough headroom. */
+# define PATH_MAX_BYTES (MAX_PATH * 4)
+#else
+# include <limits.h>
+# define PATH_MAX_BYTES (PATH_MAX)
+#endif
+
 static void* default_malloc(size_t size, void* mem_user_data) {
   return malloc(size);
 }
@@ -688,7 +698,7 @@ uvwasi_errno_t uvwasi_fd_close(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
   if (r != 0)
     return uvwasi__translate_uv_error(r);
 
-  return uvwasi_fd_table_remove(&uvwasi->fds, fd);
+  return uvwasi_fd_table_remove(uvwasi, &uvwasi->fds, fd);
 }
 
 
@@ -1319,7 +1329,7 @@ uvwasi_errno_t uvwasi_fd_renumber(uvwasi_t* uvwasi,
   to_wrap->id = to;
   uv_mutex_unlock(&from_wrap->mutex);
   uv_mutex_unlock(&to_wrap->mutex);
-  return uvwasi_fd_table_remove(&uvwasi->fds, from);
+  return uvwasi_fd_table_remove(uvwasi, &uvwasi->fds, from);
 }
 
 
@@ -1773,7 +1783,7 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
   if ((o_flags & UVWASI_O_DIRECTORY) != 0 &&
       wrap.type != UVWASI_FILETYPE_DIRECTORY) {
     uv_mutex_unlock(&dirfd_wrap->mutex);
-    uvwasi_fd_table_remove(&uvwasi->fds, wrap.id);
+    uvwasi_fd_table_remove(uvwasi, &uvwasi->fds, wrap.id);
     err = UVWASI_ENOTDIR;
     goto close_file_and_error_exit;
   }
