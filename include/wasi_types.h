@@ -266,7 +266,6 @@ typedef struct uvwasi_subscription_s {
   uvwasi_eventtype_t type;
   union {
     struct {
-      uvwasi_userdata_t identifier;
       uvwasi_clockid_t clock_id;
       uvwasi_timestamp_t timeout;
       uvwasi_timestamp_t precision;
