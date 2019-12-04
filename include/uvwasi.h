@@ -20,7 +20,7 @@ extern "C" {
 #define UVWASI_VERSION_STRING UVWASI_STRINGIFY(UVWASI_VERSION_MAJOR) "." \
                               UVWASI_STRINGIFY(UVWASI_VERSION_MINOR) "." \
                               UVWASI_STRINGIFY(UVWASI_VERSION_PATCH)
-#define UVWASI_VERSION_WASI "snapshot_0"
+#define UVWASI_VERSION_WASI "snapshot_1"
 
 typedef void* (*uvwasi_malloc)(size_t size, void* mem_user_data);
 typedef void (*uvwasi_free)(void* ptr, void* mem_user_data);
