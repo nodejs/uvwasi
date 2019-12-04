@@ -17,12 +17,11 @@ struct uvwasi_fd_wrap_t {
   uvwasi_rights_t rights_base;
   uvwasi_rights_t rights_inheriting;
   int preopen;
-  int valid;
   uv_mutex_t mutex;
 };
 
 struct uvwasi_fd_table_t {
-  struct uvwasi_fd_wrap_t* fds;
+  struct uvwasi_fd_wrap_t** fds;
   uint32_t size;
   uint32_t used;
   uv_rwlock_t rwlock;
