@@ -26,7 +26,7 @@ int main(void) {
 
   assert(UVWASI_VERSION_HEX == 1);
   assert(strcmp(UVWASI_VERSION_STRING, "0.0.2") == 0);
-  assert(strcmp(UVWASI_VERSION_WASI, "snapshot_0") == 0);
+  assert(strcmp(UVWASI_VERSION_WASI, "snapshot_1") == 0);
 
   uvw = &uvwasi;
   init_options.fd_table_size = 3;
