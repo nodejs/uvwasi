@@ -316,8 +316,8 @@ typedef struct uvwasi_event_s {
 } uvwasi_event_t;
 
 typedef uint8_t uvwasi_whence_t;
-#define UVWASI_WHENCE_CUR 0
-#define UVWASI_WHENCE_END 1
-#define UVWASI_WHENCE_SET 2
+#define UVWASI_WHENCE_SET 0
+#define UVWASI_WHENCE_CUR 1
+#define UVWASI_WHENCE_END 2
 
 #endif /* __UVWASI_WASI_TYPES_H__ */
