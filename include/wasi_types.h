@@ -155,7 +155,7 @@ typedef struct uvwasi_iovec_s {
   size_t buf_len;
 } uvwasi_iovec_t;
 
-typedef uint32_t uvwasi_linkcount_t;
+typedef uint64_t uvwasi_linkcount_t;
 
 typedef uint32_t uvwasi_lookupflags_t;           /* Bitfield */
 #define UVWASI_LOOKUP_SYMLINK_FOLLOW (1 << 0)
