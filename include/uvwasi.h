@@ -69,6 +69,7 @@ void uvwasi_destroy(uvwasi_t* uvwasi);
 uvwasi_errno_t uvwasi_embedder_remap_fd(uvwasi_t* uvwasi,
                                         const uvwasi_fd_t fd,
                                         uv_file new_host_fd);
+const char* uvwasi_embedder_err_code_to_string(uvwasi_errno_t code);
 
 
 // WASI system call API.
