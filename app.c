@@ -24,8 +24,8 @@ int main(void) {
   size_t env_buf_size;
   size_t i;
 
-  assert(UVWASI_VERSION_HEX == 1);
-  assert(strcmp(UVWASI_VERSION_STRING, "0.0.2") == 0);
+  assert(UVWASI_VERSION_HEX == 3);
+  assert(strcmp(UVWASI_VERSION_STRING, "0.0.3") == 0);
   assert(strcmp(UVWASI_VERSION_WASI, "snapshot_1") == 0);
 
   uvw = &uvwasi;
