@@ -16,6 +16,11 @@ if(APPLE)
    set(CMAKE_MACOSX_RPATH ON)
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  list(APPEND uvwasi_defines _GNU_SOURCE _POSIX_C_SOURCE=200112)
+  list(APPEND uvwasi_sources src/unix/linux-core.c)
+endif()
+
 include(FetchContent)
 ## https://libuv.org
 FetchContent_Declare(
