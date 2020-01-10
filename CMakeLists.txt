@@ -18,7 +18,7 @@ endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   list(APPEND uvwasi_defines _GNU_SOURCE _POSIX_C_SOURCE=200112)
-  list(APPEND uvwasi_sources src/unix/linux-core.c)
+  list(APPEND uvwasi_sources src/uvwasi.c)
 endif()
 
 include(FetchContent)
