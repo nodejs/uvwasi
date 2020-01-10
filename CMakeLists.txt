@@ -16,6 +16,10 @@ if(APPLE)
    set(CMAKE_MACOSX_RPATH ON)
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  list(APPEND uvwasi_defines _GNU_SOURCE _POSIX_C_SOURCE=200112)
+endif()
+
 include(FetchContent)
 ## https://libuv.org
 FetchContent_Declare(
@@ -65,6 +69,7 @@ endif()
 
 ## Static library target.
 add_library(uvwasi_a STATIC ${uvwasi_sources})
+target_compile_definitions(uvwasi_a PRIVATE ${uvwasi_defines})
 target_compile_options(uvwasi_a PRIVATE ${uvwasi_cflags})
 target_include_directories(uvwasi_a PRIVATE ${PROJECT_SOURCE_DIR}/include)
 if(CODE_COVERAGE)
