@@ -79,14 +79,6 @@ else()
 endif()
 
 
-## Demo app target.
-set(app_sources app.c)
-add_executable(app ${app_sources})
-target_compile_options(app PRIVATE ${uvwasi_cflags})
-target_include_directories(app PRIVATE ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(app PRIVATE uv_a uvwasi_a)
-
-
 ## Test targets.
 enable_testing()
 file(GLOB test_files "test/test-*.c")
