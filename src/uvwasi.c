@@ -101,7 +101,7 @@ static uvwasi_errno_t uvwasi__normalize_path(const char* path,
   const char* cur;
   char* ptr;
   char* next;
-  int cur_len;
+  size_t cur_len;
 
   if (path_len > normalized_len)
     return UVWASI_ENOBUFS;
@@ -110,7 +110,7 @@ static uvwasi_errno_t uvwasi__normalize_path(const char* path,
   ptr = normalized_path;
   for (cur = path; cur != NULL; cur = next + 1) {
     next = uvwasi__strchr_slash(cur);
-    cur_len = (next == NULL) ? strlen(cur) : next - cur;
+    cur_len = (next == NULL) ? strlen(cur) : (size_t) (next - cur);
 
     if (cur_len == 0 || (cur_len == 1 && cur[0] == '.'))
       continue;
