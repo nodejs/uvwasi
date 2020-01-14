@@ -5,8 +5,8 @@
 extern "C" {
 #endif
 
+#include "uv.h"
 #include "wasi_types.h"
-#include "uv_mapping.h"
 #include "fd_table.h"
 
 #define UVWASI_VERSION_MAJOR 0
