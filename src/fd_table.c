@@ -108,19 +108,17 @@ static uvwasi_errno_t uvwasi__get_type_and_rights(uv_file fd,
                                            uvwasi_filetype_t* type,
                                            uvwasi_rights_t* rights_base,
                                            uvwasi_rights_t* rights_inheriting) {
-  uv_fs_t req;
-  uvwasi_filetype_t filetype;
+  uvwasi_errno_t err;
   int read_or_write_only;
-  int r;
 
-  r = uv_fs_fstat(NULL, &req, fd, NULL);
-  filetype = uvwasi__stat_to_filetype(&req.statbuf);
-  uv_fs_req_cleanup(&req);
-  if (r != 0)
-    return uvwasi__translate_uv_error(r);
+  err = uvwasi__get_filetype_by_fd(fd, type);
+  if (err != UVWASI_ESUCCESS)
+    return err;
 
-  *type = filetype;
-  switch (filetype) {
+  if (*type == UVWASI_FILETYPE_UNKNOWN)
+    return UVWASI_EINVAL;
+
+  switch (*type) {
     case UVWASI_FILETYPE_REGULAR_FILE:
       *rights_base = UVWASI__RIGHTS_REGULAR_FILE_BASE;
       *rights_inheriting = UVWASI__RIGHTS_REGULAR_FILE_INHERITING;
@@ -131,12 +129,8 @@ static uvwasi_errno_t uvwasi__get_type_and_rights(uv_file fd,
       *rights_inheriting = UVWASI__RIGHTS_DIRECTORY_INHERITING;
       break;
 
-    /* uvwasi__stat_to_filetype() cannot differentiate socket types. It only
-       returns UVWASI_FILETYPE_SOCKET_STREAM. */
     case UVWASI_FILETYPE_SOCKET_STREAM:
-      if (uv_guess_handle(fd) == UV_UDP)
-        *type = UVWASI_FILETYPE_SOCKET_DGRAM;
-
+    case UVWASI_FILETYPE_SOCKET_DGRAM:
       *rights_base = UVWASI__RIGHTS_SOCKET_BASE;
       *rights_inheriting = UVWASI__RIGHTS_SOCKET_INHERITING;
       break;
@@ -160,9 +154,6 @@ static uvwasi_errno_t uvwasi__get_type_and_rights(uv_file fd,
       *rights_base = 0;
       *rights_inheriting = 0;
   }
-
-  if (*type == UVWASI_FILETYPE_UNKNOWN)
-    return UVWASI_EINVAL;
 
   /* Disable read/write bits depending on access mode. */
   read_or_write_only = flags & (UV_FS_O_RDONLY | UV_FS_O_WRONLY | UV_FS_O_RDWR);
