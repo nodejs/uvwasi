@@ -101,11 +101,13 @@ uvwasi_errno_t uvwasi_fd_table_insert(uvwasi_t* uvwasi,
   entry->rights_base = rights_base;
   entry->rights_inheriting = rights_inheriting;
   entry->preopen = preopen;
-  table->used++;
 
-  if (wrap != NULL)
+  if (wrap != NULL) {
+    uv_mutex_lock(&entry->mutex);
     *wrap = entry;
+  }
 
+  table->used++;
   err = UVWASI_ESUCCESS;
 exit:
   uv_rwlock_wrunlock(&table->rwlock);
@@ -173,7 +175,9 @@ uvwasi_errno_t uvwasi_fd_table_init(uvwasi_t* uvwasi,
     if (err != UVWASI_ESUCCESS)
       goto error_exit;
 
-    if (wrap->id != i || wrap->id != (uvwasi_fd_t) wrap->fd) {
+    r = wrap->id != i || wrap->id != (uvwasi_fd_t) wrap->fd;
+    uv_mutex_unlock(&wrap->mutex);
+    if (r) {
       err = UVWASI_EBADF;
       goto error_exit;
     }
@@ -235,20 +239,16 @@ uvwasi_errno_t uvwasi_fd_table_insert_preopen(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  err = uvwasi_fd_table_insert(uvwasi,
-                               table,
-                               fd,
-                               path,
-                               real_path,
-                               UVWASI_FILETYPE_DIRECTORY,
-                               UVWASI__RIGHTS_DIRECTORY_BASE,
-                               UVWASI__RIGHTS_DIRECTORY_INHERITING,
-                               1,
-                               NULL);
-  if (err != UVWASI_ESUCCESS)
-    return err;
-
-  return UVWASI_ESUCCESS;
+  return uvwasi_fd_table_insert(uvwasi,
+                                table,
+                                fd,
+                                path,
+                                real_path,
+                                UVWASI_FILETYPE_DIRECTORY,
+                                UVWASI__RIGHTS_DIRECTORY_BASE,
+                                UVWASI__RIGHTS_DIRECTORY_INHERITING,
+                                1,
+                                NULL);
 }
 
 

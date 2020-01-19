@@ -1990,6 +1990,7 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
     goto close_file_and_error_exit;
 
   *fd = wrap->id;
+  uv_mutex_unlock(&wrap->mutex);
   uv_mutex_unlock(&dirfd_wrap->mutex);
   return UVWASI_ESUCCESS;
 
