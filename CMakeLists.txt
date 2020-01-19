@@ -40,6 +40,7 @@ set(uvwasi_sources
     src/fd_table.c
     src/uv_mapping.c
     src/uvwasi.c
+    src/wasi_rights.c
 )
 
 # Code Coverage Configuration
