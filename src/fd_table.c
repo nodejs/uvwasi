@@ -103,22 +103,17 @@
                                  UVWASI_RIGHT_POLL_FD_READWRITE)
 #define UVWASI__RIGHTS_TTY_INHERITING 0
 
-static uvwasi_errno_t uvwasi__get_type_and_rights(uv_file fd,
-                                           int flags,
-                                           uvwasi_filetype_t* type,
-                                           uvwasi_rights_t* rights_base,
-                                           uvwasi_rights_t* rights_inheriting) {
-  uvwasi_errno_t err;
+static uvwasi_errno_t uvwasi__get_rights(uv_file fd,
+                                         int flags,
+                                         uvwasi_filetype_t type,
+                                         uvwasi_rights_t* rights_base,
+                                         uvwasi_rights_t* rights_inheriting) {
   int read_or_write_only;
 
-  err = uvwasi__get_filetype_by_fd(fd, type);
-  if (err != UVWASI_ESUCCESS)
-    return err;
-
-  if (*type == UVWASI_FILETYPE_UNKNOWN)
+  if (type == UVWASI_FILETYPE_UNKNOWN)
     return UVWASI_EINVAL;
 
-  switch (*type) {
+  switch (type) {
     case UVWASI_FILETYPE_REGULAR_FILE:
       *rights_base = UVWASI__RIGHTS_REGULAR_FILE_BASE;
       *rights_inheriting = UVWASI__RIGHTS_REGULAR_FILE_INHERITING;
@@ -305,11 +300,11 @@ uvwasi_errno_t uvwasi_fd_table_init(uvwasi_t* uvwasi,
 
   /* Create the stdio FDs. */
   for (i = 0; i < 3; ++i) {
-    err = uvwasi__get_type_and_rights(i,
-                                      UV_FS_O_RDWR,
-                                      &type,
-                                      &base,
-                                      &inheriting);
+    err = uvwasi__get_filetype_by_fd(i, &type);
+    if (err != UVWASI_ESUCCESS)
+      goto error_exit;
+
+    err = uvwasi__get_rights(i, UV_FS_O_RDWR, type, &base, &inheriting);
     if (err != UVWASI_ESUCCESS)
       goto error_exit;
 
@@ -377,12 +372,16 @@ uvwasi_errno_t uvwasi_fd_table_insert_preopen(uvwasi_t* uvwasi,
   if (table == NULL || path == NULL || real_path == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi__get_type_and_rights(fd, 0, &type, &base, &inheriting);
+  err = uvwasi__get_filetype_by_fd(fd, &type);
   if (err != UVWASI_ESUCCESS)
     return err;
 
   if (type != UVWASI_FILETYPE_DIRECTORY)
     return UVWASI_ENOTDIR;
+
+  err = uvwasi__get_rights(fd, 0, type, &base, &inheriting);
+  if (err != UVWASI_ESUCCESS)
+    return err;
 
   err = uvwasi__fd_table_insert(uvwasi,
                                 table,
@@ -418,7 +417,11 @@ uvwasi_errno_t uvwasi_fd_table_insert_fd(uvwasi_t* uvwasi,
   if (table == NULL || path == NULL || wrap == NULL)
     return UVWASI_EINVAL;
 
-  r = uvwasi__get_type_and_rights(fd, flags, &type, &max_base, &max_inheriting);
+  r = uvwasi__get_filetype_by_fd(fd, &type);
+  if (r != UVWASI_ESUCCESS)
+    return r;
+
+  r = uvwasi__get_rights(fd, flags, type, &max_base, &max_inheriting);
   if (r != UVWASI_ESUCCESS)
     return r;
 
