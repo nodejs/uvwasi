@@ -14,16 +14,16 @@
 #include "uvwasi_alloc.h"
 
 
-static uvwasi_errno_t uvwasi__fd_table_insert(uvwasi_t* uvwasi,
-                                              struct uvwasi_fd_table_t* table,
-                                              uv_file fd,
-                                              const char* mapped_path,
-                                              const char* real_path,
-                                              uvwasi_filetype_t type,
-                                              uvwasi_rights_t rights_base,
-                                              uvwasi_rights_t rights_inheriting,
-                                              int preopen,
-                                              struct uvwasi_fd_wrap_t** wrap) {
+uvwasi_errno_t uvwasi_fd_table_insert(uvwasi_t* uvwasi,
+                                      struct uvwasi_fd_table_t* table,
+                                      uv_file fd,
+                                      const char* mapped_path,
+                                      const char* real_path,
+                                      uvwasi_filetype_t type,
+                                      uvwasi_rights_t rights_base,
+                                      uvwasi_rights_t rights_inheriting,
+                                      int preopen,
+                                      struct uvwasi_fd_wrap_t** wrap) {
   struct uvwasi_fd_wrap_t* entry;
   struct uvwasi_fd_wrap_t** new_fds;
   uvwasi_errno_t err;
@@ -160,16 +160,16 @@ uvwasi_errno_t uvwasi_fd_table_init(uvwasi_t* uvwasi,
     if (err != UVWASI_ESUCCESS)
       goto error_exit;
 
-    err = uvwasi__fd_table_insert(uvwasi,
-                                  table,
-                                  i,
-                                  "",
-                                  "",
-                                  type,
-                                  base,
-                                  inheriting,
-                                  0,
-                                  &wrap);
+    err = uvwasi_fd_table_insert(uvwasi,
+                                 table,
+                                 i,
+                                 "",
+                                 "",
+                                 type,
+                                 base,
+                                 inheriting,
+                                 0,
+                                 &wrap);
     if (err != UVWASI_ESUCCESS)
       goto error_exit;
 
@@ -235,62 +235,19 @@ uvwasi_errno_t uvwasi_fd_table_insert_preopen(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  err = uvwasi__fd_table_insert(uvwasi,
-                                table,
-                                fd,
-                                path,
-                                real_path,
-                                UVWASI_FILETYPE_DIRECTORY,
-                                UVWASI__RIGHTS_DIRECTORY_BASE,
-                                UVWASI__RIGHTS_DIRECTORY_INHERITING,
-                                1,
-                                NULL);
+  err = uvwasi_fd_table_insert(uvwasi,
+                               table,
+                               fd,
+                               path,
+                               real_path,
+                               UVWASI_FILETYPE_DIRECTORY,
+                               UVWASI__RIGHTS_DIRECTORY_BASE,
+                               UVWASI__RIGHTS_DIRECTORY_INHERITING,
+                               1,
+                               NULL);
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  return UVWASI_ESUCCESS;
-}
-
-
-uvwasi_errno_t uvwasi_fd_table_insert_fd(uvwasi_t* uvwasi,
-                                         struct uvwasi_fd_table_t* table,
-                                         const uv_file fd,
-                                         const int flags,
-                                         const char* path,
-                                         uvwasi_rights_t rights_base,
-                                         uvwasi_rights_t rights_inheriting,
-                                         struct uvwasi_fd_wrap_t* wrap) {
-  struct uvwasi_fd_wrap_t* fd_wrap;
-  uvwasi_filetype_t type;
-  uvwasi_rights_t max_base;
-  uvwasi_rights_t max_inheriting;
-  uvwasi_errno_t r;
-
-  if (table == NULL || path == NULL || wrap == NULL)
-    return UVWASI_EINVAL;
-
-  r = uvwasi__get_filetype_by_fd(fd, &type);
-  if (r != UVWASI_ESUCCESS)
-    return r;
-
-  r = uvwasi__get_rights(fd, flags, type, &max_base, &max_inheriting);
-  if (r != UVWASI_ESUCCESS)
-    return r;
-
-  r = uvwasi__fd_table_insert(uvwasi,
-                              table,
-                              fd,
-                              path,
-                              path,
-                              type,
-                              rights_base & max_base,
-                              rights_inheriting & max_inheriting,
-                              0,
-                              &fd_wrap);
-  if (r != UVWASI_ESUCCESS)
-    return r;
-
-  *wrap = *fd_wrap;
   return UVWASI_ESUCCESS;
 }
 
