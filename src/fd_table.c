@@ -325,3 +325,67 @@ exit:
   uv_rwlock_wrunlock(&table->rwlock);
   return err;
 }
+
+
+uvwasi_errno_t uvwasi_fd_table_renumber(struct uvwasi_s* uvwasi,
+                                        struct uvwasi_fd_table_t* table,
+                                        const uvwasi_fd_t dst,
+                                        const uvwasi_fd_t src) {
+  struct uvwasi_fd_wrap_t* dst_entry;
+  struct uvwasi_fd_wrap_t* src_entry;
+  uv_fs_t req;
+  uvwasi_errno_t err;
+  int r;
+
+  if (uvwasi == NULL || table == NULL)
+    return UVWASI_EINVAL;
+
+  if (dst == src)
+    return UVWASI_ESUCCESS;
+
+  uv_rwlock_wrlock(&table->rwlock);
+
+  if (dst >= table->size || src >= table->size) {
+    err = UVWASI_EBADF;
+    goto exit;
+  }
+
+  dst_entry = table->fds[dst];
+  src_entry = table->fds[src];
+
+  if (dst_entry == NULL || dst_entry->id != dst ||
+      src_entry == NULL || src_entry->id != src) {
+    err = UVWASI_EBADF;
+    goto exit;
+  }
+
+  uv_mutex_lock(&dst_entry->mutex);
+  uv_mutex_lock(&src_entry->mutex);
+
+  /* Close the existing destination descriptor. */
+  r = uv_fs_close(NULL, &req, dst_entry->fd, NULL);
+  uv_fs_req_cleanup(&req);
+  if (r != 0) {
+    uv_mutex_unlock(&dst_entry->mutex);
+    uv_mutex_unlock(&src_entry->mutex);
+    err = uvwasi__translate_uv_error(r);
+    goto exit;
+  }
+
+  /* Move the source entry to the destination slot in the table. */
+  table->fds[dst] = table->fds[src];
+  table->fds[dst]->id = dst;
+  uv_mutex_unlock(&table->fds[dst]->mutex);
+  table->fds[src] = NULL;
+  table->used--;
+
+  /* Clean up what's left of the old destination entry. */
+  uv_mutex_unlock(&dst_entry->mutex);
+  uv_mutex_destroy(&dst_entry->mutex);
+  uvwasi__free(uvwasi, dst_entry);
+
+  err = UVWASI_ESUCCESS;
+exit:
+  uv_rwlock_wrunlock(&table->rwlock);
+  return err;
+}

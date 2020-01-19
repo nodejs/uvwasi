@@ -54,5 +54,9 @@ uvwasi_errno_t uvwasi_fd_table_get(const struct uvwasi_fd_table_t* table,
 uvwasi_errno_t uvwasi_fd_table_remove(struct uvwasi_s* uvwasi,
                                       struct uvwasi_fd_table_t* table,
                                       const uvwasi_fd_t id);
+uvwasi_errno_t uvwasi_fd_table_renumber(struct uvwasi_s* uvwasi,
+                                        struct uvwasi_fd_table_t* table,
+                                        const uvwasi_fd_t dst,
+                                        const uvwasi_fd_t src);
 
 #endif /* __UVWASI_FD_TABLE_H__ */
