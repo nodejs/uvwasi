@@ -1486,41 +1486,10 @@ exit:
 uvwasi_errno_t uvwasi_fd_renumber(uvwasi_t* uvwasi,
                                   uvwasi_fd_t from,
                                   uvwasi_fd_t to) {
-  struct uvwasi_fd_wrap_t* to_wrap;
-  struct uvwasi_fd_wrap_t* from_wrap;
-  uv_fs_t req;
-  uvwasi_errno_t err;
-  int r;
-
   if (uvwasi == NULL)
     return UVWASI_EINVAL;
 
-  if (from == to)
-    return UVWASI_ESUCCESS;
-
-  err = uvwasi_fd_table_get(&uvwasi->fds, from, &from_wrap, 0, 0);
-  if (err != UVWASI_ESUCCESS)
-    return err;
-
-  err = uvwasi_fd_table_get(&uvwasi->fds, to, &to_wrap, 0, 0);
-  if (err != UVWASI_ESUCCESS) {
-    uv_mutex_unlock(&from_wrap->mutex);
-    return err;
-  }
-
-  r = uv_fs_close(NULL, &req, to_wrap->fd, NULL);
-  uv_fs_req_cleanup(&req);
-  if (r != 0) {
-    uv_mutex_unlock(&from_wrap->mutex);
-    uv_mutex_unlock(&to_wrap->mutex);
-    return uvwasi__translate_uv_error(r);
-  }
-
-  memcpy(to_wrap, from_wrap, sizeof(*to_wrap));
-  to_wrap->id = to;
-  uv_mutex_unlock(&from_wrap->mutex);
-  uv_mutex_unlock(&to_wrap->mutex);
-  return uvwasi_fd_table_remove(uvwasi, &uvwasi->fds, from);
+  return uvwasi_fd_table_renumber(uvwasi, &uvwasi->fds, to, from);
 }
 
 
