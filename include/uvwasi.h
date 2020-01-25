@@ -8,6 +8,7 @@ extern "C" {
 #include "uv.h"
 #include "wasi_types.h"
 #include "fd_table.h"
+#include "serdes.h"
 
 #define UVWASI_VERSION_MAJOR 0
 #define UVWASI_VERSION_MINOR 0
