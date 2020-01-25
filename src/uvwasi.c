@@ -2201,6 +2201,11 @@ uvwasi_errno_t uvwasi_poll_oneoff(uvwasi_t* uvwasi,
         nsubscriptions,
         nevents);
 
+  if (uvwasi == NULL || in == NULL || out == NULL ||
+      nsubscriptions == 0 || nevents == NULL) {
+    return UVWASI_EINVAL;
+  }
+
   /* TODO(cjihrig): Implement this. */
   return UVWASI_ENOTSUP;
 }

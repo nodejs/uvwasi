@@ -20,6 +20,8 @@ int main(void) {
   uvwasi_prestat_t test_prestat;
   uvwasi_dircookie_t test_dircookie = 0;
   uvwasi_filesize_t test_filesize;
+  uvwasi_subscription_t test_sub;
+  uvwasi_event_t test_event;
   uvwasi_fd_t test_fd;
 
   test_void = (void*) &test_fdstat;
@@ -145,7 +147,11 @@ int main(void) {
   CHECK(uvwasi_path_unlink_file(NULL, 3, test_str, 10));
   CHECK(uvwasi_path_unlink_file(&uvw, 3, NULL, 10));
 
-  /* TODO(cjihrig): Add uvwasi_poll_oneoff() tests. */
+  CHECK(uvwasi_poll_oneoff(NULL, &test_sub, &test_event, 5, &test_size));
+  CHECK(uvwasi_poll_oneoff(&uvw, NULL, &test_event, 5, &test_size));
+  CHECK(uvwasi_poll_oneoff(&uvw, &test_sub, NULL, 5, &test_size));
+  CHECK(uvwasi_poll_oneoff(&uvw, &test_sub, &test_event, 0, &test_size));
+  CHECK(uvwasi_poll_oneoff(&uvw, &test_sub, &test_event, 5, NULL));
 
   CHECK(uvwasi_proc_raise(NULL, UVWASI_SIGUSR2));
 
