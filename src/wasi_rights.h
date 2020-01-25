@@ -93,6 +93,13 @@
                                  UVWASI_RIGHT_POLL_FD_READWRITE)
 #define UVWASI__RIGHTS_TTY_INHERITING 0
 
+#define UVWASI__RIGHTS_FIFO_BASE (UVWASI_RIGHT_FD_READ |                      \
+                                  UVWASI_RIGHT_FD_FDSTAT_SET_FLAGS |          \
+                                  UVWASI_RIGHT_FD_WRITE |                     \
+                                  UVWASI_RIGHT_FD_FILESTAT_GET |              \
+                                  UVWASI_RIGHT_POLL_FD_READWRITE)
+#define UVWASI__RIGHTS_FIFO_INHERITING UVWASI__RIGHTS_ALL
+
 
 uvwasi_errno_t uvwasi__get_rights(uv_file fd,
                                   int flags,

@@ -143,6 +143,7 @@ typedef uint8_t uvwasi_filetype_t;
 #define UVWASI_FILETYPE_SOCKET_DGRAM     5
 #define UVWASI_FILETYPE_SOCKET_STREAM    6
 #define UVWASI_FILETYPE_SYMBOLIC_LINK    7
+#define UVWASI_FILETYPE_FIFO             8
 
 typedef uint16_t uvwasi_fstflags_t;              /* Bitfield */
 #define UVWASI_FILESTAT_SET_ATIM      (1 << 0)

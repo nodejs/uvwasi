@@ -1878,6 +1878,10 @@ Possible values:
 
     The file refers to a symbolic link inode.
 
+- <a href="#filetype.fifo" name="filetype.fifo"></a>**`UVWASI_FILETYPE_FIFO`**
+
+    The file descriptor or file refers to a FIFO.
+
 ### <a href="#fstflags" name="fstflags"></a>`uvwasi_fstflags_t` (`uint16_t` bitfield)
 
 Which file time attributes to adjust.

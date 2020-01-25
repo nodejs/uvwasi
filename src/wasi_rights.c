@@ -45,6 +45,11 @@ uvwasi_errno_t uvwasi__get_rights(uv_file fd,
       *rights_inheriting = UVWASI__RIGHTS_BLOCK_DEVICE_INHERITING;
       break;
 
+    case UVWASI_FILETYPE_FIFO:
+      *rights_base = UVWASI__RIGHTS_FIFO_BASE;
+      *rights_inheriting = UVWASI__RIGHTS_FIFO_INHERITING;
+      break;
+
     default:
       *rights_base = 0;
       *rights_inheriting = 0;

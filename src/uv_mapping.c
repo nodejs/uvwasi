@@ -134,7 +134,7 @@ uvwasi_filetype_t uvwasi__stat_to_filetype(const uv_stat_t* stat) {
 
 #ifdef S_ISFIFO
   if (S_ISFIFO(mode))
-    return UVWASI_FILETYPE_SOCKET_STREAM;
+    return UVWASI_FILETYPE_FIFO;
 #endif /* S_ISFIFO */
 
 #ifdef S_ISBLK

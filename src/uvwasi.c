@@ -1373,6 +1373,8 @@ uvwasi_errno_t uvwasi_fd_readdir(uvwasi_t* uvwasi,
           dirent.d_type = UVWASI_FILETYPE_BLOCK_DEVICE;
           break;
         case UV_DIRENT_FIFO:
+          dirent.d_type = UVWASI_FILETYPE_FIFO;
+          break;
         case UV_DIRENT_UNKNOWN:
         default:
           dirent.d_type = UVWASI_FILETYPE_UNKNOWN;
