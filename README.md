@@ -1964,7 +1964,7 @@ Used by [`uvwasi_path_open()`](#path_open).
 
 Possible values:
 
-- <a href="#oflags.creat" name="oflags.creat"></a>**`UVWASI_O_CREAT`**
+- <a href="#oflags.create" name="oflags.create"></a>**`UVWASI_O_CREATE`**
 
     Create file if it does not exist.
 
@@ -2066,7 +2066,7 @@ Possible values:
 - <a href="#rights.path_create_file" name="rights.path_create_file"></a>**`UVWASI_RIGHT_PATH_CREATE_FILE`**
 
     If [`UVWASI_RIGHT_PATH_OPEN`](#rights.path_open) is set, the right to invoke
-    [`uvwasi_path_open()`](#path_open) with [`UVWASI_O_CREAT`](#oflags.creat).
+    [`uvwasi_path_open()`](#path_open) with [`UVWASI_O_CREATE`](#oflags.create).
 
 - <a href="#rights.path_link_source" name="rights.path_link_source"></a>**`UVWASI_RIGHT_PATH_LINK_SOURCE`**
 

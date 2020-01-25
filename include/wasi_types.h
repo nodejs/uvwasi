@@ -163,7 +163,7 @@ typedef uint32_t uvwasi_lookupflags_t;           /* Bitfield */
 #define UVWASI_LOOKUP_SYMLINK_FOLLOW (1 << 0)
 
 typedef uint16_t uvwasi_oflags_t;                /* Bitfield */
-#define UVWASI_O_CREAT     (1 << 0)
+#define UVWASI_O_CREATE    (1 << 0)
 #define UVWASI_O_DIRECTORY (1 << 1)
 #define UVWASI_O_EXCL      (1 << 2)
 #define UVWASI_O_TRUNC     (1 << 3)

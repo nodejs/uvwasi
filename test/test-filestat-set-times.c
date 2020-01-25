@@ -59,7 +59,7 @@ int main(void) {
                          1,
                          path,
                          pathsize,
-                         UVWASI_O_CREAT,
+                         UVWASI_O_CREATE,
                          fs_rights_base,
                          0,
                          0,

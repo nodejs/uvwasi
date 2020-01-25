@@ -1904,7 +1904,7 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
   needed_base = UVWASI_RIGHT_PATH_OPEN;
   needed_inheriting = fs_rights_base | fs_rights_inheriting;
 
-  if ((o_flags & UVWASI_O_CREAT) != 0) {
+  if ((o_flags & UVWASI_O_CREATE) != 0) {
     flags |= UV_FS_O_CREAT;
     needed_base |= UVWASI_RIGHT_PATH_CREATE_FILE;
   }
