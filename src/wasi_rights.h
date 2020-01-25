@@ -24,9 +24,11 @@
                             UVWASI_RIGHT_PATH_FILESTAT_GET |                  \
                             UVWASI_RIGHT_PATH_FILESTAT_SET_SIZE |             \
                             UVWASI_RIGHT_PATH_FILESTAT_SET_TIMES |            \
+                            UVWASI_RIGHT_PATH_PERMISSIONS_SET |               \
                             UVWASI_RIGHT_FD_FILESTAT_GET |                    \
                             UVWASI_RIGHT_FD_FILESTAT_SET_TIMES |              \
                             UVWASI_RIGHT_FD_FILESTAT_SET_SIZE |               \
+                            UVWASI_RIGHT_FD_PERMISSIONS_SET |                 \
                             UVWASI_RIGHT_PATH_SYMLINK |                       \
                             UVWASI_RIGHT_PATH_UNLINK_FILE |                   \
                             UVWASI_RIGHT_PATH_REMOVE_DIRECTORY |              \
@@ -51,6 +53,7 @@
                                           UVWASI_RIGHT_FD_FILESTAT_GET |      \
                                           UVWASI_RIGHT_FD_FILESTAT_SET_SIZE | \
                                           UVWASI_RIGHT_FD_FILESTAT_SET_TIMES |\
+                                          UVWASI_RIGHT_FD_PERMISSIONS_SET |   \
                                           UVWASI_RIGHT_POLL_FD_READWRITE)
 #define UVWASI__RIGHTS_REGULAR_FILE_INHERITING 0
 
@@ -69,8 +72,10 @@
                                        UVWASI_RIGHT_PATH_FILESTAT_GET |       \
                                        UVWASI_RIGHT_PATH_FILESTAT_SET_SIZE |  \
                                        UVWASI_RIGHT_PATH_FILESTAT_SET_TIMES | \
+                                       UVWASI_RIGHT_PATH_PERMISSIONS_SET |    \
                                        UVWASI_RIGHT_FD_FILESTAT_GET |         \
                                        UVWASI_RIGHT_FD_FILESTAT_SET_TIMES |   \
+                                       UVWASI_RIGHT_FD_PERMISSIONS_SET |      \
                                        UVWASI_RIGHT_PATH_SYMLINK |            \
                                        UVWASI_RIGHT_PATH_UNLINK_FILE |        \
                                        UVWASI_RIGHT_PATH_REMOVE_DIRECTORY |   \

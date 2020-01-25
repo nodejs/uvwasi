@@ -50,6 +50,8 @@ BASIC_TYPE_UVWASI(linkcount_t)
 BASIC_TYPE_UVWASI(lookupflags_t)
 #define UVWASI_SERDES_SIZE_oflags_t sizeof(uvwasi_oflags_t)
 BASIC_TYPE_UVWASI(oflags_t)
+#define UVWASI_SERDES_SIZE_permissions_t sizeof(uvwasi_permissions_t)
+BASIC_TYPE_UVWASI(permissions_t)
 #define UVWASI_SERDES_SIZE_preopentype_t sizeof(uvwasi_preopentype_t)
 BASIC_TYPE_UVWASI(preopentype_t)
 #define UVWASI_SERDES_SIZE_riflags_t sizeof(uvwasi_riflags_t)
@@ -107,6 +109,9 @@ STRUCT(dirent_t)
 #define UVWASI_SERDES_SIZE_fdstat_t 24
 STRUCT(fdstat_t)
 
+/* TODO(cjihrig): This has a new permissions field which is not accounted for
+   in the following size. Wait to see how wasi-libc lays this out in memory.
+   This will also need to be updated in wasi_serdes.c */
 #define UVWASI_SERDES_SIZE_filestat_t 64
 STRUCT(filestat_t)
 

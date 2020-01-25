@@ -221,6 +221,7 @@ This section has been adapted from the official WASI API documentation.
 - [`uvwasi_fd_filestat_get()`](#fd_filestat_get)
 - [`uvwasi_fd_filestat_set_size()`](#fd_filestat_set_size)
 - [`uvwasi_fd_filestat_set_times()`](#fd_filestat_set_times)
+- [`uvwasi_fd_permissions_set()`](#fd_permissions_set)
 - [`uvwasi_fd_pread()`](#fd_pread)
 - [`uvwasi_fd_prestat_get()`](#fd_prestat_get)
 - [`uvwasi_fd_prestat_dir_name()`](#fd_prestat_dir_name)
@@ -237,6 +238,7 @@ This section has been adapted from the official WASI API documentation.
 - [`uvwasi_path_filestat_set_times()`](#path_filestat_set_times)
 - [`uvwasi_path_link()`](#path_link)
 - [`uvwasi_path_open()`](#path_open)
+- [`uvwasi_path_permissions_set()`](#path_permissions_set)
 - [`uvwasi_path_readlink()`](#path_readlink)
 - [`uvwasi_path_remove_directory()`](#path_remove_directory)
 - [`uvwasi_path_rename()`](#path_rename)
@@ -530,6 +532,27 @@ Inputs:
 - <a href="#fd_filestat_set_times.fst_flags" name="fd_filestat_set_times.fst_flags"></a><code>[\_\_wasi\_fstflags\_t](#fstflags) <strong>fst\_flags</strong></code>
 
     A bitmask indicating which timestamps to adjust.
+
+### <a href="#fd_permissions_set" name="fd_permissions_set"></a>`uvwasi_fd_permissions_set()`
+
+Set the permissions of a file or directory.
+
+This sets the permissions associated with a file or directory
+in a filesystem at the time it is called. The ability to actually
+access a file or directory may depend on additional permissions not
+reflected here.
+
+Note: This is similar `fchmod` in POSIX.
+
+Inputs:
+
+- <a href="#fd_permissions_set.fd" name="fd_permissions_set.fd"></a><code>[\_\_wasi\_fd\_t](#fd) <strong>fd</strong></code>
+
+    The file descriptor to operate on.
+
+- <a href="#fd_permissions_set.permissions" name="fd_permissions_set.permissions"></a><code>[\_\_wasi\_permissions\_t](#permissions) <strong>permissions</strong></code>
+
+    The permissions associated with the file.
 
 ### <a href="#fd_pread" name="fd_pread"></a>`uvwasi_fd_pread()`
 
@@ -927,12 +950,49 @@ Inputs:
 
     The initial flags of the file descriptor.
 
+- <a href="#path_open.permissions" name="path_open.permissions"></a><code>[\_\_wasi\_permissions\_t](#permissions) <strong>permissions</strong></code>
+
+    If a file is created, the filesystem permissions to associate with it.
+
 Outputs:
 
 - <a href="#path_open.fd" name="path_open.fd"></a><code>[\_\_wasi\_fd\_t](#fd) <strong>fd</strong></code>
 
     The file descriptor of the file that has been
     opened.
+
+### <a href="#path_permissions_set" name="path_permissions_set"></a>`uvwasi_path_permissions_set()`
+
+Set the permissions of a file or directory.
+
+This sets the permissions associated with a file or directory in a
+filesystem at the time it is called. The ability to actually access
+a file or directory may depend on additional permissions not reflected
+here.
+
+Note: This is similar `fchmodat` in POSIX.
+
+Unlike POSIX, this doesn't expose a user/group/other distinction;
+implementations in POSIX environments are suggested to consult the
+umask to determine which of the user/group/other flags to modify.
+
+Inputs:
+
+- <a href="#path_permissions_set.fd" name="path_permissions_set.fd"></a><code>[\_\_wasi\_fd\_t](#fd) <strong>fd</strong></code>
+
+    The file descriptor to operate on.
+
+- <a href="#path_permissions_set.flags" name="path_permissions_set.flags"></a><code>[\_\_wasi\_lookupflags\_t](#lookupflags) <strong>flags</strong></code>
+
+    Flags determining the method of how the path is resolved.
+
+- <a href="#path_permissions_set.path" name="path_permissions_set.path"></a><code>const char \*<strong>path</strong></code> and <a href="#path_permissions_set.path_len" name="path_permissions_set.path_len"></a><code>\_\_wasi\_size\_t <strong>path\_len</strong></code>
+
+    The path to a file to query.
+
+- <a href="#path_permissions_set.permissions" name="path_permissions_set.permissions"></a><code>[\_\_wasi\_permissions\_t](#permissions) <strong>permissions</strong></code>
+
+    The permissions associated with the file.
 
 ### <a href="#path_readlink" name="path_readlink"></a>`uvwasi_path_readlink()`
 
@@ -1809,6 +1869,10 @@ Members:
 
     File type.
 
+- <a href="#filestat.permissions" name="filestat.permissions"></a><code>[\_\_wasi\_permissions\_t](#permissions) <strong>permissions</strong></code>
+
+    File permissions.
+
 - <a href="#filestat.st_nlink" name="filestat.st_nlink"></a><code>[\_\_wasi\_linkcount\_t](#linkcount) <strong>st\_nlink</strong></code>
 
     Number of hard links to the file.
@@ -1971,6 +2035,30 @@ Possible values:
 
     Truncate file to size 0.
 
+### <a href="#permissions" name="permissions"></a>`uvwasi_permissions_t` (`uint8_t` bitfield)
+
+File permissions. This represents the permissions associated with a file in a filesystem, and don't fully reflect all the conditions which determine whether a given WASI program can access the file.
+
+Possible values:
+
+- <a href="#permissions.read" name="permissions.read"></a>**`UVWASI_PERMISSION_READ`**
+
+    For files, permission to read the file. For directories, permission to do `readdir` and access files within the directory.
+
+    Note: This is similar to the read bit being set on files, and the read *and* execute bits being set on directories, in POSIX.
+
+- <a href="#permissions.write" name="permissions.write"></a>**`UVWASI_PERMISSION_WRITE`**
+
+    For files, permission to mutate the file. For directories, permission to create, remove, and rename items within the directory.
+
+- <a href="#permissions.execute" name="permissions.execute"></a>**`UVWASI_PERMISSION_EXECUTE`**
+
+    For files, permission to "execute" the file, using whatever concept of "executing" the host filesystem has. This flag is not valid for directories.
+
+- <a href="#permissions.private" name="permissions.private"></a>**`UVWASI_PERMISSION_PRIVATE`**
+
+    For filesystems which have a concept of multiple "users", this flag indicates that the file is only accessible by the effective "user" that the WASI store uses to access the filesystem, and inaccessible to other "users".
+
 ### <a href="#riflags" name="riflags"></a>`uvwasi_riflags_t` (`uint16_t` bitfield)
 
 Flags provided to [`uvwasi_sock_recv()`](#sock_recv).
@@ -2106,6 +2194,10 @@ Possible values:
 
     The right to invoke [`uvwasi_path_filestat_set_times()`](#path_filestat_set_times).
 
+- <a href="#rights.path_permissions_set" name="rights.path_permissions_set"></a>**`UVWASI_RIGHT_PATH_PERMISSIONS_SET`**
+
+    The right to invoke [`uvwasi_path_filestat_permissions_set()`](#path_filestat_permissions_set).
+
 - <a href="#rights.fd_filestat_get" name="rights.fd_filestat_get"></a>**`UVWASI_RIGHT_FD_FILESTAT_GET`**
 
     The right to invoke [`uvwasi_fd_filestat_get()`](#fd_filestat_get).
@@ -2117,6 +2209,10 @@ Possible values:
 - <a href="#rights.fd_filestat_set_times" name="rights.fd_filestat_set_times"></a>**`UVWASI_RIGHT_FD_FILESTAT_SET_TIMES`**
 
     The right to invoke [`uvwasi_fd_filestat_set_times()`](#fd_filestat_set_times).
+
+- <a href="#rights.fd_permissions_set" name="rights.fd_permissions_set"></a>**`UVWASI_RIGHT_FD_PERMISSIONS_SET`**
+
+    The right to invoke [`uvwasi_fd_filestat_permissions_set()`](#fd_filestat_permissions_set).
 
 - <a href="#rights.path_symlink" name="rights.path_symlink"></a>**`UVWASI_RIGHT_PATH_SYMLINK`**
 

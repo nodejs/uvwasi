@@ -215,9 +215,17 @@ typedef uint64_t uvwasi_rights_t;                /* Bitfield */
 #define UVWASI_RIGHT_PATH_UNLINK_FILE        (1 << 26)
 #define UVWASI_RIGHT_POLL_FD_READWRITE       (1 << 27)
 #define UVWASI_RIGHT_SOCK_SHUTDOWN           (1 << 28)
+#define UVWASI_RIGHT_PATH_PERMISSIONS_SET    (1 << 29)
+#define UVWASI_RIGHT_FD_PERMISSIONS_SET      (1 << 30)
 
 typedef uint16_t uvwasi_roflags_t;               /* Bitfield */
 #define UVWASI_SOCK_RECV_DATA_TRUNCATED (1 << 0)
+
+typedef uint8_t uvwasi_permissions_t;            /* Bitfield */
+#define UVWASI_PERMISSION_READ    (1 << 0)
+#define UVWASI_PERMISSION_WRITE   (1 << 1)
+#define UVWASI_PERMISSION_EXECUTE (1 << 2)
+#define UVWASI_PERMISSION_PRIVATE (1 << 3)
 
 typedef uint8_t uvwasi_sdflags_t;                /* Bitfield */
 #define UVWASI_SHUT_RD (1 << 0)
@@ -266,6 +274,7 @@ typedef struct uvwasi_filestat_s {
   uvwasi_device_t st_dev;
   uvwasi_inode_t st_ino;
   uvwasi_filetype_t st_filetype;
+  uvwasi_permissions_t permissions;
   uvwasi_linkcount_t st_nlink;
   uvwasi_filesize_t st_size;
   uvwasi_timestamp_t st_atim;

@@ -71,6 +71,7 @@ uint8_t uvwasi_serdes_read_uint8_t(const void* ptr,  size_t offset) {
   ALIAS(linkcount_t,     uint64_t)                                            \
   ALIAS(lookupflags_t,   uint32_t)                                            \
   ALIAS(oflags_t,        uint16_t)                                            \
+  ALIAS(permissions_t,   uint8_t)                                             \
   ALIAS(preopentype_t,   uint8_t)                                             \
   ALIAS(riflags_t,       uint16_t)                                            \
   ALIAS(rights_t,        uint64_t)                                            \

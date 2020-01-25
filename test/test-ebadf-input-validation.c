@@ -58,7 +58,7 @@ int main(void) {
   CHECK(uvwasi_path_filestat_get(&uvw, 100, 0, test_str, 5, &test_filestat));
   CHECK(uvwasi_path_filestat_set_times(&uvw, 100, 0, test_str, 4, 5, 6, 7));
   CHECK(uvwasi_path_link(&uvw, 100, 4, test_str, 5, 100, test_str, 6));
-  CHECK(uvwasi_path_open(&uvw, 100, 0, test_str, 4, 5, 6, 7, 8, &test_fd));
+  CHECK(uvwasi_path_open(&uvw, 100, 0, test_str, 4, 5, 6, 7, 8, 9, &test_fd));
   CHECK(uvwasi_path_readlink(&uvw, 100, test_str, 4, test_str, 5, &test_size));
   CHECK(uvwasi_path_remove_directory(&uvw, 99, "x", 2));
   CHECK(uvwasi_path_rename(&uvw, 99, test_str, 4, 99, test_str, 5));

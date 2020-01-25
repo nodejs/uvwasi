@@ -63,6 +63,7 @@ int main(void) {
                          fs_rights_base,
                          0,
                          0,
+                         0,
                          &fd);
   assert(err == 0);
 

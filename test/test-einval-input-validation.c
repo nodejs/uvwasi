@@ -74,6 +74,8 @@ int main(void) {
 
   CHECK(uvwasi_fd_filestat_set_times(NULL, 3, 0, 0, UVWASI_FILESTAT_SET_ATIM));
 
+  CHECK(uvwasi_fd_permissions_set(NULL, 3, 0));
+
   CHECK(uvwasi_fd_pread(NULL, 3, &test_iovec, 2, 10, &test_size));
   CHECK(uvwasi_fd_pread(&uvw, 3, NULL, 2, 10, &test_size));
   CHECK(uvwasi_fd_pread(&uvw, 3, &test_iovec, 2, 10, NULL));
@@ -124,9 +126,12 @@ int main(void) {
   CHECK(uvwasi_path_link(&uvw, 3, 4, NULL, 5, 3, test_str, 6));
   CHECK(uvwasi_path_link(&uvw, 3, 4, test_str, 5, 3, NULL, 6));
 
-  CHECK(uvwasi_path_open(NULL, 3, 0, test_str, 4, 5, 6, 7, 8, &test_fd));
-  CHECK(uvwasi_path_open(&uvw, 3, 0, NULL, 4, 5, 6, 7, 8, &test_fd));
-  CHECK(uvwasi_path_open(&uvw, 3, 0, test_str, 4, 5, 6, 7, 8, NULL));
+  CHECK(uvwasi_path_open(NULL, 3, 0, test_str, 4, 5, 6, 7, 8, 9, &test_fd));
+  CHECK(uvwasi_path_open(&uvw, 3, 0, NULL, 4, 5, 6, 7, 8, 9, &test_fd));
+  CHECK(uvwasi_path_open(&uvw, 3, 0, test_str, 4, 5, 6, 7, 8, 9, NULL));
+
+  CHECK(uvwasi_path_permissions_set(NULL, 3, 1, test_str, 4, 5));
+  CHECK(uvwasi_path_permissions_set(&uvw, 3, 1, NULL, 4, 5));
 
   CHECK(uvwasi_path_readlink(NULL, 3, test_str, 4, test_str, 5, &test_size));
   CHECK(uvwasi_path_readlink(&uvw, 3, NULL, 4, test_str, 5, &test_size));

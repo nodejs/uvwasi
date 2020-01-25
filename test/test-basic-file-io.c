@@ -59,6 +59,7 @@ int main(void) {
                          fs_rights_base,
                          0,
                          0,
+                         0,
                          &fd);
   assert(err == 0);
 
@@ -77,6 +78,7 @@ int main(void) {
   assert(stats.st_atim > 0);
   assert(stats.st_mtim > 0);
   assert(stats.st_ctim > 0);
+  assert(stats.permissions == 0);
 
   /* Resize the file to 1024 bytes. */
   err = uvwasi_fd_filestat_set_size(&uvwasi, fd, 1024);
@@ -161,6 +163,7 @@ int main(void) {
   assert(stats2.st_atim > 0);
   assert(stats2.st_mtim > 0);
   assert(stats2.st_ctim > 0);
+  assert(stats2.permissions == 0);
 
   /* Create symlink */
   err = uvwasi_path_symlink(&uvwasi,

@@ -155,6 +155,14 @@ void uvwasi__stat_to_filestat(const uv_stat_t* stat, uvwasi_filestat_t* fs) {
   fs->st_atim = uvwasi__timespec_to_timestamp(&stat->st_atim);
   fs->st_mtim = uvwasi__timespec_to_timestamp(&stat->st_mtim);
   fs->st_ctim = uvwasi__timespec_to_timestamp(&stat->st_ctim);
+  /* TODO(cjihrig): Permissions are not currently used. */
+  fs->permissions = 0;
+}
+
+
+void uvwasi__permissions_to_mode(const uvwasi_permissions_t permissions,
+                                 int* mode) {
+  *mode = 0666;  /* TODO(cjihrig): Parse this from permissions argument. */
 }
 
 

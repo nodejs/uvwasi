@@ -1043,6 +1043,43 @@ uvwasi_errno_t uvwasi_fd_filestat_set_times(uvwasi_t* uvwasi,
 }
 
 
+uvwasi_errno_t uvwasi_fd_permissions_set(uvwasi_t* uvwasi,
+                                         uvwasi_fd_t fd,
+                                         uvwasi_permissions_t permissions) {
+  struct uvwasi_fd_wrap_t* wrap;
+  uv_fs_t req;
+  uvwasi_errno_t err;
+  int mode;
+  int r;
+
+  UVWASI_DEBUG("uvwasi_fd_permissions_set(uvwasi=%p, fd=%d, permissions=%d)\n",
+               uvwasi,
+               fd,
+               permissions);
+
+  if (uvwasi == NULL)
+    return UVWASI_EINVAL;
+
+  uvwasi__permissions_to_mode(permissions, &mode);
+  err = uvwasi_fd_table_get(uvwasi->fds,
+                            fd,
+                            &wrap,
+                            UVWASI_RIGHT_FD_PERMISSIONS_SET,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  r = uv_fs_fchmod(NULL, &req, wrap->fd, mode, NULL);
+  uv_mutex_unlock(&wrap->mutex);
+  uv_fs_req_cleanup(&req);
+
+  if (r != 0)
+    return uvwasi__translate_uv_error(r);
+
+  return UVWASI_ESUCCESS;
+}
+
+
 uvwasi_errno_t uvwasi_fd_pread(uvwasi_t* uvwasi,
                                uvwasi_fd_t fd,
                                const uvwasi_iovec_t* iovs,
@@ -1863,6 +1900,7 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
                                 uvwasi_rights_t fs_rights_base,
                                 uvwasi_rights_t fs_rights_inheriting,
                                 uvwasi_fdflags_t fs_flags,
+                                uvwasi_permissions_t permissions,
                                 uvwasi_fd_t* fd) {
   char* resolved_path;
   uvwasi_rights_t needed_inheriting;
@@ -1877,11 +1915,13 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
   int flags;
   int read;
   int write;
+  int mode;
   int r;
 
   UVWASI_DEBUG("uvwasi_path_open(uvwasi=%p, dirfd=%d, dirflags=%d, path='%s', "
                "path_len=%d, o_flags=%d, fs_rights_base=%"PRIu64", "
-               "fs_rights_inheriting=%"PRIu64", fs_flags=%d, fd=%p)\n",
+               "fs_rights_inheriting=%"PRIu64", fs_flags=%d, permissions=%d, "
+               "fd=%p)\n",
                uvwasi,
                dirfd,
                dirflags,
@@ -1891,11 +1931,13 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
                fs_rights_base,
                fs_rights_inheriting,
                fs_flags,
+               permissions,
                fd);
 
   if (uvwasi == NULL || path == NULL || fd == NULL)
     return UVWASI_EINVAL;
 
+  uvwasi__permissions_to_mode(permissions, &mode);
   read = 0 != (fs_rights_base & (UVWASI_RIGHT_FD_READ |
                                  UVWASI_RIGHT_FD_READDIR));
   write = 0 != (fs_rights_base & (UVWASI_RIGHT_FD_DATASYNC |
@@ -1961,7 +2003,7 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
     return err;
   }
 
-  r = uv_fs_open(NULL, &req, resolved_path, flags, 0666, NULL);
+  r = uv_fs_open(NULL, &req, resolved_path, flags, mode, NULL);
   uv_mutex_unlock(&dirfd_wrap->mutex);
   uv_fs_req_cleanup(&req);
 
@@ -2009,6 +2051,63 @@ close_file_and_error_exit:
   uv_fs_req_cleanup(&req);
   uvwasi__free(uvwasi, resolved_path);
   return err;
+}
+
+
+uvwasi_errno_t uvwasi_path_permissions_set(uvwasi_t* uvwasi,
+                                           uvwasi_fd_t fd,
+                                           uvwasi_lookupflags_t flags,
+                                           const char* path,
+                                           uvwasi_size_t path_len,
+                                           uvwasi_permissions_t permissions) {
+  char* resolved_path;
+  struct uvwasi_fd_wrap_t* wrap;
+  uv_fs_t req;
+  uvwasi_errno_t err;
+  int mode;
+  int r;
+
+  UVWASI_DEBUG("uvwasi_path_permissions_set(uvwasi=%p, fd=%d, flags=%d, "
+               "path='%s', path_len=%d, permissions=%d)\n",
+               uvwasi,
+               fd,
+               flags,
+               path,
+               path_len,
+               permissions);
+
+  if (uvwasi == NULL || path == NULL)
+    return UVWASI_EINVAL;
+
+  uvwasi__permissions_to_mode(permissions, &mode);
+  err = uvwasi_fd_table_get(uvwasi->fds,
+                            fd,
+                            &wrap,
+                            UVWASI_RIGHT_PATH_PERMISSIONS_SET,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  err = uvwasi__resolve_path(uvwasi,
+                             wrap,
+                             path,
+                             path_len,
+                             &resolved_path,
+                             flags);
+  if (err != UVWASI_ESUCCESS) {
+    uv_mutex_unlock(&wrap->mutex);
+    return err;
+  }
+
+  r = uv_fs_chmod(NULL, &req, resolved_path, mode, NULL);
+  uv_mutex_unlock(&wrap->mutex);
+  uvwasi__free(uvwasi, resolved_path);
+  uv_fs_req_cleanup(&req);
+
+  if (r != 0)
+    return uvwasi__translate_uv_error(r);
+
+  return UVWASI_ESUCCESS;
 }
 
 
