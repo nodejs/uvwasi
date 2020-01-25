@@ -4,10 +4,6 @@
 
 #define CHECK_ERR(err) assert(uvwasi__translate_uv_error(UV_ ## err ) ==      \
                               UVWASI_ ## err)
-#ifndef _WIN32
-# define CHECK_SIG(sig) assert(uvwasi__translate_to_uv_signal(UVWASI_ ## sig) \
-                               == (sig))
-#endif /* _WIN32 */
 
 int main(void) {
   /* Verify error code translation. */
@@ -70,37 +66,6 @@ int main(void) {
   assert(uvwasi__translate_uv_error(0) == UVWASI_ESUCCESS);
   assert(uvwasi__translate_uv_error(1) == 1);
   assert(uvwasi__translate_uv_error(-99999) == UVWASI_ENOSYS);
-
-  /* Verify signal translation. */
-#ifndef _WIN32
-  CHECK_SIG(SIGABRT);
-  CHECK_SIG(SIGALRM);
-  CHECK_SIG(SIGBUS);
-  CHECK_SIG(SIGCHLD);
-  CHECK_SIG(SIGCONT);
-  CHECK_SIG(SIGFPE);
-  CHECK_SIG(SIGHUP);
-  CHECK_SIG(SIGILL);
-  CHECK_SIG(SIGINT);
-  CHECK_SIG(SIGKILL);
-  CHECK_SIG(SIGPIPE);
-  CHECK_SIG(SIGQUIT);
-  CHECK_SIG(SIGSEGV);
-  CHECK_SIG(SIGSTOP);
-  CHECK_SIG(SIGSYS);
-  CHECK_SIG(SIGTERM);
-  CHECK_SIG(SIGTRAP);
-  CHECK_SIG(SIGTSTP);
-  CHECK_SIG(SIGTTIN);
-  CHECK_SIG(SIGTTOU);
-  CHECK_SIG(SIGURG);
-  CHECK_SIG(SIGUSR1);
-  CHECK_SIG(SIGUSR2);
-  CHECK_SIG(SIGVTALRM);
-  CHECK_SIG(SIGXCPU);
-  CHECK_SIG(SIGXFSZ);
-#endif /* _WIN32 */
-  assert(uvwasi__translate_to_uv_signal(255) == -1);
 
   return 0;
 }

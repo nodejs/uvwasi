@@ -2453,26 +2453,6 @@ uvwasi_errno_t uvwasi_proc_exit(uvwasi_t* uvwasi, uvwasi_exitcode_t rval) {
 }
 
 
-uvwasi_errno_t uvwasi_proc_raise(uvwasi_t* uvwasi, uvwasi_signal_t sig) {
-  int r;
-
-  UVWASI_DEBUG("uvwasi_proc_raise(uvwasi=%p, sig=%d)\n", uvwasi, sig);
-
-  if (uvwasi == NULL)
-    return UVWASI_EINVAL;
-
-  r = uvwasi__translate_to_uv_signal(sig);
-  if (r == -1)
-    return UVWASI_ENOSYS;
-
-  r = uv_kill(uv_os_getpid(), r);
-  if (r != 0)
-    return uvwasi__translate_uv_error(r);
-
-  return UVWASI_ESUCCESS;
-}
-
-
 uvwasi_errno_t uvwasi_random_get(uvwasi_t* uvwasi,
                                  void* buf,
                                  uvwasi_size_t buf_len) {

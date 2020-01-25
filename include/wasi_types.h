@@ -224,38 +224,6 @@ typedef uint8_t uvwasi_sdflags_t;                /* Bitfield */
 
 typedef uint16_t uvwasi_siflags_t;               /* Bitfield */
 
-typedef uint8_t uvwasi_signal_t;
-#define UVWASI_SIGHUP     1
-#define UVWASI_SIGINT     2
-#define UVWASI_SIGQUIT    3
-#define UVWASI_SIGILL     4
-#define UVWASI_SIGTRAP    5
-#define UVWASI_SIGABRT    6
-#define UVWASI_SIGBUS     7
-#define UVWASI_SIGFPE     8
-#define UVWASI_SIGKILL    9
-#define UVWASI_SIGUSR1   10
-#define UVWASI_SIGSEGV   11
-#define UVWASI_SIGUSR2   12
-#define UVWASI_SIGPIPE   13
-#define UVWASI_SIGALRM   14
-#define UVWASI_SIGTERM   15
-#define UVWASI_SIGCHLD   16
-#define UVWASI_SIGCONT   17
-#define UVWASI_SIGSTOP   18
-#define UVWASI_SIGTSTP   19
-#define UVWASI_SIGTTIN   20
-#define UVWASI_SIGTTOU   21
-#define UVWASI_SIGURG    22
-#define UVWASI_SIGXCPU   23
-#define UVWASI_SIGXFSZ   24
-#define UVWASI_SIGVTALRM 25
-#define UVWASI_SIGPROF   26
-#define UVWASI_SIGWINCH  27
-#define UVWASI_SIGPOLL   28
-#define UVWASI_SIGPWR    29
-#define UVWASI_SIGSYS    30
-
 typedef uint16_t uvwasi_subclockflags_t;         /* Bitfield */
 #define UVWASI_SUBSCRIPTION_CLOCK_ABSTIME (1 << 0)
 

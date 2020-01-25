@@ -153,8 +153,6 @@ int main(void) {
   CHECK(uvwasi_poll_oneoff(&uvw, &test_sub, &test_event, 0, &test_size));
   CHECK(uvwasi_poll_oneoff(&uvw, &test_sub, &test_event, 5, NULL));
 
-  CHECK(uvwasi_proc_raise(NULL, UVWASI_SIGUSR2));
-
   CHECK(uvwasi_random_get(NULL, test_void, 10));
   CHECK(uvwasi_random_get(&uvw, NULL, 10));
 

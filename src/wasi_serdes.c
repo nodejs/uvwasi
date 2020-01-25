@@ -77,7 +77,6 @@ uint8_t uvwasi_serdes_read_uint8_t(const void* ptr,  size_t offset) {
   ALIAS(roflags_t,       uint16_t)                                            \
   ALIAS(sdflags_t,       uint8_t)                                             \
   ALIAS(siflags_t,       uint16_t)                                            \
-  ALIAS(signal_t,        uint8_t)                                             \
   ALIAS(size_t,          uint32_t)                                            \
   ALIAS(subclockflags_t, uint16_t)                                            \
   ALIAS(timestamp_t,     uint64_t)                                            \
