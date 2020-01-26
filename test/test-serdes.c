@@ -78,6 +78,8 @@ void test_bound_checks(void) {
 
   assert(UVWASI_SERDES_CHECK_ARRAY_BOUNDS(0, 480, subscription_t, 10));
   assert(!UVWASI_SERDES_CHECK_ARRAY_BOUNDS(1, 480, subscription_t, 10));
+  assert(UVWASI_SERDES_CHECK_ARRAY_BOUNDS(0, 8000, inode_t, 1000));
+  assert(!UVWASI_SERDES_CHECK_ARRAY_BOUNDS(1, 8000, inode_t, 1000));
 }
 
 void test_basic_types(void) {
