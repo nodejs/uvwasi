@@ -55,17 +55,17 @@ STRUCT(subscription_t)
 // Helper macros for bound checking.
 //
 
-#define UVWASI_SERDES_CHECK_BOUNDS(offset, size, type)                         \
+#define UVWASI_SERDES_CHECK_BOUNDS(offset, end, type)                          \
   ((offset) >= 0 &&                                                            \
-   (size) > (offset) &&                                                        \
-   (UVWASI_SERDES_SIZE_##type <= (size) - (offset)))                           \
+   (end) > (offset) &&                                                         \
+   (UVWASI_SERDES_SIZE_##type <= (end) - (offset)))                            \
 
-#define UVWASI_SERDES_CHECK_ARRAY_BOUNDS(offset, size, type, count)            \
+#define UVWASI_SERDES_CHECK_ARRAY_BOUNDS(offset, end, type, count)             \
   ((offset) >= 0 &&                                                            \
-   (size) > (offset) &&                                                        \
+   (end) > (offset) &&                                                         \
    (count) >= 0 &&                                                             \
    ((count) * UVWASI_SERDES_SIZE_##type) / UVWASI_SERDES_SIZE_##type ==        \
     (count) &&                                                                 \
-   ((count) * UVWASI_SERDES_SIZE_##type <= (size) - (offset)))                 \
+   ((count) * UVWASI_SERDES_SIZE_##type <= (end) - (offset)))                  \
 
 #endif /* __UVWASI_SERDES_H__ */
