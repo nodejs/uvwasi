@@ -64,6 +64,8 @@ STRUCT(subscription_t)
   ((offset) >= 0 &&                                                            \
    (size) > (offset) &&                                                        \
    (count) >= 0 &&                                                             \
+   ((count) * UVWASI_SERDES_SIZE_##type) / UVWASI_SERDES_SIZE_##type ==        \
+    (count) &&                                                                 \
    ((count) * UVWASI_SERDES_SIZE_##type <= (size) - (offset)))                 \
 
 #endif /* __UVWASI_SERDES_H__ */

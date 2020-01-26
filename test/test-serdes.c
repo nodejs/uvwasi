@@ -51,6 +51,10 @@ void test_bound_checks(void) {
   assert(!UVWASI_SERDES_CHECK_BOUNDS(-500, -100, event_t));
   assert(!UVWASI_SERDES_CHECK_BOUNDS(5000, 1000, fdstat_t));
   assert(!UVWASI_SERDES_CHECK_ARRAY_BOUNDS(0, 1000, filestat_t, -1));
+  // This causes an integer overflow, which should be detected correctly.
+  assert(!UVWASI_SERDES_CHECK_ARRAY_BOUNDS(0, 0xffffffffffffffffllu,
+                                           subscription_t,
+                                           0xffffffffffffffffllu));
 
   assert(UVWASI_SERDES_CHECK_BOUNDS(19, 20, uint8_t));
   assert(!UVWASI_SERDES_CHECK_BOUNDS(20, 20, uint8_t));
