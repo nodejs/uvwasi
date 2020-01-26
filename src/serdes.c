@@ -1,24 +1,28 @@
 #include "uvwasi.h"
 
-inline void uvwasi_serdes_write_uint64_t(void* ptr, size_t offset,
+inline void uvwasi_serdes_write_uint64_t(void* ptr,
+                                         size_t offset,
                                          uint64_t value) {
   uvwasi_serdes_write_uint32_t(ptr, offset, (uint32_t) value);
   uvwasi_serdes_write_uint32_t(ptr, offset + 4, value >> 32);
 }
 
-inline void uvwasi_serdes_write_uint32_t(void* ptr, size_t offset,
+inline void uvwasi_serdes_write_uint32_t(void* ptr,
+                                         size_t offset,
                                          uint32_t value) {
   uvwasi_serdes_write_uint16_t(ptr, offset, (uint16_t) value);
   uvwasi_serdes_write_uint16_t(ptr, offset + 2, value >> 16);
 }
 
-inline void uvwasi_serdes_write_uint16_t(void* ptr, size_t offset,
+inline void uvwasi_serdes_write_uint16_t(void* ptr,
+                                         size_t offset,
                                          uint16_t value) {
   uvwasi_serdes_write_uint8_t(ptr, offset, (uint8_t) value);
   uvwasi_serdes_write_uint8_t(ptr, offset + 1, value >> 8);
 }
 
-inline void uvwasi_serdes_write_uint8_t(void* ptr, size_t offset,
+inline void uvwasi_serdes_write_uint8_t(void* ptr,
+                                        size_t offset,
                                         uint8_t value) {
   ((uint8_t*) ptr)[offset] = value;
 }

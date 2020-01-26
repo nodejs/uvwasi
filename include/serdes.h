@@ -3,9 +3,9 @@
 
 #include "wasi_types.h"
 
-//
-// Basic uint{8,16,32,64}_t read/write functions.
-//
+/*
+   Basic uint{8,16,32,64}_t read/write functions.
+*/
 
 #define BASIC_TYPE(type)                                                       \
   void uvwasi_serdes_write_##type(void* ptr, size_t offset, type value);       \
@@ -22,9 +22,9 @@ BASIC_TYPE(uint64_t)
 
 #undef BASIC_TYPE
 
-//
-// WASI structure read/write functions.
-//
+/*
+   WASI structure read/write functions.
+*/
 
 #define STRUCT(name) \
   void uvwasi_serdes_write_##name(void* ptr,                                   \
@@ -51,9 +51,9 @@ STRUCT(subscription_t)
 
 #undef STRUCT
 
-//
-// Helper macros for bound checking.
-//
+/*
+   Helper macros for bound checking.
+*/
 
 #define UVWASI_SERDES_CHECK_BOUNDS(offset, end, type)                          \
   ((offset) >= 0 &&                                                            \

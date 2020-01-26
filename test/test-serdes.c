@@ -22,20 +22,21 @@ int main(void) {
   return 0;
 }
 
-// First 16 digits of PI, used to make sure that the algorithm doesn't overwrite
-// anything it shouldn't.
+/* First 16 digits of PI, used to make sure that the algorithm doesn't overwrite
+   anything it shouldn't.
+*/
 const char canary[16] = { 3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9, 3 };
 
 #define ADD_CANARIES(type) ((UVWASI_SERDES_SIZE_##type) + 2 * sizeof(canary))
 
-// Writes the canary to the beginning and end of the buffer.
+/* Writes the canary to the beginning and end of the buffer. */
 void use_canaries(char* ptr, size_t size) {
   assert(size >= 2 * sizeof(canary));
   memcpy(ptr, canary, sizeof(canary));
   memcpy(ptr + size - sizeof(canary), canary, sizeof(canary));
 }
 
-// Checks that the canaries at the beginning and end of the buffer are intact.
+/* Checks that the canaries at the beginning and end of the buffer are intact. */
 void check_canaries(const char* ptr, size_t size) {
   assert(size >= 2 * sizeof(canary));
   assert(memcmp(ptr, canary, sizeof(canary)) == 0);
@@ -43,7 +44,7 @@ void check_canaries(const char* ptr, size_t size) {
 }
 
 void test_bound_checks(void) {
-  // Regardless of the type, the macro should catch negative offsets and sizes.
+  /* Regardless of the type, the macro should catch negative offsets and sizes. */
   assert(!UVWASI_SERDES_CHECK_BOUNDS(-500, 1000, uint8_t));
   assert(!UVWASI_SERDES_CHECK_BOUNDS(-500, -100, uint16_t));
   assert(!UVWASI_SERDES_CHECK_BOUNDS(5000, 1000, uint32_t));
@@ -51,7 +52,7 @@ void test_bound_checks(void) {
   assert(!UVWASI_SERDES_CHECK_BOUNDS(-500, -100, event_t));
   assert(!UVWASI_SERDES_CHECK_BOUNDS(5000, 1000, fdstat_t));
   assert(!UVWASI_SERDES_CHECK_ARRAY_BOUNDS(0, 1000, filestat_t, -1));
-  // This causes an integer overflow, which should be detected correctly.
+  /* This causes an integer overflow, which should be detected correctly. */
   assert(!UVWASI_SERDES_CHECK_ARRAY_BOUNDS(0, 0xffffffffffffffffllu,
                                            subscription_t,
                                            0xffffffffffffffffllu));
@@ -122,7 +123,7 @@ void test_fdstat_t(void) {
   use_canaries(data, sizeof(data));
   uvwasi_serdes_write_fdstat_t(data, sizeof(canary), &stat);
   check_canaries(data, sizeof(data));
-  // TODO: Check result of serialization.
+  /* TODO(tniessen): Check result of serialization. */
 
   uvwasi_fdstat_t deserialized;
   uvwasi_serdes_read_fdstat_t(data, sizeof(canary), &deserialized);
@@ -148,7 +149,7 @@ void test_filestat_t(void) {
   use_canaries(data, sizeof(data));
   uvwasi_serdes_write_filestat_t(data, sizeof(canary), &stat);
   check_canaries(data, sizeof(data));
-  // TODO: Check result of serialization.
+  /* TODO(tniessen): Check result of serialization. */
 
   uvwasi_filestat_t deserialized;
   uvwasi_serdes_read_filestat_t(data, sizeof(canary), &deserialized);
@@ -176,7 +177,7 @@ void test_prestat_t(void) {
   use_canaries(data, sizeof(data));
   uvwasi_serdes_write_prestat_t(data, sizeof(canary), &stat);
   check_canaries(data, sizeof(data));
-  // TODO: Check result of serialization.
+  /* TODO(tniessen): Check result of serialization. */
 
   uvwasi_prestat_t deserialized;
   uvwasi_serdes_read_prestat_t(data, sizeof(canary), &deserialized);
@@ -195,7 +196,7 @@ void test_event_t(void) {
   use_canaries(data, sizeof(data));
   uvwasi_serdes_write_event_t(data, sizeof(canary), &event);
   check_canaries(data, sizeof(data));
-  // TODO: Check result of serialization.
+  /* TODO(tniessen): Check result of serialization. */
 
   uvwasi_event_t deserialized = { 0 };
   uvwasi_serdes_read_event_t(data, sizeof(canary), &deserialized);
@@ -209,7 +210,7 @@ void test_event_t(void) {
   event.u.fd_readwrite.nbytes = 1000;
   event.u.fd_readwrite.flags = UVWASI_EVENT_FD_READWRITE_HANGUP;
   uvwasi_serdes_write_event_t(data, sizeof(canary), &event);
-  // TODO: Check result of serialization
+  /* TODO(tniessen): Check result of serialization. */
 
   memset(&deserialized, 0, sizeof(deserialized));
   uvwasi_serdes_read_event_t(data, sizeof(canary), &deserialized);
@@ -221,7 +222,7 @@ void test_event_t(void) {
 
   event.type = UVWASI_EVENTTYPE_FD_WRITE;
   uvwasi_serdes_write_event_t(data, sizeof(canary), &event);
-  // TODO: Check result of serialization
+  /* TODO(tniessen): Check result of serialization. */
 
   memset(&deserialized, 0, sizeof(deserialized));
   uvwasi_serdes_read_event_t(data, sizeof(canary), &deserialized);
@@ -250,7 +251,7 @@ void test_subscription_t(void) {
   use_canaries(data, sizeof(data));
   uvwasi_serdes_write_subscription_t(data, sizeof(canary), &subscription);
   check_canaries(data, sizeof(data));
-  // TODO: Check result of serialization.
+  /* TODO(tniessen): Check result of serialization. */
 
   uvwasi_subscription_t deserialized = { 0 };
   uvwasi_serdes_read_subscription_t(data, sizeof(canary), &deserialized);
@@ -264,7 +265,7 @@ void test_subscription_t(void) {
   subscription.type = UVWASI_EVENTTYPE_FD_READ;
   subscription.u.fd_readwrite.fd = 0xabcdabcdu;
   uvwasi_serdes_write_subscription_t(data, sizeof(canary), &subscription);
-  // TODO: Check result of serialization
+  /* TODO(tniessen): Check result of serialization. */
 
   memset(&deserialized, 0, sizeof(deserialized));
   uvwasi_serdes_read_subscription_t(data, sizeof(canary), &deserialized);
@@ -274,7 +275,7 @@ void test_subscription_t(void) {
 
   subscription.type = UVWASI_EVENTTYPE_FD_WRITE;
   uvwasi_serdes_write_subscription_t(data, sizeof(canary), &subscription);
-  // TODO: Check result of serialization
+  /* TODO(tniessen): Check result of serialization. */
 
   memset(&deserialized, 0, sizeof(deserialized));
   uvwasi_serdes_read_subscription_t(data, sizeof(canary), &deserialized);
