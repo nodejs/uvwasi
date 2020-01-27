@@ -49,7 +49,7 @@ inline uint8_t uvwasi_serdes_read_uint8_t(const void* ptr,  size_t offset) {
   return ((const uint8_t*) ptr)[offset];
 }
 
-#define TYPE_SWITCH switch(value->type)
+#define TYPE_SWITCH switch (value->type)
 
 #define ALL_TYPES(STRUCT, FIELD, ALIAS)                                        \
                                                                                \
