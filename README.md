@@ -3,6 +3,17 @@
 `uvwasi` implements the [WASI][] system call API. Under the hood, `uvwasi`
 leverages [libuv][] where possible for maximum portability.
 
+## Building Locally
+
+To build with [CMake](https://cmake.org/):
+
+```sh
+$ mkdir -p out/cmake ; cd out/cmake   # create build directory
+$ cmake ../.. -DBUILD_TESTING=ON      # generate project with test
+$ cmake --build .                     # build
+$ ctest -C Debug --output-on-failure  # run tests
+```
+
 ## Example Usage
 
 ```c
