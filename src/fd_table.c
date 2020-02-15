@@ -28,7 +28,7 @@ uvwasi_errno_t uvwasi_fd_table_insert(uvwasi_t* uvwasi,
   struct uvwasi_fd_wrap_t** new_fds;
   uvwasi_errno_t err;
   uint32_t new_size;
-  int index;
+  uint32_t index;
   uint32_t i;
   int r;
   size_t mp_len;
@@ -69,16 +69,17 @@ uvwasi_errno_t uvwasi_fd_table_insert(uvwasi_t* uvwasi,
     table->size = new_size;
   } else {
     /* The table is big enough, so find an empty slot for the new data. */
-    index = -1;
+    int valid_slot = 0;
     for (i = 0; i < table->size; ++i) {
       if (table->fds[i] == NULL) {
+        valid_slot = 1;
         index = i;
         break;
       }
     }
 
-    /* index should never be -1. */
-    if (index == -1) {
+    /* This should never happen. */
+    if (valid_slot == 0) {
       uvwasi__free(uvwasi, entry);
       err = UVWASI_ENOSPC;
       goto exit;
@@ -123,7 +124,7 @@ uvwasi_errno_t uvwasi_fd_table_init(uvwasi_t* uvwasi,
   uvwasi_rights_t base;
   uvwasi_rights_t inheriting;
   uvwasi_errno_t err;
-  uvwasi_fd_t i;
+  int i;
   int r;
 
   /* Require an initial size of at least three to store the stdio FDs. */
@@ -175,7 +176,7 @@ uvwasi_errno_t uvwasi_fd_table_init(uvwasi_t* uvwasi,
     if (err != UVWASI_ESUCCESS)
       goto error_exit;
 
-    r = wrap->id != i || wrap->id != (uvwasi_fd_t) wrap->fd;
+    r = (int) wrap->id != i || wrap->id != (uvwasi_fd_t) wrap->fd;
     uv_mutex_unlock(&wrap->mutex);
     if (r) {
       err = UVWASI_EBADF;
