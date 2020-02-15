@@ -1,4 +1,6 @@
-#ifndef _WIN32
+#ifdef _WIN32
+#include "clocks.h"
+#else
 # include <errno.h>
 # include <sys/time.h>
 # include <sys/resource.h>
@@ -6,7 +8,6 @@
 #endif /* _WIN32 */
 
 #include "uv.h"
-#include "clocks.h"
 #include "wasi_types.h"
 #include "uv_mapping.h"
 
