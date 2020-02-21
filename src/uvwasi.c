@@ -1147,7 +1147,7 @@ uvwasi_errno_t uvwasi_fd_prestat_get(uvwasi_t* uvwasi,
     goto exit;
   }
 
-  buf->pr_type = UVWASI_PREOPENTYPE_DIR;
+  buf->tag = UVWASI_PREOPENTYPE_DIR;
   buf->u.dir.pr_name_len = strlen(wrap->path) + 1;
   err = UVWASI_ESUCCESS;
 exit:
@@ -2458,17 +2458,17 @@ uvwasi_errno_t uvwasi_poll_oneoff(uvwasi_t* uvwasi,
   for (i = 0; i < nsubscriptions; i++) {
     sub = in[i];
 
-    switch (sub.type) {
+    switch (sub.u.tag) {
       case UVWASI_EVENTTYPE_CLOCK:
-        if (sub.u.clock.flags == UVWASI_SUBSCRIPTION_CLOCK_ABSTIME) {
+        if (sub.u.u.clock.flags == UVWASI_SUBSCRIPTION_CLOCK_ABSTIME) {
           /* Convert absolute time to relative delay. */
           err = uvwasi__clock_gettime_realtime(&now);
           if (err != UVWASI_ESUCCESS)
             goto exit;
 
-          cur_timeout = sub.u.clock.timeout - now;
+          cur_timeout = sub.u.u.clock.timeout - now;
         } else {
-          cur_timeout = sub.u.clock.timeout;
+          cur_timeout = sub.u.u.clock.timeout;
         }
 
         if (has_timeout == 0 || cur_timeout < min_timeout) {
@@ -2515,13 +2515,13 @@ uvwasi_errno_t uvwasi_poll_oneoff(uvwasi_t* uvwasi,
       event->userdata = fdevent->userdata;
       event->error = fdevent->error;
       event->type = fdevent->type;
-      event->u.fd_readwrite.nbytes = 0;
-      event->u.fd_readwrite.flags = 0;
+      event->fd_readwrite.nbytes = 0;
+      event->fd_readwrite.flags = 0;
 
       if (fdevent->error != UVWASI_ESUCCESS)
         ;
       else if ((fdevent->revents & UV_DISCONNECT) != 0)
-        event->u.fd_readwrite.flags = UVWASI_EVENT_FD_READWRITE_HANGUP;
+        event->fd_readwrite.flags = UVWASI_EVENT_FD_READWRITE_HANGUP;
       else if ((fdevent->revents & (UV_READABLE | UV_WRITABLE)) != 0)
         ; /* TODO(cjihrig): Set nbytes if type is UVWASI_EVENTTYPE_FD_READ. */
       else

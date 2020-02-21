@@ -171,7 +171,7 @@ typedef uint8_t uvwasi_preopentype_t;
 #define UVWASI_PREOPENTYPE_DIR 0
 
 typedef struct uvwasi_prestat_s {
-  uvwasi_preopentype_t pr_type;
+  uvwasi_preopentype_t tag;
   union uvwasi_prestat_u {
     struct uvwasi_prestat_dir_t {
       uvwasi_size_t pr_name_len;
@@ -238,20 +238,29 @@ typedef uint64_t uvwasi_timestamp_t;
 
 typedef uint64_t uvwasi_userdata_t;
 
+typedef union uvwasi_subscription_u_u_s {
+  struct {
+    uvwasi_clockid_t clock_id;
+    uvwasi_timestamp_t timeout;
+    uvwasi_timestamp_t precision;
+    uvwasi_subclockflags_t flags;
+  } clock;
+  struct {
+    uvwasi_fd_t fd;
+  } fd_read;
+  struct {
+    uvwasi_fd_t fd;
+  } fd_write;
+} uvwasi_subscription_u_u_t;
+
+typedef struct uvwasi_subscription_u_s {
+  uvwasi_eventtype_t tag;
+  uvwasi_subscription_u_u_t u;
+} uvwasi_subscription_u_t;
+
 typedef struct uvwasi_subscription_s {
   uvwasi_userdata_t userdata;
-  uvwasi_eventtype_t type;
-  union {
-    struct {
-      uvwasi_clockid_t clock_id;
-      uvwasi_timestamp_t timeout;
-      uvwasi_timestamp_t precision;
-      uvwasi_subclockflags_t flags;
-    } clock;
-    struct {
-      uvwasi_fd_t fd;
-    } fd_readwrite;
-  } u;
+  uvwasi_subscription_u_t u;
 } uvwasi_subscription_t;
 
 typedef struct uvwasi_dirent_s {
@@ -280,16 +289,16 @@ typedef struct uvwasi_filestat_s {
   uvwasi_timestamp_t st_ctim;
 } uvwasi_filestat_t;
 
+typedef struct uvwasi_event_fd_readwrite_s {
+  uvwasi_filesize_t nbytes;
+  uvwasi_eventrwflags_t flags;
+} uvwasi_event_fd_readwrite_t;
+
 typedef struct uvwasi_event_s {
   uvwasi_userdata_t userdata;
   uvwasi_errno_t error;
   uvwasi_eventtype_t type;
-  union {
-    struct {
-      uvwasi_filesize_t nbytes;
-      uvwasi_eventrwflags_t flags;
-    } fd_readwrite;
-  } u;
+  uvwasi_event_fd_readwrite_t fd_readwrite;
 } uvwasi_event_t;
 
 typedef uint8_t uvwasi_whence_t;

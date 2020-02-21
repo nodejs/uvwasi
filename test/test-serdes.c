@@ -172,7 +172,7 @@ void test_filestat_t(void) {
 
 void test_prestat_t(void) {
   uvwasi_prestat_t stat = {
-    .pr_type = UVWASI_PREOPENTYPE_DIR,
+    .tag = UVWASI_PREOPENTYPE_DIR,
     .u = {
       .dir = {
         .pr_name_len = 100
@@ -188,7 +188,7 @@ void test_prestat_t(void) {
 
   uvwasi_prestat_t deserialized;
   uvwasi_serdes_read_prestat_t(data, sizeof(canary), &deserialized);
-  assert(deserialized.pr_type == stat.pr_type);
+  assert(deserialized.tag == stat.tag);
   assert(deserialized.u.dir.pr_name_len == stat.u.dir.pr_name_len);
 }
 
@@ -210,12 +210,12 @@ void test_event_t(void) {
   assert(deserialized.userdata == event.userdata);
   assert(deserialized.error == event.error);
   assert(deserialized.type == event.type);
-  assert(deserialized.u.fd_readwrite.nbytes == 0);
-  assert(deserialized.u.fd_readwrite.flags == 0);
+  assert(deserialized.fd_readwrite.nbytes == 0);
+  assert(deserialized.fd_readwrite.flags == 0);
 
   event.type = UVWASI_EVENTTYPE_FD_READ;
-  event.u.fd_readwrite.nbytes = 1000;
-  event.u.fd_readwrite.flags = UVWASI_EVENT_FD_READWRITE_HANGUP;
+  event.fd_readwrite.nbytes = 1000;
+  event.fd_readwrite.flags = UVWASI_EVENT_FD_READWRITE_HANGUP;
   uvwasi_serdes_write_event_t(data, sizeof(canary), &event);
   /* TODO(tniessen): Check result of serialization. */
 
@@ -224,8 +224,8 @@ void test_event_t(void) {
   assert(deserialized.userdata == event.userdata);
   assert(deserialized.error == event.error);
   assert(deserialized.type == event.type);
-  assert(deserialized.u.fd_readwrite.nbytes == event.u.fd_readwrite.nbytes);
-  assert(deserialized.u.fd_readwrite.flags == event.u.fd_readwrite.flags);
+  assert(deserialized.fd_readwrite.nbytes == event.fd_readwrite.nbytes);
+  assert(deserialized.fd_readwrite.flags == event.fd_readwrite.flags);
 
   event.type = UVWASI_EVENTTYPE_FD_WRITE;
   uvwasi_serdes_write_event_t(data, sizeof(canary), &event);
@@ -236,20 +236,22 @@ void test_event_t(void) {
   assert(deserialized.userdata == event.userdata);
   assert(deserialized.error == event.error);
   assert(deserialized.type == event.type);
-  assert(deserialized.u.fd_readwrite.nbytes == event.u.fd_readwrite.nbytes);
-  assert(deserialized.u.fd_readwrite.flags == event.u.fd_readwrite.flags);
+  assert(deserialized.fd_readwrite.nbytes == event.fd_readwrite.nbytes);
+  assert(deserialized.fd_readwrite.flags == event.fd_readwrite.flags);
 }
 
 void test_subscription_t(void) {
   uvwasi_subscription_t subscription = {
     .userdata = 0xabcdabcdabcdabcdllu,
-    .type = UVWASI_EVENTTYPE_CLOCK,
     .u = {
-      .clock = {
-        .clock_id = 0xabcdabcdu,
-        .timeout = 0xabcdabcdabcdabcdllu,
-        .precision = 0xdcbadcbadcbadcballu,
-        .flags = UVWASI_SUBSCRIPTION_CLOCK_ABSTIME
+      .tag = UVWASI_EVENTTYPE_CLOCK,
+      .u = {
+        .clock = {
+          .clock_id = 0xabcdabcdu,
+          .timeout = 0xabcdabcdabcdabcdllu,
+          .precision = 0xdcbadcbadcbadcballu,
+          .flags = UVWASI_SUBSCRIPTION_CLOCK_ABSTIME
+        }
       }
     }
   };
@@ -263,30 +265,30 @@ void test_subscription_t(void) {
   uvwasi_subscription_t deserialized = { 0 };
   uvwasi_serdes_read_subscription_t(data, sizeof(canary), &deserialized);
   assert(deserialized.userdata == subscription.userdata);
-  assert(deserialized.type == subscription.type);
-  assert(deserialized.u.clock.clock_id == subscription.u.clock.clock_id);
-  assert(deserialized.u.clock.timeout == subscription.u.clock.timeout);
-  assert(deserialized.u.clock.precision == subscription.u.clock.precision);
-  assert(deserialized.u.clock.flags == subscription.u.clock.flags);
+  assert(deserialized.u.tag == subscription.u.tag);
+  assert(deserialized.u.u.clock.clock_id == subscription.u.u.clock.clock_id);
+  assert(deserialized.u.u.clock.timeout == subscription.u.u.clock.timeout);
+  assert(deserialized.u.u.clock.precision == subscription.u.u.clock.precision);
+  assert(deserialized.u.u.clock.flags == subscription.u.u.clock.flags);
 
-  subscription.type = UVWASI_EVENTTYPE_FD_READ;
-  subscription.u.fd_readwrite.fd = 0xabcdabcdu;
+  subscription.u.tag = UVWASI_EVENTTYPE_FD_READ;
+  subscription.u.u.fd_read.fd = 0xabcdabcdu;
   uvwasi_serdes_write_subscription_t(data, sizeof(canary), &subscription);
   /* TODO(tniessen): Check result of serialization. */
 
   memset(&deserialized, 0, sizeof(deserialized));
   uvwasi_serdes_read_subscription_t(data, sizeof(canary), &deserialized);
   assert(deserialized.userdata == subscription.userdata);
-  assert(deserialized.type == subscription.type);
-  assert(deserialized.u.fd_readwrite.fd == subscription.u.fd_readwrite.fd);
+  assert(deserialized.u.tag == subscription.u.tag);
+  assert(deserialized.u.u.fd_read.fd == subscription.u.u.fd_read.fd);
 
-  subscription.type = UVWASI_EVENTTYPE_FD_WRITE;
+  subscription.u.tag = UVWASI_EVENTTYPE_FD_WRITE;
   uvwasi_serdes_write_subscription_t(data, sizeof(canary), &subscription);
   /* TODO(tniessen): Check result of serialization. */
 
   memset(&deserialized, 0, sizeof(deserialized));
   uvwasi_serdes_read_subscription_t(data, sizeof(canary), &deserialized);
   assert(deserialized.userdata == subscription.userdata);
-  assert(deserialized.type == subscription.type);
-  assert(deserialized.u.fd_readwrite.fd == subscription.u.fd_readwrite.fd);
+  assert(deserialized.u.tag == subscription.u.tag);
+  assert(deserialized.u.u.fd_read.fd == subscription.u.u.fd_read.fd);
 }

@@ -172,15 +172,16 @@ uvwasi_errno_t uvwasi__poll_oneoff_state_add_fdevent(
     return UVWASI_EINVAL;
 
   event = &state->fdevents[state->fdevent_cnt];
-  fd = subscription->u.fd_readwrite.fd;
-  type = subscription->type;
+  type = subscription->u.tag;
 
   if (type == UVWASI_EVENTTYPE_FD_READ) {
     event->events = UV_DISCONNECT | UV_READABLE;
     rights = UVWASI_RIGHT_POLL_FD_READWRITE | UVWASI_RIGHT_FD_READ;
+    fd = subscription->u.u.fd_read.fd;
   } else if (type == UVWASI_EVENTTYPE_FD_WRITE) {
     event->events = UV_DISCONNECT | UV_WRITABLE;
     rights = UVWASI_RIGHT_POLL_FD_READWRITE | UVWASI_RIGHT_FD_WRITE;
+    fd = subscription->u.u.fd_write.fd;
   } else {
     return UVWASI_EINVAL;
   }

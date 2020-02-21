@@ -32,7 +32,7 @@ int main(void) {
   /* Verify uvwasi_fd_prestat_get(). */
   err = uvwasi_fd_prestat_get(&uvwasi, 3, &prestat);
   assert(err == 0);
-  assert(prestat.pr_type == UVWASI_PREOPENTYPE_DIR);
+  assert(prestat.tag == UVWASI_PREOPENTYPE_DIR);
   assert(prestat.u.dir.pr_name_len ==
          strlen(init_options.preopens[0].mapped_path) + 1);
 

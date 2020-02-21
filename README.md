@@ -1702,13 +1702,13 @@ Members:
 
 - When `type` is [`UVWASI_EVENTTYPE_FD_READ`](#eventtype.fd_read) or [`UVWASI_EVENTTYPE_FD_WRITE`](#eventtype.fd_write):
 
-    - <a href="#event.u.fd_readwrite" name="event.u.fd_readwrite"></a>**`u.fd_readwrite`**
+    - <a href="#event.fd_readwrite" name="event.fd_readwrite"></a>**`fd_readwrite`**
 
-        - <a href="#event.u.fd_readwrite.nbytes" name="event.u.fd_readwrite.nbytes"></a><code>[\_\_wasi\_filesize\_t](#filesize) <strong>nbytes</strong></code>
+        - <a href="#event.fd_readwrite.nbytes" name="event.fd_readwrite.nbytes"></a><code>[\_\_wasi\_filesize\_t](#filesize) <strong>nbytes</strong></code>
 
             The number of bytes available for reading or writing.
 
-        - <a href="#event.u.fd_readwrite.flags" name="event.u.fd_readwrite.flags"></a><code>[\_\_wasi\_eventrwflags\_t](#eventrwflags) <strong>flags</strong></code>
+        - <a href="#event.fd_readwrite.flags" name="event.fd_readwrite.flags"></a><code>[\_\_wasi\_eventrwflags\_t](#eventrwflags) <strong>flags</strong></code>
 
             The state of the file descriptor.
 

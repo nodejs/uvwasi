@@ -14,11 +14,11 @@ int main(void) {
   assert(err == 0);
 
   sub.userdata = 42;
-  sub.type = UVWASI_EVENTTYPE_CLOCK;
-  sub.u.clock.clock_id = UVWASI_CLOCK_REALTIME;
-  sub.u.clock.timeout = 0;
-  sub.u.clock.precision = 1;
-  sub.u.clock.flags = 0;
+  sub.u.tag = UVWASI_EVENTTYPE_CLOCK;
+  sub.u.u.clock.clock_id = UVWASI_CLOCK_REALTIME;
+  sub.u.u.clock.timeout = 0;
+  sub.u.u.clock.precision = 1;
+  sub.u.u.clock.flags = 0;
 
   err = uvwasi_poll_oneoff(&uvwasi, &sub, &event, 1, &nevents);
   assert(err == 0);

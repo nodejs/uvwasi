@@ -50,7 +50,7 @@ uint8_t uvwasi_serdes_read_uint8_t(const void* ptr,  size_t offset) {
   return ((const uint8_t*) ptr)[offset];
 }
 
-#define TYPE_SWITCH switch (value->type)
+#define TYPE_SWITCH(expr) switch ((expr))
 
 #define ALL_TYPES(STRUCT, FIELD, ALIAS)                                       \
                                                                               \
@@ -110,7 +110,7 @@ uint8_t uvwasi_serdes_read_uint8_t(const void* ptr,  size_t offset) {
   }                                                                           \
                                                                               \
   STRUCT(prestat_t) {                                                         \
-    FIELD(0, preopentype_t, pr_type);                                         \
+    FIELD(0, preopentype_t, tag);                                             \
     FIELD(4, uint32_t,      u.dir.pr_name_len);                               \
   }                                                                           \
                                                                               \
@@ -118,27 +118,31 @@ uint8_t uvwasi_serdes_read_uint8_t(const void* ptr,  size_t offset) {
     FIELD( 0, userdata_t,  userdata);                                         \
     FIELD( 8, errno_t,     error);                                            \
     FIELD(10, eventtype_t, type);                                             \
-    TYPE_SWITCH {                                                             \
+    TYPE_SWITCH(value->type) {                                                \
       case UVWASI_EVENTTYPE_FD_READ:                                          \
       case UVWASI_EVENTTYPE_FD_WRITE:                                         \
-        FIELD(16, filesize_t,     u.fd_readwrite.nbytes);                     \
-        FIELD(24, eventrwflags_t, u.fd_readwrite.flags);                      \
+        FIELD(16, filesize_t,     fd_readwrite.nbytes);                       \
+        FIELD(24, eventrwflags_t, fd_readwrite.flags);                        \
+        break;                                                                \
     }                                                                         \
   }                                                                           \
                                                                               \
   STRUCT(subscription_t) {                                                    \
     FIELD(0, userdata_t,  userdata);                                          \
-    FIELD(8, eventtype_t, type);                                              \
-    TYPE_SWITCH {                                                             \
+    FIELD(8, eventtype_t, u.tag);                                             \
+    TYPE_SWITCH(value->u.tag) {                                               \
       case UVWASI_EVENTTYPE_CLOCK:                                            \
-        FIELD(16, clockid_t,       u.clock.clock_id);                         \
-        FIELD(24, timestamp_t,     u.clock.timeout);                          \
-        FIELD(32, timestamp_t,     u.clock.precision);                        \
-        FIELD(40, subclockflags_t, u.clock.flags);                            \
+        FIELD(16, clockid_t,       u.u.clock.clock_id);                       \
+        FIELD(24, timestamp_t,     u.u.clock.timeout);                        \
+        FIELD(32, timestamp_t,     u.u.clock.precision);                      \
+        FIELD(40, subclockflags_t, u.u.clock.flags);                          \
         break;                                                                \
       case UVWASI_EVENTTYPE_FD_READ:                                          \
+        FIELD(16, fd_t, u.u.fd_read.fd);                                      \
+        break;                                                                \
       case UVWASI_EVENTTYPE_FD_WRITE:                                         \
-        FIELD(16, fd_t, u.fd_readwrite.fd);                                   \
+        FIELD(16, fd_t, u.u.fd_write.fd);                                     \
+        break;                                                                \
     }                                                                         \
   }                                                                           \
 
