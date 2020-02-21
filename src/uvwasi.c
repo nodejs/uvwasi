@@ -474,10 +474,6 @@ uvwasi_errno_t uvwasi_clock_res_get(uvwasi_t* uvwasi,
     case UVWASI_CLOCK_REALTIME:
       *resolution = 1;  /* Nanosecond precision. */
       return UVWASI_ESUCCESS;
-    case UVWASI_CLOCK_PROCESS_CPUTIME_ID:
-      return uvwasi__clock_getres_process_cputime(resolution);
-    case UVWASI_CLOCK_THREAD_CPUTIME_ID:
-      return uvwasi__clock_getres_thread_cputime(resolution);
     default:
       return UVWASI_EINVAL;
   }
@@ -504,10 +500,6 @@ uvwasi_errno_t uvwasi_clock_time_get(uvwasi_t* uvwasi,
       return UVWASI_ESUCCESS;
     case UVWASI_CLOCK_REALTIME:
       return uvwasi__clock_gettime_realtime(time);
-    case UVWASI_CLOCK_PROCESS_CPUTIME_ID:
-      return uvwasi__clock_gettime_process_cputime(time);
-    case UVWASI_CLOCK_THREAD_CPUTIME_ID:
-      return uvwasi__clock_gettime_thread_cputime(time);
     default:
       return UVWASI_EINVAL;
   }

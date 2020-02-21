@@ -1307,19 +1307,10 @@ Possible values:
     The epoch of this clock is undefined. The absolute
     time value of this clock therefore has no meaning.
 
-- <a href="#clockid.process_cputime_id" name="clockid.process_cputime_id"></a>**`UVWASI_CLOCK_PROCESS_CPUTIME_ID`**
-
-    The CPU-time clock associated with the current
-    process.
-
 - <a href="#clockid.realtime" name="clockid.realtime"></a>**`UVWASI_CLOCK_REALTIME`**
 
     The clock measuring real time. Time value
     zero corresponds with 1970-01-01T00:00:00Z.
-
-- <a href="#clockid.thread_cputime_id" name="clockid.thread_cputime_id"></a>**`UVWASI_CLOCK_THREAD_CPUTIME_ID`**
-
-    The CPU-time clock associated with the current thread.
 
 ### <a href="#device" name="device"></a>`uvwasi_device_t` (`uint64_t`)
 

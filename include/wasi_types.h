@@ -24,8 +24,6 @@ typedef struct uvwasi_ciovec_s {
 typedef uint32_t uvwasi_clockid_t;
 #define UVWASI_CLOCK_REALTIME           0
 #define UVWASI_CLOCK_MONOTONIC          1
-#define UVWASI_CLOCK_PROCESS_CPUTIME_ID 2
-#define UVWASI_CLOCK_THREAD_CPUTIME_ID  3
 
 typedef uint64_t uvwasi_device_t;
 
