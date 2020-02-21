@@ -34,6 +34,11 @@
 # define PATH_MAX_BYTES (PATH_MAX)
 #endif
 
+/* IBMi PASE does not support posix_fadvise() */
+#ifdef __PASE__
+# undef POSIX_FADV_NORMAL
+#endif
+
 static void* default_malloc(size_t size, void* mem_user_data) {
   return malloc(size);
 }
