@@ -1378,7 +1378,7 @@ Possible values:
 
     Argument list too long.
 
-- <a href="#errno.acces" name="errno.acces"></a>**`UVWASI_EACCES`**
+- <a href="#errno.access" name="errno.access"></a>**`UVWASI_EACCESS`**
 
     Permission denied.
 

@@ -8,7 +8,6 @@
 int main(void) {
   /* Verify error code translation. */
   CHECK_ERR(E2BIG);
-  CHECK_ERR(EACCES);
   CHECK_ERR(EADDRINUSE);
   CHECK_ERR(EADDRNOTAVAIL);
   CHECK_ERR(EAFNOSUPPORT);
@@ -63,6 +62,10 @@ int main(void) {
   CHECK_ERR(ETIMEDOUT);
   CHECK_ERR(ETXTBSY);
   CHECK_ERR(EXDEV);
+
+  /* EACCES is no longer consistently named. */
+  assert(uvwasi__translate_uv_error(UV_EACCES) == UVWASI_EACCESS);
+
   assert(uvwasi__translate_uv_error(0) == UVWASI_ESUCCESS);
   assert(uvwasi__translate_uv_error(1) == 1);
   assert(uvwasi__translate_uv_error(-99999) == UVWASI_ENOSYS);

@@ -2625,7 +2625,7 @@ const char* uvwasi_embedder_err_code_to_string(uvwasi_errno_t code) {
   switch (code) {
 #define V(errcode) case errcode: return #errcode;
     V(UVWASI_E2BIG)
-    V(UVWASI_EACCES)
+    V(UVWASI_EACCESS)
     V(UVWASI_EADDRINUSE)
     V(UVWASI_EADDRNOTAVAIL)
     V(UVWASI_EAFNOSUPPORT)

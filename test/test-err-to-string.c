@@ -8,7 +8,7 @@ static void check(uvwasi_errno_t err, const char* str) {
 
 int main(void) {
   check(UVWASI_E2BIG, "UVWASI_E2BIG");
-  check(UVWASI_EACCES, "UVWASI_EACCES");
+  check(UVWASI_EACCESS, "UVWASI_EACCESS");
   check(UVWASI_EADDRINUSE, "UVWASI_EADDRINUSE");
   check(UVWASI_EADDRNOTAVAIL, "UVWASI_EADDRNOTAVAIL");
   check(UVWASI_EAFNOSUPPORT, "UVWASI_EAFNOSUPPORT");

@@ -33,7 +33,7 @@ typedef uint64_t uvwasi_dircookie_t;
 typedef uint16_t uvwasi_errno_t;
 #define UVWASI_ESUCCESS         0
 #define UVWASI_E2BIG            1
-#define UVWASI_EACCES           2
+#define UVWASI_EACCESS          2
 #define UVWASI_EADDRINUSE       3
 #define UVWASI_EADDRNOTAVAIL    4
 #define UVWASI_EAFNOSUPPORT     5

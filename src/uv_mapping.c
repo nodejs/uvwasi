@@ -28,7 +28,7 @@
 uvwasi_errno_t uvwasi__translate_uv_error(int err) {
   switch (err) {
     case UV_E2BIG:           return UVWASI_E2BIG;
-    case UV_EACCES:          return UVWASI_EACCES;
+    case UV_EACCES:          return UVWASI_EACCESS;
     case UV_EADDRINUSE:      return UVWASI_EADDRINUSE;
     case UV_EADDRNOTAVAIL:   return UVWASI_EADDRNOTAVAIL;
     case UV_EAFNOSUPPORT:    return UVWASI_EAFNOSUPPORT;
