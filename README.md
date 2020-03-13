@@ -27,9 +27,9 @@ int main(void) {
   uvwasi_errno_t err;
 
   /* Setup the initialization options. */
-  init_options.stdin = 0;
-  init_options.stdout = 1;
-  init_options.stderr = 2;
+  init_options.in = 0;
+  init_options.out = 1;
+  init_options.err = 2;
   init_options.fd_table_size = 3;
   init_options.argc = 3;
   init_options.argv = calloc(3, sizeof(char*));
@@ -150,9 +150,9 @@ typedef struct uvwasi_options_s {
   size_t argc;
   char** argv;
   char** envp;
-  uvwasi_fd_t stdin;
-  uvwasi_fd_t stdout;
-  uvwasi_fd_t stderr;
+  uvwasi_fd_t in;
+  uvwasi_fd_t out;
+  uvwasi_fd_t err;
   const uvwasi_mem_t* allocator;
 } uvwasi_options_t;
 ```

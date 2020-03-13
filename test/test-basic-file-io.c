@@ -29,9 +29,9 @@ int main(void) {
   uv_fs_req_cleanup(&req);
   assert(r == 0 || r == UV_EEXIST);
 
-  init_options.stdin = 0;
-  init_options.stdout = 1;
-  init_options.stderr = 2;
+  init_options.in = 0;
+  init_options.out = 1;
+  init_options.err = 2;
   init_options.fd_table_size = 3;
   init_options.argc = 0;
   init_options.argv = NULL;

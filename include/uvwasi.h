@@ -60,9 +60,9 @@ typedef struct uvwasi_options_s {
   size_t argc;
   char** argv;
   char** envp;
-  uvwasi_fd_t stdin;
-  uvwasi_fd_t stdout;
-  uvwasi_fd_t stderr;
+  uvwasi_fd_t in;
+  uvwasi_fd_t out;
+  uvwasi_fd_t err;
   const uvwasi_mem_t* allocator;
 } uvwasi_options_t;
 

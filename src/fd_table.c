@@ -190,15 +190,15 @@ uvwasi_errno_t uvwasi_fd_table_init(uvwasi_t* uvwasi,
   }
 
   /* Create the stdio FDs. */
-  err = uvwasi__insert_stdio(uvwasi, table, options->stdin, 0, "<stdin>");
+  err = uvwasi__insert_stdio(uvwasi, table, options->in, 0, "<stdin>");
   if (err != UVWASI_ESUCCESS)
     goto error_exit;
 
-  err = uvwasi__insert_stdio(uvwasi, table, options->stdout, 1, "<stdout>");
+  err = uvwasi__insert_stdio(uvwasi, table, options->out, 1, "<stdout>");
   if (err != UVWASI_ESUCCESS)
     goto error_exit;
 
-  err = uvwasi__insert_stdio(uvwasi, table, options->stderr, 2, "<stderr>");
+  err = uvwasi__insert_stdio(uvwasi, table, options->err, 2, "<stderr>");
   if (err != UVWASI_ESUCCESS)
     goto error_exit;
 

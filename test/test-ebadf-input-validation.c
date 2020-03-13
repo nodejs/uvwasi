@@ -22,9 +22,9 @@ int main(void) {
 
   test_void = (void*) &test_fdstat;
 
-  init_options.stdin = 0;
-  init_options.stdout = 1;
-  init_options.stderr = 2;
+  init_options.in = 0;
+  init_options.out = 1;
+  init_options.err = 2;
   init_options.fd_table_size = 3;
   init_options.argc = 0;
   init_options.argv = NULL;
