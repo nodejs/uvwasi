@@ -27,6 +27,9 @@ int main(void) {
   uvwasi_errno_t err;
 
   /* Setup the initialization options. */
+  init_options.stdin = 0;
+  init_options.stdout = 1;
+  init_options.stderr = 2;
   init_options.fd_table_size = 3;
   init_options.argc = 3;
   init_options.argv = calloc(3, sizeof(char*));
@@ -38,6 +41,7 @@ int main(void) {
   init_options.preopens = calloc(1, sizeof(uvwasi_preopen_t));
   init_options.preopens[0].mapped_path = "/var";
   init_options.preopens[0].real_path = ".";
+  init_options.allocator = NULL;
 
   /* Initialize the sandbox. */
   err = uvwasi_init(&uvwasi, &init_options);
@@ -146,6 +150,10 @@ typedef struct uvwasi_options_s {
   size_t argc;
   char** argv;
   char** envp;
+  uvwasi_fd_t stdin;
+  uvwasi_fd_t stdout;
+  uvwasi_fd_t stderr;
+  const uvwasi_mem_t* allocator;
 } uvwasi_options_t;
 ```
 
