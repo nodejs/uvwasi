@@ -117,8 +117,8 @@ exit:
 
 
 uvwasi_errno_t uvwasi_fd_table_init(uvwasi_t* uvwasi,
-                                    struct uvwasi_fd_table_t* table,
-                                    uint32_t init_size) {
+                                    uvwasi_options_t* options) {
+  struct uvwasi_fd_table_t* table;
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_filetype_t type;
   uvwasi_rights_t base;
@@ -128,14 +128,15 @@ uvwasi_errno_t uvwasi_fd_table_init(uvwasi_t* uvwasi,
   int r;
 
   /* Require an initial size of at least three to store the stdio FDs. */
-  if (table == NULL || init_size < 3)
+  if (uvwasi == NULL || options == NULL || options->fd_table_size < 3)
     return UVWASI_EINVAL;
 
+  table = &uvwasi->fds;
   table->fds = NULL;
   table->used = 0;
-  table->size = init_size;
+  table->size = options->fd_table_size;
   table->fds = uvwasi__calloc(uvwasi,
-                              init_size,
+                              options->fd_table_size,
                               sizeof(struct uvwasi_fd_wrap_t*));
 
   if (table->fds == NULL)
