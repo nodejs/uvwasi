@@ -12,9 +12,9 @@ int main(void) {
   char** args_get_argv;
   char* buf;
 
-  init_options.stdin = 0;
-  init_options.stdout = 1;
-  init_options.stderr = 2;
+  init_options.in = 0;
+  init_options.out = 1;
+  init_options.err = 2;
   init_options.fd_table_size = 3;
   init_options.argc = 3;
   init_options.argv = calloc(3, sizeof(char*));
