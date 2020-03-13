@@ -16,7 +16,7 @@
 
 static uvwasi_errno_t uvwasi__insert_stdio(uvwasi_t* uvwasi,
                                            struct uvwasi_fd_table_t* table,
-                                           const uv_file fd,
+                                           const uvwasi_fd_t fd,
                                            const uvwasi_fd_t expected,
                                            const char* name) {
   struct uvwasi_fd_wrap_t* wrap;
@@ -190,15 +190,15 @@ uvwasi_errno_t uvwasi_fd_table_init(uvwasi_t* uvwasi,
   }
 
   /* Create the stdio FDs. */
-  err = uvwasi__insert_stdio(uvwasi, table, 0, 0, "<stdin>");
+  err = uvwasi__insert_stdio(uvwasi, table, options->stdin, 0, "<stdin>");
   if (err != UVWASI_ESUCCESS)
     goto error_exit;
 
-  err = uvwasi__insert_stdio(uvwasi, table, 1, 1, "<stdout>");
+  err = uvwasi__insert_stdio(uvwasi, table, options->stdout, 1, "<stdout>");
   if (err != UVWASI_ESUCCESS)
     goto error_exit;
 
-  err = uvwasi__insert_stdio(uvwasi, table, 2, 2, "<stderr>");
+  err = uvwasi__insert_stdio(uvwasi, table, options->stderr, 2, "<stderr>");
   if (err != UVWASI_ESUCCESS)
     goto error_exit;
 
