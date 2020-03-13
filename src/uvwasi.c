@@ -574,7 +574,7 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
     }
   }
 
-  err = uvwasi_fd_table_init(uvwasi, &uvwasi->fds, options->fd_table_size);
+  err = uvwasi_fd_table_init(uvwasi, options);
   if (err != UVWASI_ESUCCESS)
     goto exit;
 
