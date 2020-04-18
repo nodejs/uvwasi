@@ -154,22 +154,30 @@ static uvwasi_errno_t uvwasi__resolve_path_to_host(
   /* Return the normalized path, but resolved to the host's real path. */
   int real_path_len;
   int fake_path_len;
+  int path_offset;
 #ifdef _WIN32
   size_t i;
 #endif /* _WIN32 */
 
   real_path_len = strlen(fd->real_path);
   fake_path_len = strlen(fd->path);
+
   *resolved_len = path_len - fake_path_len + real_path_len;
   *resolved_path = uvwasi__malloc(uvwasi, *resolved_len + 1);
 
   if (*resolved_path == NULL)
     return UVWASI_ENOMEM;
 
+  // path_offset is used to strip the fake path prefix off when calculating the
+  // resolved path. However, if the fake path's length is only one, don't strip
+  // it off, as the resulting resolved path would have no separator after the
+  // real path.
+  path_offset = fake_path_len == 1 ? 0 : fake_path_len;
+
   memcpy(*resolved_path, fd->real_path, real_path_len);
   memcpy(*resolved_path + real_path_len,
-         path + fake_path_len,
-         path_len - fake_path_len + 1);
+         path + path_offset,
+         path_len - path_offset + 1);
 
 #ifdef _WIN32
   /* Replace / with \ on Windows. */
