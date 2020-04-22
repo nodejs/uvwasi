@@ -38,6 +38,7 @@ endif()
 set(uvwasi_sources
     src/clocks.c
     src/fd_table.c
+    src/path_resolver.c
     src/uv_mapping.c
     src/uvwasi.c
     src/wasi_rights.c
