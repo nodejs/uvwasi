@@ -32,45 +32,140 @@ static char* uvwasi__strchr_slash(const char* s) {
 }
 
 
-static uvwasi_errno_t uvwasi__normalize_path(const char* path,
-                                             size_t path_len,
-                                             char* normalized_path,
-                                             size_t normalized_len) {
+uvwasi_errno_t uvwasi__normalize_path(const char* path,
+                                      size_t path_len,
+                                      char* normalized_path,
+                                      size_t normalized_len) {
   const char* cur;
   char* ptr;
   char* next;
+  char* last;
   size_t cur_len;
+  int is_absolute;
 
   if (path_len > normalized_len)
     return UVWASI_ENOBUFS;
 
+  is_absolute = uvwasi__is_absolute_path(path, path_len);
   normalized_path[0] = '\0';
   ptr = normalized_path;
   for (cur = path; cur != NULL; cur = next + 1) {
     next = uvwasi__strchr_slash(cur);
     cur_len = (next == NULL) ? strlen(cur) : (size_t) (next - cur);
 
-    if (cur_len == 0 || (cur_len == 1 && cur[0] == '.'))
-      continue;
+    if (cur_len == 0) {
+      if (ptr == normalized_path && next != NULL && is_absolute) {
+        *ptr = '/';
+        ptr++;
+      }
 
-    if (cur_len == 2 && cur[0] == '.' && cur[1] == '.') {
-      while (!IS_SLASH(*ptr) && ptr != normalized_path)
-        ptr--;
       *ptr = '\0';
-      continue;
-    }
+    } else if (cur_len == 1 && cur[0] == '.') {
+      /* No-op. Just consume the '.' */
+    } else if (cur_len == 2 && cur[0] == '.' && cur[1] == '.') {
+      /* Identify the path segment that preceded the current one. */
+      last = ptr;
+      while (!IS_SLASH(*last) && last != normalized_path) {
+        last--;
+      }
 
-    *ptr = '/';
-    ptr++;
-    memcpy(ptr, cur, cur_len);
-    ptr += cur_len;
-    *ptr = '\0';
+      /* If the result is currently empty, or the last prior path is also '..'
+         then output '..'. Otherwise, remove the last path segment. */
+      if (ptr == normalized_path ||
+          (last == ptr - 2 && last[0] == '.' && last[1] == '.') ||
+          (last == ptr - 3 && last[0] == '/' &&
+           last[1] == '.' && last[2] == '.')) {
+        if (ptr != normalized_path && *(ptr - 1) != '/') {
+          *ptr = '/';
+          ptr++;
+        }
+
+        *ptr = '.';
+        ptr++;
+        *ptr = '.';
+        ptr++;
+      } else {
+        /* Strip the last segment, but make sure not to strip the '/' if that
+           is the entire path. */
+        if (last == normalized_path && *last == '/')
+          ptr = last + 1;
+        else
+          ptr = last;
+      }
+
+      *ptr = '\0';
+    } else {
+      if (ptr != normalized_path && *(ptr - 1) != '/') {
+        *ptr = '/';
+        ptr++;
+      }
+
+      memcpy(ptr, cur, cur_len);
+      ptr += cur_len;
+      *ptr = '\0';
+    }
 
     if (next == NULL)
       break;
   }
 
+  /* Normalized the path to the empty string. Return either '/' or '.'. */
+  if (ptr == normalized_path) {
+    if (1 == is_absolute)
+      *ptr = '/';
+    else
+      *ptr = '.';
+
+    ptr++;
+    *ptr = '\0';
+  }
+
   return UVWASI_ESUCCESS;
+}
+
+
+static int uvwasi__is_path_sandboxed(const char* path,
+                                     size_t path_len,
+                                     const char* fd_path,
+                                     size_t fd_path_len) {
+  char* ptr;
+  int remaining_len;
+
+  if (1 == uvwasi__is_absolute_path(fd_path, fd_path_len))
+    return path == strstr(path, fd_path) ? 1 : 0;
+
+  /* Handle relative fds that normalized to '.' */
+  if (fd_path_len == 1 && fd_path[0] == '.') {
+    /* If the fd's path is '.', then any path does not begin with '..' is OK. */
+    if ((path_len == 2 && path[0] == '.' && path[1] == '.') ||
+        (path_len > 2 && path[0] == '.' && path[1] == '.' && path[2] == '/')) {
+      return 0;
+    }
+
+    return 1;
+  }
+
+  if (path != strstr(path, fd_path))
+    return 0;
+
+  /* Fail if the remaining path starts with '..', '../', '/..', or '/../'. */
+  ptr = (char*) path + fd_path_len;
+  remaining_len = path_len - fd_path_len;
+  if (remaining_len < 2)
+    return 1;
+
+  /* Strip a leading slash so the check is only for '..' and '../'. */
+  if (*ptr == '/') {
+    ptr++;
+    remaining_len--;
+  }
+
+  if ((remaining_len == 2 && ptr[0] == '.' && ptr[1] == '.') ||
+      (remaining_len > 2 && ptr[0] == '.' && ptr[1] == '.' && ptr[2] == '/')) {
+    return 0;
+  }
+
+  return 1;
 }
 
 
@@ -82,6 +177,12 @@ static uvwasi_errno_t uvwasi__normalize_absolute_path(
                                               char** normalized_path,
                                               size_t* normalized_len
                                             ) {
+  /* This function resolves an absolute path to the provided file descriptor.
+     If the file descriptor's path is relative, then this operation will fail
+     with UVWASI_ENOTCAPABLE since it doesn't make sense to resolve an absolute
+     path to a relative prefix. If the file desciptor's path is also absolute,
+     then we just need to verify that the normalized path still starts with
+     the file descriptor's path. */
   uvwasi_errno_t err;
   char* abs_path;
   int abs_size;
@@ -96,15 +197,15 @@ static uvwasi_errno_t uvwasi__normalize_absolute_path(
   }
 
   /* Normalize the input path first. */
-  err = uvwasi__normalize_path(path,
-                               path_len,
-                               abs_path,
-                               path_len);
+  err = uvwasi__normalize_path(path, path_len, abs_path, path_len);
   if (err != UVWASI_ESUCCESS)
     goto exit;
 
   /* Once the input is normalized, ensure that it is still sandboxed. */
-  if (abs_path != strstr(abs_path, fd->path)) {
+  if (0 == uvwasi__is_path_sandboxed(abs_path,
+                                     path_len,
+                                     fd->normalized_path,
+                                     strlen(fd->normalized_path))) {
     err = UVWASI_ENOTCAPABLE;
     goto exit;
   }
@@ -127,35 +228,68 @@ static uvwasi_errno_t uvwasi__normalize_relative_path(
                                               char** normalized_path,
                                               size_t* normalized_len
                                             ) {
+  /* This function resolves a relative path to the provided file descriptor.
+     The relative path is concatenated to the file descriptor's path, and then
+     normalized. */
   uvwasi_errno_t err;
-  char* abs_path;
-  int abs_size;
+  char* combined;
+  char* normalized;
+  int combined_size;
+  int fd_path_len;
+  int norm_len;
   int r;
 
   *normalized_path = NULL;
   *normalized_len = 0;
-  abs_size = path_len + strlen(fd->path) + 2;
-  abs_path = uvwasi__malloc(uvwasi, abs_size);
-  if (abs_path == NULL) {
+
+  /* The max combined size is the path length + the file descriptor's path
+     length + 2 for a terminating NULL and a possible path separator. */
+  fd_path_len = strlen(fd->normalized_path);
+  combined_size = path_len + fd_path_len + 2;
+  combined = uvwasi__malloc(uvwasi, combined_size);
+  if (combined == NULL)
+    return UVWASI_ENOMEM;
+
+  normalized = uvwasi__malloc(uvwasi, combined_size);
+  if (normalized == NULL) {
     err = UVWASI_ENOMEM;
     goto exit;
   }
 
-  /* Resolve the relative path to an absolute path based on fd's fake path. */
-  r = snprintf(abs_path, abs_size, "%s/%s", fd->path, path);
+  r = snprintf(combined, combined_size, "%s/%s", fd->normalized_path, path);
   if (r <= 0) {
     err = uvwasi__translate_uv_error(uv_translate_sys_error(errno));
     goto exit;
   }
 
-  err = uvwasi__normalize_absolute_path(uvwasi,
-                                        fd,
-                                        abs_path,
-                                        abs_size - 1,
-                                        normalized_path,
-                                        normalized_len);
+  /* Normalize the input path. */
+  err = uvwasi__normalize_path(combined,
+                               combined_size - 1,
+                               normalized,
+                               combined_size - 1);
+  if (err != UVWASI_ESUCCESS)
+    goto exit;
+
+  norm_len = strlen(normalized);
+
+  /* Once the path is normalized, ensure that it is still sandboxed. */
+  if (0 == uvwasi__is_path_sandboxed(normalized,
+                                     norm_len,
+                                     fd->normalized_path,
+                                     fd_path_len)) {
+    err = UVWASI_ENOTCAPABLE;
+    goto exit;
+  }
+
+  err = UVWASI_ESUCCESS;
+  *normalized_path = normalized;
+  *normalized_len = norm_len;
+
 exit:
-  uvwasi__free(uvwasi, abs_path);
+  if (err != UVWASI_ESUCCESS)
+    uvwasi__free(uvwasi, normalized);
+
+  uvwasi__free(uvwasi, combined);
   return err;
 }
 
@@ -169,38 +303,57 @@ static uvwasi_errno_t uvwasi__resolve_path_to_host(
                                               size_t* resolved_len
                                             ) {
   /* Return the normalized path, but resolved to the host's real path. */
+  char* res_path;
+  char* stripped_path;
   int real_path_len;
   int fake_path_len;
-  int path_offset;
+  int stripped_len;
 #ifdef _WIN32
   size_t i;
 #endif /* _WIN32 */
 
   real_path_len = strlen(fd->real_path);
-  fake_path_len = strlen(fd->path);
+  fake_path_len = strlen(fd->normalized_path);
 
-  *resolved_len = path_len - fake_path_len + real_path_len;
+  /* If the fake path is '.' just ignore it. */
+  if (fake_path_len == 1 && fd->normalized_path[0] == '.') {
+    fake_path_len = 0;
+  }
+
+  stripped_len = path_len - fake_path_len;
+
+  /* The resolved path's length is calculated as: the length of the fd's real
+     path, + 1 for a path separator, and the length of the input path (with the
+     fake path stripped off). */
+  *resolved_len = stripped_len + real_path_len + 1;
   *resolved_path = uvwasi__malloc(uvwasi, *resolved_len + 1);
 
   if (*resolved_path == NULL)
     return UVWASI_ENOMEM;
 
-  /* path_offset is used to strip the fake path prefix off when calculating the
-     resolved path. However, if the fake path's length is only one, don't strip
-     it off, as the resulting resolved path would have no separator after the
-     real path. */
-  path_offset = fake_path_len == 1 ? 0 : fake_path_len;
+  res_path = *resolved_path;
+  stripped_path = (char*) path + fake_path_len;
+  memcpy(res_path, fd->real_path, real_path_len);
+  res_path += real_path_len;
 
-  memcpy(*resolved_path, fd->real_path, real_path_len);
-  memcpy(*resolved_path + real_path_len,
-         path + path_offset,
-         path_len - path_offset + 1);
+  if (stripped_len > 1 ||
+      (stripped_len == 1 && stripped_path[0] != '/')) {
+    if (stripped_path[0] != '/') {
+      *res_path = '/';
+      res_path++;
+    }
+
+    memcpy(res_path, stripped_path, stripped_len);
+    res_path += stripped_len;
+  }
+
+  *res_path = '\0';
 
 #ifdef _WIN32
   /* Replace / with \ on Windows. */
   for (i = real_path_len; i < *resolved_len; i++) {
-    if ((*resolved_path)[i] == '/')
-      (*resolved_path)[i] = '\\';
+    if (res_path[i] == '/')
+      res_path[i] = '\\';
   }
 #endif /* _WIN32 */
 
