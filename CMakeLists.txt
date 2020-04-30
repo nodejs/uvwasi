@@ -44,6 +44,11 @@ set(uvwasi_sources
     src/wasi_rights.c
 )
 
+option(UVWASI_DEBUG_LOG "Enable debug logging" OFF)
+if(UVWASI_DEBUG_LOG)
+    list(APPEND uvwasi_cflags -DUVWASI_DEBUG_LOG)
+endif()
+
 # Code Coverage Configuration
 add_library(coverage_config INTERFACE)
 
