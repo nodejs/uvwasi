@@ -24,14 +24,11 @@ static void check_normalize(char* path, char* expected) {
   assert(0 == strcmp(buffer, expected));
 }
 
-static uvwasi_errno_t check(char* fd_mp, char* fd_rp, char* path) {
+static uvwasi_errno_t check(char* fd_mp, char* fd_rp, char* path, char** res) {
   struct uvwasi_fd_wrap_t fd;
   uvwasi_errno_t err;
-  char* resolved;
   size_t len;
 
-  buffer[0] = '\0';
-  resolved = buffer;
   len = strlen(path);
   fd.id = 3;
   fd.fd = 3;
@@ -48,16 +45,22 @@ static uvwasi_errno_t check(char* fd_mp, char* fd_rp, char* path) {
                                strlen(fd_mp));
   if (err != UVWASI_ESUCCESS)
     return err;
-  return uvwasi__resolve_path(&uvwasi, &fd, path, len, resolved, 0);
+  return uvwasi__resolve_path(&uvwasi, &fd, path, len, res, 0);
 }
 
 static void pass(char* mp, char* rp, char* path, char* expected) {
-  assert(UVWASI_ESUCCESS == check(mp, rp, path));
-  assert(0 == strcmp(buffer, expected));
+  char* resolved;
+
+  assert(UVWASI_ESUCCESS == check(mp, rp, path, &resolved));
+  assert(0 == strcmp(resolved, expected));
+  free(resolved);
 }
 
 static void fail(char* mp, char* rp, char* path, uvwasi_errno_t expected) {
-  assert(expected == check(mp, rp, path));
+  char* resolved;
+
+  assert(expected == check(mp, rp, path, &resolved));
+  assert(resolved == NULL);
 }
 
 int main(void) {

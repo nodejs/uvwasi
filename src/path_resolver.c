@@ -365,7 +365,7 @@ uvwasi_errno_t uvwasi__resolve_path(const uvwasi_t* uvwasi,
                                     const struct uvwasi_fd_wrap_t* fd,
                                     const char* path,
                                     size_t path_len,
-                                    char* resolved_path,
+                                    char** resolved_path,
                                     uvwasi_lookupflags_t flags) {
   uv_fs_t req;
   uvwasi_errno_t err;
@@ -417,14 +417,6 @@ start:
                                      &host_path_len);
   if (err != UVWASI_ESUCCESS)
     goto exit;
-
-  /* TODO(cjihrig): Currently performing a bounds check here. The TODO is to
-     stop allocating resolved_path in every caller and instead return the
-     path allocated in this function. */
-  if (host_path_len > PATH_MAX_BYTES) {
-    err = UVWASI_ENOBUFS;
-    goto exit;
-  }
 
   if ((flags & UVWASI_LOOKUP_SYMLINK_FOLLOW) == UVWASI_LOOKUP_SYMLINK_FOLLOW) {
     r = uv_fs_readlink(NULL, &req, host_path, NULL);
@@ -482,11 +474,14 @@ start:
   }
 
 exit:
-  if (err == UVWASI_ESUCCESS)
-    memcpy(resolved_path, host_path, host_path_len + 1);
+  if (err == UVWASI_ESUCCESS) {
+    *resolved_path = host_path;
+  } else {
+    *resolved_path = NULL;
+    uvwasi__free(uvwasi, host_path);
+  }
 
   uvwasi__free(uvwasi, link_target);
   uvwasi__free(uvwasi, normalized_path);
-  uvwasi__free(uvwasi, host_path);
   return err;
 }
