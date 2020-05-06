@@ -25,7 +25,7 @@ uvwasi_errno_t uvwasi__resolve_path(const uvwasi_t* uvwasi,
                                     const struct uvwasi_fd_wrap_t* fd,
                                     const char* path,
                                     size_t path_len,
-                                    char* resolved_path,
+                                    char** resolved_path,
                                     uvwasi_lookupflags_t flags);
 
 #endif /* __UVWASI_PATH_RESOLVER_H__ */
