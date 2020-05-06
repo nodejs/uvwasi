@@ -10,6 +10,9 @@
 # define PATH_MAX_BYTES (MAX_PATH * 4)
 #else
 # include <limits.h>
+# ifndef PATH_MAX
+#  define PATH_MAX 4096
+# endif
 # define PATH_MAX_BYTES (PATH_MAX)
 #endif
 

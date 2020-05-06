@@ -1695,8 +1695,11 @@ uvwasi_errno_t uvwasi_path_readlink(uvwasi_t* uvwasi,
     return uvwasi__translate_uv_error(r);
   }
 
+#ifdef __EMSCRIPTEN__
+  len = strlen(req.ptr);
+#else 
   len = strnlen(req.ptr, buf_len);
-  if (len >= buf_len) {
+#endif  if (len >= buf_len) {
     uv_fs_req_cleanup(&req);
     return UVWASI_ENOBUFS;
   }
