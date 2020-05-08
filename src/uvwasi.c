@@ -20,6 +20,7 @@
 #include "fd_table.h"
 #include "clocks.h"
 #include "path_resolver.h"
+#include "poll_oneoff.h"
 #include "wasi_rights.h"
 #include "debug.h"
 
@@ -2193,6 +2194,18 @@ uvwasi_errno_t uvwasi_poll_oneoff(uvwasi_t* uvwasi,
                                   uvwasi_event_t* out,
                                   size_t nsubscriptions,
                                   size_t* nevents) {
+  struct uvwasi_poll_oneoff_state_t state;
+  struct uvwasi__poll_fdevent_t* fdevent;
+  uvwasi_userdata_t timer_userdata;
+  uvwasi_timestamp_t min_timeout;
+  uvwasi_timestamp_t cur_timeout;
+  uvwasi_timestamp_t now;
+  uvwasi_subscription_t sub;
+  uvwasi_event_t* event;
+  uvwasi_errno_t err;
+  int has_timeout;
+  size_t i;
+
   DEBUG("uvwasi_poll_oneoff(uvwasi=%p, in=%p, out=%p, nsubscriptions=%zu, "
         "nevents=%p)\n",
         uvwasi,
@@ -2206,8 +2219,95 @@ uvwasi_errno_t uvwasi_poll_oneoff(uvwasi_t* uvwasi,
     return UVWASI_EINVAL;
   }
 
-  /* TODO(cjihrig): Implement this. */
-  return UVWASI_ENOTSUP;
+  *nevents = 0;
+  err = uvwasi__poll_oneoff_state_init(uvwasi, &state, nsubscriptions);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  has_timeout = 0;
+  min_timeout = 0;
+
+  for (i = 0; i < nsubscriptions; i++) {
+    sub = in[i];
+
+    switch (sub.type) {
+      case UVWASI_EVENTTYPE_CLOCK:
+        if (sub.u.clock.flags == UVWASI_SUBSCRIPTION_CLOCK_ABSTIME) {
+          /* Convert absolute time to relative delay. */
+          err = uvwasi__clock_gettime_realtime(&now);
+          if (err != UVWASI_ESUCCESS)
+            goto exit;
+
+          cur_timeout = sub.u.clock.timeout - now;
+        } else {
+          cur_timeout = sub.u.clock.timeout;
+        }
+
+        if (has_timeout == 0 || cur_timeout < min_timeout) {
+          min_timeout = cur_timeout;
+          timer_userdata = sub.userdata;
+          has_timeout = 1;
+        }
+
+        break;
+      case UVWASI_EVENTTYPE_FD_READ:
+      case UVWASI_EVENTTYPE_FD_WRITE:
+        err = uvwasi__poll_oneoff_state_add_fdevent(&state, &sub);
+        if (err != UVWASI_ESUCCESS)
+          goto exit;
+
+        break;
+      default:
+        err = UVWASI_EINVAL;
+        goto exit;
+    }
+  }
+
+  if (has_timeout == 1) {
+    err = uvwasi__poll_oneoff_state_set_timer(&state, min_timeout);
+    if (err != UVWASI_ESUCCESS)
+      goto exit;
+  }
+
+  /* Handle poll() errors, then timeouts, then happy path. */
+  err = uvwasi__poll_oneoff_run(&state);
+  if (err != UVWASI_ESUCCESS) {
+    goto exit;
+  } else if (state.result == 0) {
+    event = &out[0];
+    event->userdata = timer_userdata;
+    event->error = UVWASI_ESUCCESS;
+    event->type = UVWASI_EVENTTYPE_CLOCK;
+    *nevents = 1;
+  } else {
+    for (i = 0; i < state.fdevent_cnt; i++) {
+      fdevent = &state.fdevents[i];
+      event = &out[*nevents];
+
+      event->userdata = fdevent->userdata;
+      event->error = fdevent->error;
+      event->type = fdevent->type;
+      event->u.fd_readwrite.nbytes = 0;
+      event->u.fd_readwrite.flags = 0;
+
+      if (fdevent->error != UVWASI_ESUCCESS)
+        ;
+      else if ((fdevent->revents & UV_DISCONNECT) != 0)
+        event->u.fd_readwrite.flags = UVWASI_EVENT_FD_READWRITE_HANGUP;
+      else if ((fdevent->revents & (UV_READABLE | UV_WRITABLE)) != 0)
+        ; /* TODO(cjihrig): Set nbytes if type is UVWASI_EVENTTYPE_FD_READ. */
+      else
+        continue;
+
+      *nevents = *nevents + 1;
+    }
+  }
+
+  err = UVWASI_ESUCCESS;
+
+exit:
+  uvwasi__poll_oneoff_state_cleanup(&state);
+  return err;
 }
 
 
