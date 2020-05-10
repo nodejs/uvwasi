@@ -9,7 +9,7 @@ int main(void) {
   uvwasi_t uvw;
   char* test_str = "foo";
   void* test_void;
-  size_t test_size = 5;
+  uvwasi_size_t test_size = 5;
   uvwasi_clockid_t test_clock = UVWASI_CLOCK_MONOTONIC;
   uvwasi_timestamp_t test_ts = 1000;
   uvwasi_fdstat_t test_fdstat;

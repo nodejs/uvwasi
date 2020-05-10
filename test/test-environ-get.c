@@ -14,11 +14,11 @@ int main(void) {
   uvwasi_t uvwasi;
   uvwasi_options_t init_options;
   uvwasi_errno_t err;
-  size_t envc;
-  size_t env_buf_size;
+  uvwasi_size_t envc;
+  uvwasi_size_t env_buf_size;
   char** env_get_env;
   char* buf;
-  size_t i;
+  uvwasi_size_t i;
 
   init_options.in = 0;
   init_options.out = 1;

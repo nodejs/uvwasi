@@ -19,10 +19,10 @@ int main(void) {
   uvwasi_errno_t err;
   uv_fs_t req;
   void* buf;
-  size_t ciovec_size;
-  size_t iovec_size;
-  size_t nio;
-  size_t i;
+  uvwasi_size_t ciovec_size;
+  uvwasi_size_t iovec_size;
+  uvwasi_size_t nio;
+  uvwasi_size_t i;
   int r;
 
   r = uv_fs_mkdir(NULL, &req, TEST_TMP_DIR, 0777, NULL);
