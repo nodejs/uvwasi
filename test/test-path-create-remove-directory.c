@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "uvwasi.h"
+#include "uv.h"
 
 #define TEST_TMP_DIR "./out/tmp"
 #define TEST_MKDIR_PATH TEST_TMP_DIR "/test_dir"

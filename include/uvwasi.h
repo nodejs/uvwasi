@@ -5,9 +5,7 @@
 extern "C" {
 #endif
 
-#include "uv.h"
 #include "wasi_types.h"
-#include "fd_table.h"
 
 #define UVWASI_VERSION_MAJOR 0
 #define UVWASI_VERSION_MINOR 0
@@ -35,8 +33,10 @@ typedef struct uvwasi_mem_s {
   uvwasi_realloc realloc;
 } uvwasi_mem_t;
 
+struct uvwasi_fd_table_t;
+
 typedef struct uvwasi_s {
-  struct uvwasi_fd_table_t fds;
+  struct uvwasi_fd_table_t* fds;
   uvwasi_size_t argc;
   char** argv;
   char* argv_buf;
@@ -69,9 +69,10 @@ typedef struct uvwasi_options_s {
 /* Embedder API. */
 uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options);
 void uvwasi_destroy(uvwasi_t* uvwasi);
+/* Use int instead of uv_file to avoid needing uv.h */
 uvwasi_errno_t uvwasi_embedder_remap_fd(uvwasi_t* uvwasi,
                                         const uvwasi_fd_t fd,
-                                        uv_file new_host_fd);
+                                        int new_host_fd);
 const char* uvwasi_embedder_err_code_to_string(uvwasi_errno_t code);
 
 

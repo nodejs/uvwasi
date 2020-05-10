@@ -175,7 +175,7 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   uvwasi->argv = NULL;
   uvwasi->env_buf = NULL;
   uvwasi->env = NULL;
-  uvwasi->fds.fds = NULL;
+  uvwasi->fds = NULL;
 
   args_size = 0;
   for (i = 0; i < options->argc; ++i)
@@ -272,7 +272,7 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
     }
 
     err = uvwasi_fd_table_insert_preopen(uvwasi,
-                                         &uvwasi->fds,
+                                         uvwasi->fds,
                                          open_req.result,
                                          options->preopens[i].mapped_path,
                                          realpath_req.ptr);
@@ -295,11 +295,12 @@ void uvwasi_destroy(uvwasi_t* uvwasi) {
   if (uvwasi == NULL)
     return;
 
-  uvwasi_fd_table_free(uvwasi, &uvwasi->fds);
+  uvwasi_fd_table_free(uvwasi, uvwasi->fds);
   uvwasi__free(uvwasi, uvwasi->argv_buf);
   uvwasi__free(uvwasi, uvwasi->argv);
   uvwasi__free(uvwasi, uvwasi->env_buf);
   uvwasi__free(uvwasi, uvwasi->env);
+  uvwasi->fds = NULL;
   uvwasi->argv_buf = NULL;
   uvwasi->argv = NULL;
   uvwasi->env_buf = NULL;
@@ -316,7 +317,7 @@ uvwasi_errno_t uvwasi_embedder_remap_fd(uvwasi_t* uvwasi,
   if (uvwasi == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, 0, 0);
+  err = uvwasi_fd_table_get(uvwasi->fds, fd, &wrap, 0, 0);
   if (err != UVWASI_ESUCCESS)
     return err;
 
@@ -517,7 +518,7 @@ uvwasi_errno_t uvwasi_fd_advise(uvwasi_t* uvwasi,
       return UVWASI_EINVAL;
   }
 
-  err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, UVWASI_RIGHT_FD_ADVISE, 0);
+  err = uvwasi_fd_table_get(uvwasi->fds, fd, &wrap, UVWASI_RIGHT_FD_ADVISE, 0);
   if (err != UVWASI_ESUCCESS)
     return err;
 
@@ -555,7 +556,7 @@ uvwasi_errno_t uvwasi_fd_allocate(uvwasi_t* uvwasi,
   if (uvwasi == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
+  err = uvwasi_fd_table_get(uvwasi->fds,
                             fd,
                             &wrap,
                             UVWASI_RIGHT_FD_ALLOCATE,
@@ -607,9 +608,9 @@ uvwasi_errno_t uvwasi_fd_close(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
   if (uvwasi == NULL)
     return UVWASI_EINVAL;
 
-  uvwasi_fd_table_lock(&uvwasi->fds);
+  uvwasi_fd_table_lock(uvwasi->fds);
 
-  err = uvwasi_fd_table_get_nolock(&uvwasi->fds, fd, &wrap, 0, 0);
+  err = uvwasi_fd_table_get_nolock(uvwasi->fds, fd, &wrap, 0, 0);
   if (err != UVWASI_ESUCCESS)
     goto exit;
 
@@ -622,10 +623,10 @@ uvwasi_errno_t uvwasi_fd_close(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
     goto exit;
   }
 
-  err = uvwasi_fd_table_remove_nolock(uvwasi, &uvwasi->fds, fd);
+  err = uvwasi_fd_table_remove_nolock(uvwasi, uvwasi->fds, fd);
 
 exit:
-  uvwasi_fd_table_unlock(&uvwasi->fds);
+  uvwasi_fd_table_unlock(uvwasi->fds);
   return err;
 }
 
@@ -641,7 +642,7 @@ uvwasi_errno_t uvwasi_fd_datasync(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
   if (uvwasi == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
+  err = uvwasi_fd_table_get(uvwasi->fds,
                             fd,
                             &wrap,
                             UVWASI_RIGHT_FD_DATASYNC,
@@ -674,7 +675,7 @@ uvwasi_errno_t uvwasi_fd_fdstat_get(uvwasi_t* uvwasi,
   if (uvwasi == NULL || buf == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, 0, 0);
+  err = uvwasi_fd_table_get(uvwasi->fds, fd, &wrap, 0, 0);
   if (err != UVWASI_ESUCCESS)
     return err;
 
@@ -723,7 +724,7 @@ uvwasi_errno_t uvwasi_fd_fdstat_set_flags(uvwasi_t* uvwasi,
   if (uvwasi == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
+  err = uvwasi_fd_table_get(uvwasi->fds,
                             fd,
                             &wrap,
                             UVWASI_RIGHT_FD_FDSTAT_SET_FLAGS,
@@ -786,7 +787,7 @@ uvwasi_errno_t uvwasi_fd_fdstat_set_rights(uvwasi_t* uvwasi,
   if (uvwasi == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, 0, 0);
+  err = uvwasi_fd_table_get(uvwasi->fds, fd, &wrap, 0, 0);
   if (err != UVWASI_ESUCCESS)
     return err;
 
@@ -824,7 +825,7 @@ uvwasi_errno_t uvwasi_fd_filestat_get(uvwasi_t* uvwasi,
   if (uvwasi == NULL || buf == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
+  err = uvwasi_fd_table_get(uvwasi->fds,
                             fd,
                             &wrap,
                             UVWASI_RIGHT_FD_FILESTAT_GET,
@@ -864,7 +865,7 @@ uvwasi_errno_t uvwasi_fd_filestat_set_size(uvwasi_t* uvwasi,
   if (uvwasi == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
+  err = uvwasi_fd_table_get(uvwasi->fds,
                             fd,
                             &wrap,
                             UVWASI_RIGHT_FD_FILESTAT_SET_SIZE,
@@ -910,7 +911,7 @@ uvwasi_errno_t uvwasi_fd_filestat_set_times(uvwasi_t* uvwasi,
     return UVWASI_EINVAL;
   }
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
+  err = uvwasi_fd_table_get(uvwasi->fds,
                             fd,
                             &wrap,
                             UVWASI_RIGHT_FD_FILESTAT_SET_TIMES,
@@ -955,7 +956,7 @@ uvwasi_errno_t uvwasi_fd_pread(uvwasi_t* uvwasi,
   if (uvwasi == NULL || iovs == NULL || nread == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
+  err = uvwasi_fd_table_get(uvwasi->fds,
                             fd,
                             &wrap,
                             UVWASI_RIGHT_FD_READ | UVWASI_RIGHT_FD_SEEK,
@@ -997,7 +998,7 @@ uvwasi_errno_t uvwasi_fd_prestat_get(uvwasi_t* uvwasi,
   if (uvwasi == NULL || buf == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, 0, 0);
+  err = uvwasi_fd_table_get(uvwasi->fds, fd, &wrap, 0, 0);
   if (err != UVWASI_ESUCCESS)
     return err;
   if (wrap->preopen != 1) {
@@ -1031,7 +1032,7 @@ uvwasi_errno_t uvwasi_fd_prestat_dir_name(uvwasi_t* uvwasi,
   if (uvwasi == NULL || path == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, 0, 0);
+  err = uvwasi_fd_table_get(uvwasi->fds, fd, &wrap, 0, 0);
   if (err != UVWASI_ESUCCESS)
     return err;
   if (wrap->preopen != 1) {
@@ -1078,7 +1079,7 @@ uvwasi_errno_t uvwasi_fd_pwrite(uvwasi_t* uvwasi,
   if (uvwasi == NULL || iovs == NULL || nwritten == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
+  err = uvwasi_fd_table_get(uvwasi->fds,
                             fd,
                             &wrap,
                             UVWASI_RIGHT_FD_WRITE | UVWASI_RIGHT_FD_SEEK,
@@ -1128,7 +1129,7 @@ uvwasi_errno_t uvwasi_fd_read(uvwasi_t* uvwasi,
   if (uvwasi == NULL || iovs == NULL || nread == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, UVWASI_RIGHT_FD_READ, 0);
+  err = uvwasi_fd_table_get(uvwasi->fds, fd, &wrap, UVWASI_RIGHT_FD_READ, 0);
   if (err != UVWASI_ESUCCESS)
     return err;
 
@@ -1185,7 +1186,7 @@ uvwasi_errno_t uvwasi_fd_readdir(uvwasi_t* uvwasi,
   if (uvwasi == NULL || buf == NULL || bufused == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
+  err = uvwasi_fd_table_get(uvwasi->fds,
                             fd,
                             &wrap,
                             UVWASI_RIGHT_FD_READDIR,
@@ -1309,7 +1310,7 @@ uvwasi_errno_t uvwasi_fd_renumber(uvwasi_t* uvwasi,
   if (uvwasi == NULL)
     return UVWASI_EINVAL;
 
-  return uvwasi_fd_table_renumber(uvwasi, &uvwasi->fds, to, from);
+  return uvwasi_fd_table_renumber(uvwasi, uvwasi->fds, to, from);
 }
 
 
@@ -1332,7 +1333,7 @@ uvwasi_errno_t uvwasi_fd_seek(uvwasi_t* uvwasi,
   if (uvwasi == NULL || newoffset == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, UVWASI_RIGHT_FD_SEEK, 0);
+  err = uvwasi_fd_table_get(uvwasi->fds, fd, &wrap, UVWASI_RIGHT_FD_SEEK, 0);
   if (err != UVWASI_ESUCCESS)
     return err;
 
@@ -1353,7 +1354,7 @@ uvwasi_errno_t uvwasi_fd_sync(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
   if (uvwasi == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
+  err = uvwasi_fd_table_get(uvwasi->fds,
                             fd,
                             &wrap,
                             UVWASI_RIGHT_FD_SYNC,
@@ -1383,7 +1384,7 @@ uvwasi_errno_t uvwasi_fd_tell(uvwasi_t* uvwasi,
   if (uvwasi == NULL || offset == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, UVWASI_RIGHT_FD_TELL, 0);
+  err = uvwasi_fd_table_get(uvwasi->fds, fd, &wrap, UVWASI_RIGHT_FD_TELL, 0);
   if (err != UVWASI_ESUCCESS)
     return err;
 
@@ -1416,7 +1417,7 @@ uvwasi_errno_t uvwasi_fd_write(uvwasi_t* uvwasi,
   if (uvwasi == NULL || iovs == NULL || nwritten == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds, fd, &wrap, UVWASI_RIGHT_FD_WRITE, 0);
+  err = uvwasi_fd_table_get(uvwasi->fds, fd, &wrap, UVWASI_RIGHT_FD_WRITE, 0);
   if (err != UVWASI_ESUCCESS)
     return err;
 
@@ -1460,7 +1461,7 @@ uvwasi_errno_t uvwasi_path_create_directory(uvwasi_t* uvwasi,
   if (uvwasi == NULL || path == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
+  err = uvwasi_fd_table_get(uvwasi->fds,
                             fd,
                             &wrap,
                             UVWASI_RIGHT_PATH_CREATE_DIRECTORY,
@@ -1512,7 +1513,7 @@ uvwasi_errno_t uvwasi_path_filestat_get(uvwasi_t* uvwasi,
   if (uvwasi == NULL || path == NULL || buf == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
+  err = uvwasi_fd_table_get(uvwasi->fds,
                             fd,
                             &wrap,
                             UVWASI_RIGHT_PATH_FILESTAT_GET,
@@ -1580,7 +1581,7 @@ uvwasi_errno_t uvwasi_path_filestat_set_times(uvwasi_t* uvwasi,
     return UVWASI_EINVAL;
   }
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
+  err = uvwasi_fd_table_get(uvwasi->fds,
                             fd,
                             &wrap,
                             UVWASI_RIGHT_PATH_FILESTAT_SET_TIMES,
@@ -1644,10 +1645,10 @@ uvwasi_errno_t uvwasi_path_link(uvwasi_t* uvwasi,
   if (uvwasi == NULL || old_path == NULL || new_path == NULL)
     return UVWASI_EINVAL;
 
-  uvwasi_fd_table_lock(&uvwasi->fds);
+  uvwasi_fd_table_lock(uvwasi->fds);
 
   if (old_fd == new_fd) {
-    err = uvwasi_fd_table_get_nolock(&uvwasi->fds,
+    err = uvwasi_fd_table_get_nolock(uvwasi->fds,
                                      old_fd,
                                      &old_wrap,
                                      UVWASI_RIGHT_PATH_LINK_SOURCE |
@@ -1655,17 +1656,17 @@ uvwasi_errno_t uvwasi_path_link(uvwasi_t* uvwasi,
                                      0);
     new_wrap = old_wrap;
   } else {
-    err = uvwasi_fd_table_get_nolock(&uvwasi->fds,
+    err = uvwasi_fd_table_get_nolock(uvwasi->fds,
                                      old_fd,
                                      &old_wrap,
                                      UVWASI_RIGHT_PATH_LINK_SOURCE,
                                      0);
     if (err != UVWASI_ESUCCESS) {
-      uvwasi_fd_table_unlock(&uvwasi->fds);
+      uvwasi_fd_table_unlock(uvwasi->fds);
       return err;
     }
 
-    err = uvwasi_fd_table_get_nolock(&uvwasi->fds,
+    err = uvwasi_fd_table_get_nolock(uvwasi->fds,
                                      new_fd,
                                      &new_wrap,
                                      UVWASI_RIGHT_PATH_LINK_TARGET,
@@ -1674,7 +1675,7 @@ uvwasi_errno_t uvwasi_path_link(uvwasi_t* uvwasi,
       uv_mutex_unlock(&old_wrap->mutex);
   }
 
-  uvwasi_fd_table_unlock(&uvwasi->fds);
+  uvwasi_fd_table_unlock(uvwasi->fds);
 
   if (err != UVWASI_ESUCCESS)
     return err;
@@ -1807,7 +1808,7 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
   if (write && (flags & (UV_FS_O_APPEND | UV_FS_O_TRUNC)) == 0)
     needed_inheriting |= UVWASI_RIGHT_FD_SEEK;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
+  err = uvwasi_fd_table_get(uvwasi->fds,
                             dirfd,
                             &dirfd_wrap,
                             needed_base,
@@ -1852,7 +1853,7 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
     goto close_file_and_error_exit;
 
   err = uvwasi_fd_table_insert(uvwasi,
-                               &uvwasi->fds,
+                               uvwasi->fds,
                                r,
                                resolved_path,
                                resolved_path,
@@ -1904,7 +1905,7 @@ uvwasi_errno_t uvwasi_path_readlink(uvwasi_t* uvwasi,
   if (uvwasi == NULL || path == NULL || buf == NULL || bufused == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
+  err = uvwasi_fd_table_get(uvwasi->fds,
                             fd,
                             &wrap,
                             UVWASI_RIGHT_PATH_READLINK,
@@ -1960,7 +1961,7 @@ uvwasi_errno_t uvwasi_path_remove_directory(uvwasi_t* uvwasi,
   if (uvwasi == NULL || path == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
+  err = uvwasi_fd_table_get(uvwasi->fds,
                             fd,
                             &wrap,
                             UVWASI_RIGHT_PATH_REMOVE_DIRECTORY,
@@ -2014,10 +2015,10 @@ uvwasi_errno_t uvwasi_path_rename(uvwasi_t* uvwasi,
   if (uvwasi == NULL || old_path == NULL || new_path == NULL)
     return UVWASI_EINVAL;
 
-  uvwasi_fd_table_lock(&uvwasi->fds);
+  uvwasi_fd_table_lock(uvwasi->fds);
 
   if (old_fd == new_fd) {
-    err = uvwasi_fd_table_get_nolock(&uvwasi->fds,
+    err = uvwasi_fd_table_get_nolock(uvwasi->fds,
                                      old_fd,
                                      &old_wrap,
                                      UVWASI_RIGHT_PATH_RENAME_SOURCE |
@@ -2025,17 +2026,17 @@ uvwasi_errno_t uvwasi_path_rename(uvwasi_t* uvwasi,
                                      0);
     new_wrap = old_wrap;
   } else {
-    err = uvwasi_fd_table_get_nolock(&uvwasi->fds,
+    err = uvwasi_fd_table_get_nolock(uvwasi->fds,
                                      old_fd,
                                      &old_wrap,
                                      UVWASI_RIGHT_PATH_RENAME_SOURCE,
                                      0);
     if (err != UVWASI_ESUCCESS) {
-      uvwasi_fd_table_unlock(&uvwasi->fds);
+      uvwasi_fd_table_unlock(uvwasi->fds);
       return err;
     }
 
-    err = uvwasi_fd_table_get_nolock(&uvwasi->fds,
+    err = uvwasi_fd_table_get_nolock(uvwasi->fds,
                                      new_fd,
                                      &new_wrap,
                                      UVWASI_RIGHT_PATH_RENAME_TARGET,
@@ -2044,7 +2045,7 @@ uvwasi_errno_t uvwasi_path_rename(uvwasi_t* uvwasi,
       uv_mutex_unlock(&old_wrap->mutex);
   }
 
-  uvwasi_fd_table_unlock(&uvwasi->fds);
+  uvwasi_fd_table_unlock(uvwasi->fds);
 
   if (err != UVWASI_ESUCCESS)
     return err;
@@ -2113,7 +2114,7 @@ uvwasi_errno_t uvwasi_path_symlink(uvwasi_t* uvwasi,
   if (uvwasi == NULL || old_path == NULL || new_path == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
+  err = uvwasi_fd_table_get(uvwasi->fds,
                             fd,
                             &wrap,
                             UVWASI_RIGHT_PATH_SYMLINK,
@@ -2163,7 +2164,7 @@ uvwasi_errno_t uvwasi_path_unlink_file(uvwasi_t* uvwasi,
   if (uvwasi == NULL || path == NULL)
     return UVWASI_EINVAL;
 
-  err = uvwasi_fd_table_get(&uvwasi->fds,
+  err = uvwasi_fd_table_get(uvwasi->fds,
                             fd,
                             &wrap,
                             UVWASI_RIGHT_PATH_UNLINK_FILE,

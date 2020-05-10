@@ -1,6 +1,7 @@
 #ifndef __UVWASI_POLL_ONEOFF_H__
 #define __UVWASI_POLL_ONEOFF_H__
 
+#include "fd_table.h"
 #include "wasi_types.h"
 
 struct uvwasi_s;
