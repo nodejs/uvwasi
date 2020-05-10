@@ -4,6 +4,11 @@ project (uvwasi LANGUAGES C)
 # This can be a commit hash or tag
 set(LIBUV_VERSION v1.37.0)
 
+include(CMakeDependentOption)
+cmake_dependent_option(UVWASI_BUILD_TESTS
+  "Build the unit tests when uvwasi is the root project" ON
+  "CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR" OFF)
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/out)
 
 if(CMAKE_C_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
@@ -87,24 +92,26 @@ endif()
 
 
 ## Test targets.
-enable_testing()
-file(GLOB test_files "test/test-*.c")
-foreach(file ${test_files})
-    get_filename_component(test_name ${file} NAME_WE)
-    add_executable(${test_name} ${file})
-    add_test(NAME ${test_name}
-                COMMAND ${test_name})
-    target_include_directories(${test_name}
-                                PRIVATE
-                                ${PROJECT_SOURCE_DIR}/include)
-    target_link_libraries(${test_name} PRIVATE uv_a uvwasi_a)
-    list(APPEND test_list ${test_name})
-endforeach()
+if(UVWASI_BUILD_TESTS)
+    enable_testing()
+    file(GLOB test_files "test/test-*.c")
+    foreach(file ${test_files})
+        get_filename_component(test_name ${file} NAME_WE)
+        add_executable(${test_name} ${file})
+        add_test(NAME ${test_name}
+                    COMMAND ${test_name})
+        target_include_directories(${test_name}
+                                    PRIVATE
+                                    ${PROJECT_SOURCE_DIR}/include)
+        target_link_libraries(${test_name} PRIVATE uv_a uvwasi_a)
+        list(APPEND test_list ${test_name})
+    endforeach()
 
-add_custom_target(check
-    COMMAND ctest -VV -C Debug -R test-
-    DEPENDS ${test_list}
-)
+    add_custom_target(check
+        COMMAND ctest -VV -C Debug -R test-
+        DEPENDS ${test_list}
+    )
+endif()
 
 message(STATUS "summary of build options:
 
