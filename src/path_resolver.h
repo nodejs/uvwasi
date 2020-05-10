@@ -1,6 +1,7 @@
 #ifndef __UVWASI_PATH_RESOLVER_H__
 #define __UVWASI_PATH_RESOLVER_H__
 
+#include "fd_table.h"
 #include "uvwasi.h"
 
 uvwasi_errno_t uvwasi__normalize_path(const char* path,

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "uvwasi.h"
-#include "fd_table.h"
+#include "../src/fd_table.h"
 #include "../src/path_resolver.h"
 #include "../src/wasi_rights.h"
 

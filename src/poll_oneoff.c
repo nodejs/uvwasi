@@ -201,7 +201,7 @@ uvwasi_errno_t uvwasi__poll_oneoff_state_add_fdevent(
 
   /* Get the file descriptor. If UVWASI_EBADF is returned, continue on, but
      don't do any polling with the handle. */
-  err = uvwasi_fd_table_get(&state->uvwasi->fds, fd, &event->wrap, rights, 0);
+  err = uvwasi_fd_table_get(state->uvwasi->fds, fd, &event->wrap, rights, 0);
   if (err == UVWASI_EBADF)
     event->wrap = NULL;
   else if (err != UVWASI_ESUCCESS)
