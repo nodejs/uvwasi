@@ -111,9 +111,9 @@ static uvwasi_errno_t uvwasi__lseek(uv_file fd,
 static uvwasi_errno_t uvwasi__setup_iovs(const uvwasi_t* uvwasi,
                                          uv_buf_t** buffers,
                                          const uvwasi_iovec_t* iovs,
-                                         size_t iovs_len) {
+                                         uvwasi_size_t iovs_len) {
   uv_buf_t* bufs;
-  size_t i;
+  uvwasi_size_t i;
 
   if ((iovs_len * sizeof(*bufs)) / (sizeof(*bufs)) != iovs_len)
     return UVWASI_ENOMEM;
@@ -133,9 +133,9 @@ static uvwasi_errno_t uvwasi__setup_iovs(const uvwasi_t* uvwasi,
 static uvwasi_errno_t uvwasi__setup_ciovs(const uvwasi_t* uvwasi,
                                           uv_buf_t** buffers,
                                           const uvwasi_ciovec_t* iovs,
-                                          size_t iovs_len) {
+                                          uvwasi_size_t iovs_len) {
   uv_buf_t* bufs;
-  size_t i;
+  uvwasi_size_t i;
 
   if ((iovs_len * sizeof(*bufs)) / (sizeof(*bufs)) != iovs_len)
     return UVWASI_ENOMEM;
@@ -156,12 +156,12 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
   uv_fs_t realpath_req;
   uv_fs_t open_req;
   uvwasi_errno_t err;
-  size_t args_size;
-  size_t size;
-  size_t offset;
-  size_t env_count;
-  size_t env_buf_size;
-  size_t i;
+  uvwasi_size_t args_size;
+  uvwasi_size_t size;
+  uvwasi_size_t offset;
+  uvwasi_size_t env_count;
+  uvwasi_size_t env_buf_size;
+  uvwasi_size_t i;
   int r;
 
   if (uvwasi == NULL || options == NULL || options->fd_table_size == 0)
@@ -327,7 +327,7 @@ uvwasi_errno_t uvwasi_embedder_remap_fd(uvwasi_t* uvwasi,
 
 
 uvwasi_errno_t uvwasi_args_get(uvwasi_t* uvwasi, char** argv, char* argv_buf) {
-  size_t i;
+  uvwasi_size_t i;
 
   DEBUG("uvwasi_args_get(uvwasi=%p, argv=%p, argv_buf=%p)\n",
         uvwasi,
@@ -347,8 +347,8 @@ uvwasi_errno_t uvwasi_args_get(uvwasi_t* uvwasi, char** argv, char* argv_buf) {
 
 
 uvwasi_errno_t uvwasi_args_sizes_get(uvwasi_t* uvwasi,
-                                     size_t* argc,
-                                     size_t* argv_buf_size) {
+                                     uvwasi_size_t* argc,
+                                     uvwasi_size_t* argv_buf_size) {
   DEBUG("uvwasi_args_sizes_get(uvwasi=%p, argc=%p, argv_buf_size=%p)\n",
         uvwasi,
         argc,
@@ -422,7 +422,7 @@ uvwasi_errno_t uvwasi_clock_time_get(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_environ_get(uvwasi_t* uvwasi,
                                   char** environment,
                                   char* environ_buf) {
-  size_t i;
+  uvwasi_size_t i;
 
   DEBUG("uvwasi_environ_get(uvwasi=%p, environment=%p, environ_buf=%p)\n",
         uvwasi,
@@ -442,8 +442,8 @@ uvwasi_errno_t uvwasi_environ_get(uvwasi_t* uvwasi,
 
 
 uvwasi_errno_t uvwasi_environ_sizes_get(uvwasi_t* uvwasi,
-                                        size_t* environ_count,
-                                        size_t* environ_buf_size) {
+                                        uvwasi_size_t* environ_count,
+                                        uvwasi_size_t* environ_buf_size) {
   DEBUG("uvwasi_environ_sizes_get(uvwasi=%p, environ_count=%p, "
         "environ_buf_size=%p)\n",
         uvwasi,
@@ -933,9 +933,9 @@ uvwasi_errno_t uvwasi_fd_filestat_set_times(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_fd_pread(uvwasi_t* uvwasi,
                                uvwasi_fd_t fd,
                                const uvwasi_iovec_t* iovs,
-                               size_t iovs_len,
+                               uvwasi_size_t iovs_len,
                                uvwasi_filesize_t offset,
-                               size_t* nread) {
+                               uvwasi_size_t* nread) {
   struct uvwasi_fd_wrap_t* wrap;
   uv_buf_t* bufs;
   uv_fs_t req;
@@ -978,7 +978,7 @@ uvwasi_errno_t uvwasi_fd_pread(uvwasi_t* uvwasi,
   if (r < 0)
     return uvwasi__translate_uv_error(r);
 
-  *nread = uvread;
+  *nread = (uvwasi_size_t) uvread;
   return UVWASI_ESUCCESS;
 }
 
@@ -1017,7 +1017,7 @@ exit:
 uvwasi_errno_t uvwasi_fd_prestat_dir_name(uvwasi_t* uvwasi,
                                           uvwasi_fd_t fd,
                                           char* path,
-                                          size_t path_len) {
+                                          uvwasi_size_t path_len) {
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
   size_t size;
@@ -1040,7 +1040,7 @@ uvwasi_errno_t uvwasi_fd_prestat_dir_name(uvwasi_t* uvwasi,
   }
 
   size = strlen(wrap->path) + 1;
-  if (size > path_len) {
+  if (size > (size_t) path_len) {
     err = UVWASI_ENOBUFS;
     goto exit;
   }
@@ -1056,9 +1056,9 @@ exit:
 uvwasi_errno_t uvwasi_fd_pwrite(uvwasi_t* uvwasi,
                                 uvwasi_fd_t fd,
                                 const uvwasi_ciovec_t* iovs,
-                                size_t iovs_len,
+                                uvwasi_size_t iovs_len,
                                 uvwasi_filesize_t offset,
-                                size_t* nwritten) {
+                                uvwasi_size_t* nwritten) {
   struct uvwasi_fd_wrap_t* wrap;
   uv_buf_t* bufs;
   uv_fs_t req;
@@ -1101,7 +1101,7 @@ uvwasi_errno_t uvwasi_fd_pwrite(uvwasi_t* uvwasi,
   if (r < 0)
     return uvwasi__translate_uv_error(r);
 
-  *nwritten = uvwritten;
+  *nwritten = (uvwasi_size_t) uvwritten;
   return UVWASI_ESUCCESS;
 }
 
@@ -1109,8 +1109,8 @@ uvwasi_errno_t uvwasi_fd_pwrite(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_fd_read(uvwasi_t* uvwasi,
                               uvwasi_fd_t fd,
                               const uvwasi_iovec_t* iovs,
-                              size_t iovs_len,
-                              size_t* nread) {
+                              uvwasi_size_t iovs_len,
+                              uvwasi_size_t* nread) {
   struct uvwasi_fd_wrap_t* wrap;
   uv_buf_t* bufs;
   uv_fs_t req;
@@ -1147,7 +1147,7 @@ uvwasi_errno_t uvwasi_fd_read(uvwasi_t* uvwasi,
   if (r < 0)
     return uvwasi__translate_uv_error(r);
 
-  *nread = uvread;
+  *nread = (uvwasi_size_t) uvread;
   return UVWASI_ESUCCESS;
 }
 
@@ -1155,9 +1155,9 @@ uvwasi_errno_t uvwasi_fd_read(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_fd_readdir(uvwasi_t* uvwasi,
                                  uvwasi_fd_t fd,
                                  void* buf,
-                                 size_t buf_len,
+                                 uvwasi_size_t buf_len,
                                  uvwasi_dircookie_t cookie,
-                                 size_t* bufused) {
+                                 uvwasi_size_t* bufused) {
   /* TODO(cjihrig): Support Windows where seekdir() and telldir() are used. */
   /* TODO(cjihrig): Avoid opening and closing the directory on each call. */
   struct uvwasi_fd_wrap_t* wrap;
@@ -1396,8 +1396,8 @@ uvwasi_errno_t uvwasi_fd_tell(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_fd_write(uvwasi_t* uvwasi,
                                uvwasi_fd_t fd,
                                const uvwasi_ciovec_t* iovs,
-                               size_t iovs_len,
-                               size_t* nwritten) {
+                               uvwasi_size_t iovs_len,
+                               uvwasi_size_t* nwritten) {
   struct uvwasi_fd_wrap_t* wrap;
   uv_buf_t* bufs;
   uv_fs_t req;
@@ -1435,7 +1435,7 @@ uvwasi_errno_t uvwasi_fd_write(uvwasi_t* uvwasi,
   if (r < 0)
     return uvwasi__translate_uv_error(r);
 
-  *nwritten = uvwritten;
+  *nwritten = (uvwasi_size_t) uvwritten;
   return UVWASI_ESUCCESS;
 }
 
@@ -1443,7 +1443,7 @@ uvwasi_errno_t uvwasi_fd_write(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_path_create_directory(uvwasi_t* uvwasi,
                                             uvwasi_fd_t fd,
                                             const char* path,
-                                            size_t path_len) {
+                                            uvwasi_size_t path_len) {
   char* resolved_path;
   struct uvwasi_fd_wrap_t* wrap;
   uv_fs_t req;
@@ -1492,7 +1492,7 @@ uvwasi_errno_t uvwasi_path_filestat_get(uvwasi_t* uvwasi,
                                         uvwasi_fd_t fd,
                                         uvwasi_lookupflags_t flags,
                                         const char* path,
-                                        size_t path_len,
+                                        uvwasi_size_t path_len,
                                         uvwasi_filestat_t* buf) {
   char* resolved_path;
   struct uvwasi_fd_wrap_t* wrap;
@@ -1550,7 +1550,7 @@ uvwasi_errno_t uvwasi_path_filestat_set_times(uvwasi_t* uvwasi,
                                               uvwasi_fd_t fd,
                                               uvwasi_lookupflags_t flags,
                                               const char* path,
-                                              size_t path_len,
+                                              uvwasi_size_t path_len,
                                               uvwasi_timestamp_t st_atim,
                                               uvwasi_timestamp_t st_mtim,
                                               uvwasi_fstflags_t fst_flags) {
@@ -1618,10 +1618,10 @@ uvwasi_errno_t uvwasi_path_link(uvwasi_t* uvwasi,
                                 uvwasi_fd_t old_fd,
                                 uvwasi_lookupflags_t old_flags,
                                 const char* old_path,
-                                size_t old_path_len,
+                                uvwasi_size_t old_path_len,
                                 uvwasi_fd_t new_fd,
                                 const char* new_path,
-                                size_t new_path_len) {
+                                uvwasi_size_t new_path_len) {
   char* resolved_old_path;
   char* resolved_new_path;
   struct uvwasi_fd_wrap_t* old_wrap;
@@ -1723,7 +1723,7 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
                                 uvwasi_fd_t dirfd,
                                 uvwasi_lookupflags_t dirflags,
                                 const char* path,
-                                size_t path_len,
+                                uvwasi_size_t path_len,
                                 uvwasi_oflags_t o_flags,
                                 uvwasi_rights_t fs_rights_base,
                                 uvwasi_rights_t fs_rights_inheriting,
@@ -1880,10 +1880,10 @@ close_file_and_error_exit:
 uvwasi_errno_t uvwasi_path_readlink(uvwasi_t* uvwasi,
                                     uvwasi_fd_t fd,
                                     const char* path,
-                                    size_t path_len,
+                                    uvwasi_size_t path_len,
                                     char* buf,
-                                    size_t buf_len,
-                                    size_t* bufused) {
+                                    uvwasi_size_t buf_len,
+                                    uvwasi_size_t* bufused) {
   char* resolved_path;
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
@@ -1943,7 +1943,7 @@ uvwasi_errno_t uvwasi_path_readlink(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_path_remove_directory(uvwasi_t* uvwasi,
                                             uvwasi_fd_t fd,
                                             const char* path,
-                                            size_t path_len) {
+                                            uvwasi_size_t path_len) {
   char* resolved_path;
   struct uvwasi_fd_wrap_t* wrap;
   uv_fs_t req;
@@ -1989,10 +1989,10 @@ uvwasi_errno_t uvwasi_path_remove_directory(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_path_rename(uvwasi_t* uvwasi,
                                   uvwasi_fd_t old_fd,
                                   const char* old_path,
-                                  size_t old_path_len,
+                                  uvwasi_size_t old_path_len,
                                   uvwasi_fd_t new_fd,
                                   const char* new_path,
-                                  size_t new_path_len) {
+                                  uvwasi_size_t new_path_len) {
   char* resolved_old_path;
   char* resolved_new_path;
   struct uvwasi_fd_wrap_t* old_wrap;
@@ -2091,10 +2091,10 @@ exit:
 
 uvwasi_errno_t uvwasi_path_symlink(uvwasi_t* uvwasi,
                                    const char* old_path,
-                                   size_t old_path_len,
+                                   uvwasi_size_t old_path_len,
                                    uvwasi_fd_t fd,
                                    const char* new_path,
-                                   size_t new_path_len) {
+                                   uvwasi_size_t new_path_len) {
   char* resolved_new_path;
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
@@ -2147,7 +2147,7 @@ uvwasi_errno_t uvwasi_path_symlink(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_path_unlink_file(uvwasi_t* uvwasi,
                                        uvwasi_fd_t fd,
                                        const char* path,
-                                       size_t path_len) {
+                                       uvwasi_size_t path_len) {
   char* resolved_path;
   struct uvwasi_fd_wrap_t* wrap;
   uv_fs_t req;
@@ -2192,8 +2192,8 @@ uvwasi_errno_t uvwasi_path_unlink_file(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_poll_oneoff(uvwasi_t* uvwasi,
                                   const uvwasi_subscription_t* in,
                                   uvwasi_event_t* out,
-                                  size_t nsubscriptions,
-                                  size_t* nevents) {
+                                  uvwasi_size_t nsubscriptions,
+                                  uvwasi_size_t* nevents) {
   struct uvwasi_poll_oneoff_state_t state;
   struct uvwasi__poll_fdevent_t* fdevent;
   uvwasi_userdata_t timer_userdata;
@@ -2204,7 +2204,7 @@ uvwasi_errno_t uvwasi_poll_oneoff(uvwasi_t* uvwasi,
   uvwasi_event_t* event;
   uvwasi_errno_t err;
   int has_timeout;
-  size_t i;
+  uvwasi_size_t i;
 
   DEBUG("uvwasi_poll_oneoff(uvwasi=%p, in=%p, out=%p, nsubscriptions=%zu, "
         "nevents=%p)\n",
@@ -2338,7 +2338,9 @@ uvwasi_errno_t uvwasi_proc_raise(uvwasi_t* uvwasi, uvwasi_signal_t sig) {
 }
 
 
-uvwasi_errno_t uvwasi_random_get(uvwasi_t* uvwasi, void* buf, size_t buf_len) {
+uvwasi_errno_t uvwasi_random_get(uvwasi_t* uvwasi,
+                                 void* buf,
+                                 uvwasi_size_t buf_len) {
   int r;
 
   DEBUG("uvwasi_random_get(uvwasi=%p, buf=%p, buf_len=%zu)\n",
@@ -2377,9 +2379,9 @@ uvwasi_errno_t uvwasi_sched_yield(uvwasi_t* uvwasi) {
 uvwasi_errno_t uvwasi_sock_recv(uvwasi_t* uvwasi,
                                 uvwasi_fd_t sock,
                                 const uvwasi_iovec_t* ri_data,
-                                size_t ri_data_len,
+                                uvwasi_size_t ri_data_len,
                                 uvwasi_riflags_t ri_flags,
-                                size_t* ro_datalen,
+                                uvwasi_size_t* ro_datalen,
                                 uvwasi_roflags_t* ro_flags) {
   /* TODO(cjihrig): Waiting to implement, pending
                     https://github.com/WebAssembly/WASI/issues/4 */
@@ -2391,9 +2393,9 @@ uvwasi_errno_t uvwasi_sock_recv(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_sock_send(uvwasi_t* uvwasi,
                                 uvwasi_fd_t sock,
                                 const uvwasi_ciovec_t* si_data,
-                                size_t si_data_len,
+                                uvwasi_size_t si_data_len,
                                 uvwasi_siflags_t si_flags,
-                                size_t* so_datalen) {
+                                uvwasi_size_t* so_datalen) {
   /* TODO(cjihrig): Waiting to implement, pending
                     https://github.com/WebAssembly/WASI/issues/4 */
   DEBUG("uvwasi_sock_send(uvwasi=%p, unimplemented)\n", uvwasi);

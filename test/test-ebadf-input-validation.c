@@ -17,7 +17,7 @@ int main(void) {
   uvwasi_dircookie_t test_dircookie = 0;
   uvwasi_fd_t test_fd;
   char* test_str = "foo";
-  size_t test_size = 5;
+  uvwasi_size_t test_size = 5;
   void* test_void;
 
   test_void = (void*) &test_fdstat;

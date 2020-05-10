@@ -22,7 +22,7 @@ static void poll_cb(uv_poll_t* handle, int status, int events) {
 
 static void timeout_cb(uv_timer_t* handle) {
   struct uvwasi_poll_oneoff_state_t* state;
-  size_t i;
+  uvwasi_size_t i;
 
   state = uv_loop_get_data(handle->loop);
 
@@ -34,7 +34,7 @@ static void timeout_cb(uv_timer_t* handle) {
 uvwasi_errno_t uvwasi__poll_oneoff_state_init(
                                       uvwasi_t* uvwasi,
                                       struct uvwasi_poll_oneoff_state_t* state,
-                                      size_t max_fds
+                                      uvwasi_size_t max_fds
                                     ) {
   uvwasi_errno_t err;
   int r;
@@ -92,7 +92,7 @@ uvwasi_errno_t uvwasi__poll_oneoff_state_cleanup(
                                         struct uvwasi_poll_oneoff_state_t* state
                                       ) {
   struct uvwasi__poll_fdevent_t* event;
-  size_t i;
+  uvwasi_size_t i;
   int r;
 
   if (state == NULL)
@@ -163,7 +163,7 @@ uvwasi_errno_t uvwasi__poll_oneoff_state_add_fdevent(
   uvwasi_rights_t rights;
   uvwasi_fd_t fd;
   uvwasi_errno_t err;
-  size_t i;
+  uvwasi_size_t i;
   int r;
 
   if (state == NULL)

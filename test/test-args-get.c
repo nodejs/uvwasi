@@ -7,8 +7,8 @@ int main(void) {
   uvwasi_t uvwasi;
   uvwasi_options_t init_options;
   uvwasi_errno_t err;
-  size_t argc;
-  size_t argv_buf_size;
+  uvwasi_size_t argc;
+  uvwasi_size_t argv_buf_size;
   char** args_get_argv;
   char* buf;
 

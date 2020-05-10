@@ -10,7 +10,7 @@ int main(void) {
   uvwasi_options_t init_options;
   uvwasi_prestat_t prestat;
   uvwasi_errno_t err;
-  size_t prestat_buf_size;
+  uvwasi_size_t prestat_buf_size;
   char* prestat_buf;
   uv_fs_t req;
   int r;

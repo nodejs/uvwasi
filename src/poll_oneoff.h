@@ -23,10 +23,10 @@ struct uvwasi_poll_oneoff_state_t {
   uv_timer_t timer;
   uint64_t timeout;
   uv_loop_t loop;
-  size_t max_fds;
+  uvwasi_size_t max_fds;
   int has_timer;
-  size_t fdevent_cnt;
-  size_t handle_cnt;
+  uvwasi_size_t fdevent_cnt;
+  uvwasi_size_t handle_cnt;
   int result;
 };
 
@@ -34,7 +34,7 @@ struct uvwasi_poll_oneoff_state_t {
 uvwasi_errno_t uvwasi__poll_oneoff_state_init(
                                       struct uvwasi_s* uvwasi,
                                       struct uvwasi_poll_oneoff_state_t* state,
-                                      size_t max_fds
+                                      uvwasi_size_t max_fds
                                     );
 
 uvwasi_errno_t uvwasi__poll_oneoff_state_cleanup(

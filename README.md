@@ -115,14 +115,14 @@ An individual WASI sandbox instance.
 ```c
 typedef struct uvwasi_s {
   struct uvwasi_fd_table_t fds;
-  size_t argc;
+  uvwasi_size_t argc;
   char** argv;
   char* argv_buf;
-  size_t argv_buf_size;
-  size_t envc;
+  uvwasi_size_t argv_buf_size;
+  uvwasi_size_t envc;
   char** env;
   char* env_buf;
-  size_t env_buf_size;
+  uvwasi_size_t env_buf_size;
 } uvwasi_t;
 ```
 
@@ -144,10 +144,10 @@ A data structure used to pass configuration options to `uvwasi_init()`.
 
 ```c
 typedef struct uvwasi_options_s {
-  size_t fd_table_size;
-  size_t preopenc;
+  uvwasi_size_t fd_table_size;
+  uvwasi_size_t preopenc;
   uvwasi_preopen_t* preopens;
-  size_t argc;
+  uvwasi_size_t argc;
   char** argv;
   char** envp;
   uvwasi_fd_t in;
@@ -164,11 +164,11 @@ by a `uvwasi_options_t`.
 
 Inputs:
 
-- <a href="#uvwasi_init.uvwasi" name="uvwasi_init.uvwasi"></a><code>[uvwasi\_t](#uvwasi_t) <strong>uvwasi</strong></code>
+- <a href="#uvwasi_init.uvwasi" name="uvwasi_init.uvwasi"></a><code>[\_\_wasi\_t](#uvwasi_t) <strong>uvwasi</strong></code>
 
     The sandbox to initialize.
 
-- <a href="#uvwasi_init.options" name="uvwasi_init.options"></a><code>[uvwasi\_options\_t](#uvwasi_options_t) <strong>options</strong></code>
+- <a href="#uvwasi_init.options" name="uvwasi_init.options"></a><code>[\_\_wasi\_options\_t](#uvwasi_options_t) <strong>options</strong></code>
 
     Configuration options used when initializing the sandbox.
 
@@ -178,7 +178,7 @@ Outputs:
 
 Returns:
 
-- <a href="#uvwasi_init.return" name="uvwasi_init.return"></a><code>[uvwasi\_errno\_t](#errno) <strong>errno</strong></code>
+- <a href="#uvwasi_init.return" name="uvwasi_init.return"></a><code>[\_\_wasi\_errno\_t](#errno) <strong>errno</strong></code>
 
     A WASI errno.
 
@@ -189,7 +189,7 @@ return an error code.
 
 Inputs:
 
-- <a href="#uvwasi_destroy.uvwasi" name="uvwasi_destroy.uvwasi"></a><code>[uvwasi\_t](#uvwasi_t) <strong>uvwasi</strong></code>
+- <a href="#uvwasi_destroy.uvwasi" name="uvwasi_destroy.uvwasi"></a><code>[\_\_wasi\_t](#uvwasi_t) <strong>uvwasi</strong></code>
 
     The sandbox to clean up.
 
@@ -273,11 +273,11 @@ Return command-line argument data sizes.
 
 Outputs:
 
-- <a href="#args_sizes_get.argc" name="args_sizes_get.argc"></a><code>size\_t \*<strong>argc</strong></code>
+- <a href="#args_sizes_get.argc" name="args_sizes_get.argc"></a><code>\_\_wasi\_size\_t \*<strong>argc</strong></code>
 
     The number of arguments.
 
-- <a href="#args_sizes_get.argv_buf_size" name="args_sizes_get.argv_buf_size"></a><code>size\_t \*<strong>argv\_buf\_size</strong></code>
+- <a href="#args_sizes_get.argv_buf_size" name="args_sizes_get.argv_buf_size"></a><code>\_\_wasi\_size\_t \*<strong>argv\_buf\_size</strong></code>
 
     The size of the argument string data.
 
@@ -348,11 +348,11 @@ Return command-line argument data sizes.
 
 Outputs:
 
-- <a href="#environ_sizes_get.environ_count" name="environ_sizes_get.environ_count"></a><code>size\_t \*<strong>environ\_count</strong></code>
+- <a href="#environ_sizes_get.environ_count" name="environ_sizes_get.environ_count"></a><code>\_\_wasi\_size\_t \*<strong>environ\_count</strong></code>
 
     The number of environment variables.
 
-- <a href="#environ_sizes_get.environ_buf_size" name="environ_sizes_get.environ_buf_size"></a><code>size\_t \*<strong>environ\_buf\_size</strong></code>
+- <a href="#environ_sizes_get.environ_buf_size" name="environ_sizes_get.environ_buf_size"></a><code>\_\_wasi\_size\_t \*<strong>environ\_buf\_size</strong></code>
 
     The size of the environment variable string data.
 
@@ -545,7 +545,7 @@ Inputs:
 
     The file descriptor from which to read data.
 
-- <a href="#fd_pread.iovs" name="fd_pread.iovs"></a><code>const [\_\_wasi\_iovec\_t](#iovec) \*<strong>iovs</strong></code> and <a href="#fd_pread.iovs_len" name="fd_pread.iovs_len"></a><code>size\_t <strong>iovs\_len</strong></code>
+- <a href="#fd_pread.iovs" name="fd_pread.iovs"></a><code>const [\_\_wasi\_iovec\_t](#iovec) \*<strong>iovs</strong></code> and <a href="#fd_pread.iovs_len" name="fd_pread.iovs_len"></a><code>\_\_wasi\_size\_t <strong>iovs\_len</strong></code>
 
     List of scatter/gather vectors in which to store data.
 
@@ -555,7 +555,7 @@ Inputs:
 
 Outputs:
 
-- <a href="#fd_pread.nread" name="fd_pread.nread"></a><code>size\_t <strong>nread</strong></code>
+- <a href="#fd_pread.nread" name="fd_pread.nread"></a><code>\_\_wasi\_size\_t <strong>nread</strong></code>
 
     The number of bytes read.
 
@@ -583,7 +583,7 @@ Inputs:
 
     The file descriptor about which to retrieve information.
 
-- <a href="#fd_prestat_dir_name.path" name="fd_prestat_dir_name.path"></a><code>const char \*<strong>path</strong></code> and <a href="#fd_prestat_dir_name.path_len" name="fd_prestat_dir_name.path_len"></a><code>size\_t <strong>path\_len</strong></code>
+- <a href="#fd_prestat_dir_name.path" name="fd_prestat_dir_name.path"></a><code>const char \*<strong>path</strong></code> and <a href="#fd_prestat_dir_name.path_len" name="fd_prestat_dir_name.path_len"></a><code>\_\_wasi\_size\_t <strong>path\_len</strong></code>
 
     A buffer into which to write the preopened directory name.
 
@@ -600,7 +600,7 @@ Inputs:
 
     The file descriptor to which to write data.
 
-- <a href="#fd_pwrite.iovs" name="fd_pwrite.iovs"></a><code>const [\_\_wasi\_ciovec\_t](#ciovec) \*<strong>iovs</strong></code> and <a href="#fd_pwrite.iovs_len" name="fd_pwrite.iovs_len"></a><code>size\_t <strong>iovs\_len</strong></code>
+- <a href="#fd_pwrite.iovs" name="fd_pwrite.iovs"></a><code>const [\_\_wasi\_ciovec\_t](#ciovec) \*<strong>iovs</strong></code> and <a href="#fd_pwrite.iovs_len" name="fd_pwrite.iovs_len"></a><code>\_\_wasi\_size\_t <strong>iovs\_len</strong></code>
 
     List of scatter/gather vectors from which to retrieve data.
 
@@ -610,7 +610,7 @@ Inputs:
 
 Outputs:
 
-- <a href="#fd_pwrite.nwritten" name="fd_pwrite.nwritten"></a><code>size\_t <strong>nwritten</strong></code>
+- <a href="#fd_pwrite.nwritten" name="fd_pwrite.nwritten"></a><code>\_\_wasi\_size\_t <strong>nwritten</strong></code>
 
     The number of bytes written.
 
@@ -626,13 +626,13 @@ Inputs:
 
     The file descriptor from which to read data.
 
-- <a href="#fd_read.iovs" name="fd_read.iovs"></a><code>const [\_\_wasi\_iovec\_t](#iovec) \*<strong>iovs</strong></code> and <a href="#fd_read.iovs_len" name="fd_read.iovs_len"></a><code>size\_t <strong>iovs\_len</strong></code>
+- <a href="#fd_read.iovs" name="fd_read.iovs"></a><code>const [\_\_wasi\_iovec\_t](#iovec) \*<strong>iovs</strong></code> and <a href="#fd_read.iovs_len" name="fd_read.iovs_len"></a><code>\_\_wasi\_size\_t <strong>iovs\_len</strong></code>
 
     List of scatter/gather vectors to which to store data.
 
 Outputs:
 
-- <a href="#fd_read.nread" name="fd_read.nread"></a><code>size\_t <strong>nread</strong></code>
+- <a href="#fd_read.nread" name="fd_read.nread"></a><code>\_\_wasi\_size\_t <strong>nread</strong></code>
 
     The number of bytes read.
 
@@ -658,7 +658,7 @@ Inputs:
     The directory from which to read the directory
     entries.
 
-- <a href="#fd_readdir.buf" name="fd_readdir.buf"></a><code>void \*<strong>buf</strong></code> and <a href="#fd_readdir.buf_len" name="fd_readdir.buf_len"></a><code>size\_t <strong>buf\_len</strong></code>
+- <a href="#fd_readdir.buf" name="fd_readdir.buf"></a><code>void \*<strong>buf</strong></code> and <a href="#fd_readdir.buf_len" name="fd_readdir.buf_len"></a><code>\_\_wasi\_size\_t <strong>buf\_len</strong></code>
 
     The buffer where directory entries are stored.
 
@@ -669,7 +669,7 @@ Inputs:
 
 Outputs:
 
-- <a href="#fd_readdir.bufused" name="fd_readdir.bufused"></a><code>size\_t <strong>bufused</strong></code>
+- <a href="#fd_readdir.bufused" name="fd_readdir.bufused"></a><code>\_\_wasi\_size\_t <strong>bufused</strong></code>
 
     The number of bytes stored in the read buffer.
     If less than the size of the read buffer, the
@@ -771,13 +771,13 @@ Inputs:
 
     The file descriptor to which to write data.
 
-- <a href="#fd_write.iovs" name="fd_write.iovs"></a><code>const [\_\_wasi\_ciovec\_t](#ciovec) \*<strong>iovs</strong></code> and <a href="#fd_write.iovs_len" name="fd_write.iovs_len"></a><code>size\_t <strong>iovs\_len</strong></code>
+- <a href="#fd_write.iovs" name="fd_write.iovs"></a><code>const [\_\_wasi\_ciovec\_t](#ciovec) \*<strong>iovs</strong></code> and <a href="#fd_write.iovs_len" name="fd_write.iovs_len"></a><code>\_\_wasi\_size\_t <strong>iovs\_len</strong></code>
 
     List of scatter/gather vectors from which to retrieve data.
 
 Outputs:
 
-- <a href="#fd_write.nwritten" name="fd_write.nwritten"></a><code>size\_t <strong>nwritten</strong></code>
+- <a href="#fd_write.nwritten" name="fd_write.nwritten"></a><code>\_\_wasi\_size\_t <strong>nwritten</strong></code>
 
     The number of bytes written.
 
@@ -793,7 +793,7 @@ Inputs:
 
     The working directory at which the resolution of the path starts.
 
-- <a href="#path_create_directory.path" name="path_create_directory.path"></a><code>const char \*<strong>path</strong></code> and <a href="#path_create_directory.path_len" name="path_create_directory.path_len"></a><code>size\_t <strong>path\_len</strong></code>
+- <a href="#path_create_directory.path" name="path_create_directory.path"></a><code>const char \*<strong>path</strong></code> and <a href="#path_create_directory.path_len" name="path_create_directory.path_len"></a><code>\_\_wasi\_size\_t <strong>path\_len</strong></code>
 
     The path at which to create the directory.
 
@@ -813,7 +813,7 @@ Inputs:
 
     Flags determining the method of how the path is resolved.
 
-- <a href="#path_filestat_get.path" name="path_filestat_get.path"></a><code>const char \*<strong>path</strong></code> and <a href="#path_filestat_get.path_len" name="path_filestat_get.path_len"></a><code>size\_t <strong>path\_len</strong></code>
+- <a href="#path_filestat_get.path" name="path_filestat_get.path"></a><code>const char \*<strong>path</strong></code> and <a href="#path_filestat_get.path_len" name="path_filestat_get.path_len"></a><code>\_\_wasi\_size\_t <strong>path\_len</strong></code>
 
     The path of the file or directory to inspect.
 
@@ -838,7 +838,7 @@ Inputs:
 
     Flags determining the method of how the path is resolved.
 
-- <a href="#path_filestat_set_times.path" name="path_filestat_set_times.path"></a><code>const char \*<strong>path</strong></code> and <a href="#path_filestat_set_times.path_len" name="path_filestat_set_times.path_len"></a><code>size\_t <strong>path\_len</strong></code>
+- <a href="#path_filestat_set_times.path" name="path_filestat_set_times.path"></a><code>const char \*<strong>path</strong></code> and <a href="#path_filestat_set_times.path_len" name="path_filestat_set_times.path_len"></a><code>\_\_wasi\_size\_t <strong>path\_len</strong></code>
 
     The path of the file or directory to operate on.
 
@@ -870,7 +870,7 @@ Inputs:
 
     Flags determining the method of how the path is resolved.
 
-- <a href="#path_link.old_path" name="path_link.old_path"></a><code>const char \*<strong>old\_path</strong></code> and <a href="#path_link.old_path_len" name="path_link.old_path_len"></a><code>size\_t <strong>old\_path\_len</strong></code>
+- <a href="#path_link.old_path" name="path_link.old_path"></a><code>const char \*<strong>old\_path</strong></code> and <a href="#path_link.old_path_len" name="path_link.old_path_len"></a><code>\_\_wasi\_size\_t <strong>old\_path\_len</strong></code>
 
     The source path from which to link.
 
@@ -878,7 +878,7 @@ Inputs:
 
     The working directory at which the resolution of the new path starts.
 
-- <a href="#path_link.new_path" name="path_link.new_path"></a><code>const char \*<strong>new\_path</strong></code> and <a href="#path_link.new_path_len" name="path_link.new_path_len"></a><code>size\_t <strong>new\_path\_len</strong></code>
+- <a href="#path_link.new_path" name="path_link.new_path"></a><code>const char \*<strong>new\_path</strong></code> and <a href="#path_link.new_path_len" name="path_link.new_path_len"></a><code>\_\_wasi\_size\_t <strong>new\_path\_len</strong></code>
 
     The destination path at which to create the hard link.
 
@@ -904,7 +904,7 @@ Inputs:
 
     Flags determining the method of how the path is resolved.
 
-- <a href="#path_open.path" name="path_open.path"></a><code>const char \*<strong>path</strong></code> and <a href="#path_open.path_len" name="path_open.path_len"></a><code>size\_t <strong>path\_len</strong></code>
+- <a href="#path_open.path" name="path_open.path"></a><code>const char \*<strong>path</strong></code> and <a href="#path_open.path_len" name="path_open.path_len"></a><code>\_\_wasi\_size\_t <strong>path\_len</strong></code>
 
     The relative path of the file or directory to open, relative to
     the [`dirfd`](#path_open.dirfd) directory.
@@ -947,17 +947,17 @@ Inputs:
 
     The working directory at which the resolution of the path starts.
 
-- <a href="#path_readlink.path" name="path_readlink.path"></a><code>const char \*<strong>path</strong></code> and <a href="#path_readlink.path_len" name="path_readlink.path_len"></a><code>size\_t <strong>path\_len</strong></code>
+- <a href="#path_readlink.path" name="path_readlink.path"></a><code>const char \*<strong>path</strong></code> and <a href="#path_readlink.path_len" name="path_readlink.path_len"></a><code>\_\_wasi\_size\_t <strong>path\_len</strong></code>
 
     The path of the symbolic link from which to read.
 
-- <a href="#path_readlink.buf" name="path_readlink.buf"></a><code>char \*<strong>buf</strong></code> and <a href="#path_readlink.buf_len" name="path_readlink.buf_len"></a><code>size\_t <strong>buf\_len</strong></code>
+- <a href="#path_readlink.buf" name="path_readlink.buf"></a><code>char \*<strong>buf</strong></code> and <a href="#path_readlink.buf_len" name="path_readlink.buf_len"></a><code>\_\_wasi\_size\_t <strong>buf\_len</strong></code>
 
     The buffer to which to write the contents of the symbolic link.
 
 Outputs:
 
-- <a href="#path_readlink.bufused" name="path_readlink.bufused"></a><code>size\_t <strong>bufused</strong></code>
+- <a href="#path_readlink.bufused" name="path_readlink.bufused"></a><code>\_\_wasi\_size\_t <strong>bufused</strong></code>
 
     The number of bytes placed in the buffer.
 
@@ -975,7 +975,7 @@ Inputs:
 
     The working directory at which the resolution of the path starts.
 
-- <a href="#path_remove_directory.path" name="path_remove_directory.path"></a><code>const char \*<strong>path</strong></code> and <a href="#path_remove_directory.path_len" name="path_remove_directory.path_len"></a><code>size\_t <strong>path\_len</strong></code>
+- <a href="#path_remove_directory.path" name="path_remove_directory.path"></a><code>const char \*<strong>path</strong></code> and <a href="#path_remove_directory.path_len" name="path_remove_directory.path_len"></a><code>\_\_wasi\_size\_t <strong>path\_len</strong></code>
 
     The path to a directory to remove.
 
@@ -991,7 +991,7 @@ Inputs:
 
     The working directory at which the resolution of the old path starts.
 
-- <a href="#path_rename.old_path" name="path_rename.old_path"></a><code>const char \*<strong>old\_path</strong></code> and <a href="#path_rename.old_path_len" name="path_rename.old_path_len"></a><code>size\_t <strong>old\_path\_len</strong></code>
+- <a href="#path_rename.old_path" name="path_rename.old_path"></a><code>const char \*<strong>old\_path</strong></code> and <a href="#path_rename.old_path_len" name="path_rename.old_path_len"></a><code>\_\_wasi\_size\_t <strong>old\_path\_len</strong></code>
 
     The source path of the file or directory to rename.
 
@@ -999,7 +999,7 @@ Inputs:
 
     The working directory at which the resolution of the new path starts.
 
-- <a href="#path_rename.new_path" name="path_rename.new_path"></a><code>const char \*<strong>new\_path</strong></code> and <a href="#path_rename.new_path_len" name="path_rename.new_path_len"></a><code>size\_t <strong>new\_path\_len</strong></code>
+- <a href="#path_rename.new_path" name="path_rename.new_path"></a><code>const char \*<strong>new\_path</strong></code> and <a href="#path_rename.new_path_len" name="path_rename.new_path_len"></a><code>\_\_wasi\_size\_t <strong>new\_path\_len</strong></code>
 
     The destination path to which to rename the file or directory.
 
@@ -1011,7 +1011,7 @@ Note: This is similar to `symlinkat` in POSIX.
 
 Inputs:
 
-- <a href="#path_symlink.old_path" name="path_symlink.old_path"></a><code>const char \*<strong>old\_path</strong></code> and <a href="#path_symlink.old_path_len" name="path_symlink.old_path_len"></a><code>size\_t <strong>old_path\_len</strong></code>
+- <a href="#path_symlink.old_path" name="path_symlink.old_path"></a><code>const char \*<strong>old\_path</strong></code> and <a href="#path_symlink.old_path_len" name="path_symlink.old_path_len"></a><code>\_\_wasi\_size\_t <strong>old_path\_len</strong></code>
 
     The contents of the symbolic link.
 
@@ -1019,7 +1019,7 @@ Inputs:
 
     The working directory at which the resolution of the path starts.
 
-- <a href="#path_symlink.new_path" name="path_symlink.new_path"></a><code>const char \*<strong>new\_path</strong></code> and <a href="#path_symlink.new_path_len" name="path_symlink.new_path_len"></a><code>size\_t <strong>new\_path\_len</strong></code>
+- <a href="#path_symlink.new_path" name="path_symlink.new_path"></a><code>const char \*<strong>new\_path</strong></code> and <a href="#path_symlink.new_path_len" name="path_symlink.new_path_len"></a><code>\_\_wasi\_size\_t <strong>new\_path\_len</strong></code>
 
     The destination path at which to create the symbolic link.
 
@@ -1037,7 +1037,7 @@ Inputs:
 
     The working directory at which the resolution of the path starts.
 
-- <a href="#path_unlink_file.path" name="path_unlink_file.path"></a><code>const char \*<strong>path</strong></code> and <a href="#path_unlink_file.path_len" name="path_unlink_file.path_len"></a><code>size\_t <strong>path\_len</strong></code>
+- <a href="#path_unlink_file.path" name="path_unlink_file.path"></a><code>const char \*<strong>path</strong></code> and <a href="#path_unlink_file.path_len" name="path_unlink_file.path_len"></a><code>\_\_wasi\_size\_t <strong>path\_len</strong></code>
 
     The path to a file to unlink.
 
@@ -1055,13 +1055,13 @@ Inputs:
 
     The events that have occurred.
 
-- <a href="#poll_oneoff.nsubscriptions" name="poll_oneoff.nsubscriptions"></a><code>size\_t <strong>nsubscriptions</strong></code>
+- <a href="#poll_oneoff.nsubscriptions" name="poll_oneoff.nsubscriptions"></a><code>\_\_wasi\_size\_t <strong>nsubscriptions</strong></code>
 
     Both the number of subscriptions and events.
 
 Outputs:
 
-- <a href="#poll_oneoff.nevents" name="poll_oneoff.nevents"></a><code>size\_t <strong>nevents</strong></code>
+- <a href="#poll_oneoff.nevents" name="poll_oneoff.nevents"></a><code>\_\_wasi\_size\_t <strong>nevents</strong></code>
 
     The number of events stored.
 
@@ -1107,7 +1107,7 @@ random data directly.
 
 Inputs:
 
-- <a href="#random_get.buf" name="random_get.buf"></a><code>void \*<strong>buf</strong></code> and <a href="#random_get.buf_len" name="random_get.buf_len"></a><code>size\_t <strong>buf\_len</strong></code>
+- <a href="#random_get.buf" name="random_get.buf"></a><code>void \*<strong>buf</strong></code> and <a href="#random_get.buf_len" name="random_get.buf_len"></a><code>\_\_wasi\_size\_t <strong>buf\_len</strong></code>
 
     The buffer to fill with random data.
 
@@ -1130,7 +1130,7 @@ Inputs:
 
     The socket on which to receive data.
 
-- <a href="#sock_recv.ri_data" name="sock_recv.ri_data"></a><code>const [\_\_wasi\_iovec\_t](#iovec) \*<strong>ri\_data</strong></code> and <a href="#sock_recv.ri_data_len" name="sock_recv.ri_data_len"></a><code>size\_t <strong>ri\_data\_len</strong></code>
+- <a href="#sock_recv.ri_data" name="sock_recv.ri_data"></a><code>const [\_\_wasi\_iovec\_t](#iovec) \*<strong>ri\_data</strong></code> and <a href="#sock_recv.ri_data_len" name="sock_recv.ri_data_len"></a><code>\_\_wasi\_size\_t <strong>ri\_data\_len</strong></code>
 
     List of scatter/gather vectors to which to store data.
 
@@ -1140,7 +1140,7 @@ Inputs:
 
 Outputs:
 
-- <a href="#sock_recv.ro_datalen" name="sock_recv.ro_datalen"></a><code>size\_t <strong>ro\_datalen</strong></code>
+- <a href="#sock_recv.ro_datalen" name="sock_recv.ro_datalen"></a><code>\_\_wasi\_size\_t <strong>ro\_datalen</strong></code>
 
     Number of bytes stored in [`ri_data`](#sock_recv.ri_data).
 
@@ -1161,7 +1161,7 @@ Inputs:
 
     The socket on which to send data.
 
-- <a href="#sock_send.si_data" name="sock_send.si_data"></a><code>const [\_\_wasi\_ciovec\_t](#ciovec) \*<strong>si\_data</strong></code> and <a href="#sock_send.si_data_len" name="sock_send.si_data_len"></a><code>size\_t <strong>si\_data\_len</strong></code>
+- <a href="#sock_send.si_data" name="sock_send.si_data"></a><code>const [\_\_wasi\_ciovec\_t](#ciovec) \*<strong>si\_data</strong></code> and <a href="#sock_send.si_data_len" name="sock_send.si_data_len"></a><code>\_\_wasi\_size\_t <strong>si\_data\_len</strong></code>
 
     List of scatter/gather vectors to which to retrieve data
 
@@ -1171,7 +1171,7 @@ Inputs:
 
 Outputs:
 
-- <a href="#sock_send.so_datalen" name="sock_send.so_datalen"></a><code>size\_t <strong>so\_datalen</strong></code>
+- <a href="#sock_send.so_datalen" name="sock_send.so_datalen"></a><code>\_\_wasi\_size\_t <strong>so\_datalen</strong></code>
 
     Number of bytes transmitted.
 
@@ -1239,7 +1239,7 @@ Used by [`uvwasi_fd_pwrite()`](#fd_pwrite), [`uvwasi_fd_write()`](#fd_write), an
 
 Members:
 
-- <a href="#ciovec.buf" name="ciovec.buf"></a><code>const void \*<strong>buf</strong></code> and <a href="#ciovec.buf_len" name="ciovec.buf_len"></a><code>size\_t <strong>buf\_len</strong></code>
+- <a href="#ciovec.buf" name="ciovec.buf"></a><code>const void \*<strong>buf</strong></code> and <a href="#ciovec.buf_len" name="ciovec.buf_len"></a><code>\_\_wasi\_size\_t <strong>buf\_len</strong></code>
 
     The address and length of the buffer to be written.
 
@@ -1933,7 +1933,7 @@ Used by [`uvwasi_fd_pread()`](#fd_pread), [`uvwasi_fd_read()`](#fd_read), and [`
 
 Members:
 
-- <a href="#iovec.buf" name="iovec.buf"></a><code>void \*<strong>buf</strong></code> and <a href="#iovec.buf_len" name="iovec.buf_len"></a><code>size\_t <strong>buf\_len</strong></code>
+- <a href="#iovec.buf" name="iovec.buf"></a><code>void \*<strong>buf</strong></code> and <a href="#iovec.buf_len" name="iovec.buf_len"></a><code>\_\_wasi\_size\_t <strong>buf\_len</strong></code>
 
     The address and length of the buffer to be filled.
 

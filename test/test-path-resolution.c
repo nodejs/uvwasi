@@ -27,7 +27,7 @@ static void check_normalize(char* path, char* expected) {
 static uvwasi_errno_t check(char* fd_mp, char* fd_rp, char* path, char** res) {
   struct uvwasi_fd_wrap_t fd;
   uvwasi_errno_t err;
-  size_t len;
+  uvwasi_size_t len;
 
   len = strlen(path);
   fd.id = 3;
