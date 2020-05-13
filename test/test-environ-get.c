@@ -26,7 +26,7 @@ int main(void) {
   init_options.fd_table_size = 3;
   init_options.argc = 0;
   init_options.argv = NULL;
-  init_options.envp = environ;
+  init_options.envp = (const char**) environ;
   init_options.preopenc = 0;
   init_options.preopens = NULL;
   init_options.allocator = NULL;
