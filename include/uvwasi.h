@@ -58,8 +58,8 @@ typedef struct uvwasi_options_s {
   uvwasi_size_t preopenc;
   uvwasi_preopen_t* preopens;
   uvwasi_size_t argc;
-  char** argv;
-  char** envp;
+  const char** argv;
+  const char** envp;
   uvwasi_fd_t in;
   uvwasi_fd_t out;
   uvwasi_fd_t err;
