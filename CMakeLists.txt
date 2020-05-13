@@ -48,6 +48,7 @@ set(uvwasi_sources
     src/uv_mapping.c
     src/uvwasi.c
     src/wasi_rights.c
+    src/wasi_serdes.c
 )
 
 option(UVWASI_DEBUG_LOG "Enable debug logging" OFF)

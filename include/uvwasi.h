@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include "wasi_serdes.h"
 #include "wasi_types.h"
 
 #define UVWASI_VERSION_MAJOR 0
