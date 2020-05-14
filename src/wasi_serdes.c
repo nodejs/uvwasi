@@ -1,52 +1,52 @@
 #include "wasi_serdes.h"
 #include "wasi_types.h"
 
-inline void uvwasi_serdes_write_uint64_t(void* ptr,
-                                         size_t offset,
-                                         uint64_t value) {
+void uvwasi_serdes_write_uint64_t(void* ptr,
+                                  size_t offset,
+                                  uint64_t value) {
   uvwasi_serdes_write_uint32_t(ptr, offset, (uint32_t) value);
   uvwasi_serdes_write_uint32_t(ptr, offset + 4, value >> 32);
 }
 
-inline void uvwasi_serdes_write_uint32_t(void* ptr,
-                                         size_t offset,
-                                         uint32_t value) {
+void uvwasi_serdes_write_uint32_t(void* ptr,
+                                  size_t offset,
+                                  uint32_t value) {
   uvwasi_serdes_write_uint16_t(ptr, offset, (uint16_t) value);
   uvwasi_serdes_write_uint16_t(ptr, offset + 2, value >> 16);
 }
 
-inline void uvwasi_serdes_write_uint16_t(void* ptr,
-                                         size_t offset,
-                                         uint16_t value) {
+void uvwasi_serdes_write_uint16_t(void* ptr,
+                                  size_t offset,
+                                  uint16_t value) {
   uvwasi_serdes_write_uint8_t(ptr, offset, (uint8_t) value);
   uvwasi_serdes_write_uint8_t(ptr, offset + 1, value >> 8);
 }
 
-inline void uvwasi_serdes_write_uint8_t(void* ptr,
-                                        size_t offset,
-                                        uint8_t value) {
+void uvwasi_serdes_write_uint8_t(void* ptr,
+                                 size_t offset,
+                                 uint8_t value) {
   ((uint8_t*) ptr)[offset] = value;
 }
 
-inline uint64_t uvwasi_serdes_read_uint64_t(const void* ptr, size_t offset) {
+uint64_t uvwasi_serdes_read_uint64_t(const void* ptr, size_t offset) {
   uint64_t low = uvwasi_serdes_read_uint32_t(ptr, offset);
   uint64_t high = uvwasi_serdes_read_uint32_t(ptr, offset + 4);
   return low | (high << 32);
 }
 
-inline uint32_t uvwasi_serdes_read_uint32_t(const void* ptr, size_t offset) {
+uint32_t uvwasi_serdes_read_uint32_t(const void* ptr, size_t offset) {
   uint32_t low = uvwasi_serdes_read_uint16_t(ptr, offset);
   uint32_t high = uvwasi_serdes_read_uint16_t(ptr, offset + 2);
   return low | (high << 16);
 }
 
-inline uint16_t uvwasi_serdes_read_uint16_t(const void* ptr, size_t offset) {
+uint16_t uvwasi_serdes_read_uint16_t(const void* ptr, size_t offset) {
   uint16_t low = uvwasi_serdes_read_uint8_t(ptr, offset);
   uint16_t high = uvwasi_serdes_read_uint8_t(ptr, offset + 1);
   return low | (high << 8);
 }
 
-inline uint8_t uvwasi_serdes_read_uint8_t(const void* ptr,  size_t offset) {
+uint8_t uvwasi_serdes_read_uint8_t(const void* ptr,  size_t offset) {
   return ((const uint8_t*) ptr)[offset];
 }
 
