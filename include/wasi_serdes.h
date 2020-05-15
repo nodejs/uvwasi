@@ -84,13 +84,26 @@ BASIC_TYPE_UVWASI(whence_t)
 
 /* WASI structure read/write functions. */
 
-#define STRUCT(name) \
+#define STRUCT(name)                                                          \
   void uvwasi_serdes_write_##name(void* ptr,                                  \
                                   size_t offset,                              \
                                   const uvwasi_##name* value);                \
   void uvwasi_serdes_read_##name(const void* ptr,                             \
                                  size_t offset,                               \
-                                 uvwasi_##name* value);                       \
+                                 uvwasi_##name* value);
+
+/* iovs currently only need to be read from WASM memory. */
+#define IOVS_STRUCT(name)                                                     \
+  uvwasi_errno_t uvwasi_serdes_read_##name(const void* ptr,                   \
+                                           size_t end,                        \
+                                           size_t offset,                     \
+                                           uvwasi_##name* value);
+
+#define UVWASI_SERDES_SIZE_ciovec_t 8
+IOVS_STRUCT(ciovec_t)
+
+#define UVWASI_SERDES_SIZE_iovec_t 8
+IOVS_STRUCT(iovec_t)
 
 #define UVWASI_SERDES_SIZE_fdstat_t 24
 STRUCT(fdstat_t)
@@ -108,6 +121,7 @@ STRUCT(event_t)
 STRUCT(subscription_t)
 
 #undef STRUCT
+#undef IOVS_STRUCT
 
 /* Helper macros for bound checking. */
 
