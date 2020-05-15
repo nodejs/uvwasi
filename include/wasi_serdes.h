@@ -111,17 +111,16 @@ STRUCT(subscription_t)
 
 /* Helper macros for bound checking. */
 
-#define UVWASI_SERDES_CHECK_BOUNDS(offset, end, type)                         \
+#define UVWASI_SERDES_CHECK_BOUNDS(offset, end, size)                         \
   ((offset) >= 0 &&                                                           \
    (end) > (offset) &&                                                        \
-   (UVWASI_SERDES_SIZE_##type <= (end) - (offset)))                           \
+   ((size) <= (end) - (offset)))                                              \
 
-#define UVWASI_SERDES_CHECK_ARRAY_BOUNDS(offset, end, type, count)            \
+#define UVWASI_SERDES_CHECK_ARRAY_BOUNDS(offset, end, size, count)            \
   ((offset) >= 0 &&                                                           \
    (end) > (offset) &&                                                        \
    (count) >= 0 &&                                                            \
-   ((count) * UVWASI_SERDES_SIZE_##type) / UVWASI_SERDES_SIZE_##type ==       \
-    (count) &&                                                                \
-   ((count) * UVWASI_SERDES_SIZE_##type <= (end) - (offset)))                 \
+   ((count) * (size)) / (size) == (count) &&                                  \
+   ((count) * (size) <= (end) - (offset)))                                    \
 
 #endif /* __UVWASI_SERDES_H__ */
