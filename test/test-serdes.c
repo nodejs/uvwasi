@@ -46,41 +46,57 @@ void check_canaries(const char* ptr, size_t size) {
 void test_bound_checks(void) {
   /* Regardless of the type, the macro should catch negative offsets
      and sizes. */
-  assert(!UVWASI_SERDES_CHECK_BOUNDS(-500, 1000, uint8_t));
-  assert(!UVWASI_SERDES_CHECK_BOUNDS(-500, -100, uint16_t));
-  assert(!UVWASI_SERDES_CHECK_BOUNDS(5000, 1000, uint32_t));
-  assert(!UVWASI_SERDES_CHECK_BOUNDS(-500, 1000, uint64_t));
-  assert(!UVWASI_SERDES_CHECK_BOUNDS(-500, -100, event_t));
-  assert(!UVWASI_SERDES_CHECK_BOUNDS(5000, 1000, fdstat_t));
-  assert(!UVWASI_SERDES_CHECK_ARRAY_BOUNDS(0, 1000, filestat_t, -1));
+  assert(!UVWASI_SERDES_CHECK_BOUNDS(-500, 1000, UVWASI_SERDES_SIZE_uint8_t));
+  assert(!UVWASI_SERDES_CHECK_BOUNDS(-500, -100, UVWASI_SERDES_SIZE_uint16_t));
+  assert(!UVWASI_SERDES_CHECK_BOUNDS(5000, 1000, UVWASI_SERDES_SIZE_uint32_t));
+  assert(!UVWASI_SERDES_CHECK_BOUNDS(-500, 1000, UVWASI_SERDES_SIZE_uint64_t));
+  assert(!UVWASI_SERDES_CHECK_BOUNDS(-500, -100, UVWASI_SERDES_SIZE_event_t));
+  assert(!UVWASI_SERDES_CHECK_BOUNDS(5000, 1000, UVWASI_SERDES_SIZE_fdstat_t));
+  assert(!UVWASI_SERDES_CHECK_ARRAY_BOUNDS(0,
+                                           1000,
+                                           UVWASI_SERDES_SIZE_filestat_t,
+                                           -1));
   /* This causes an integer overflow, which should be detected correctly. */
-  assert(!UVWASI_SERDES_CHECK_ARRAY_BOUNDS(0, 0xffffffffffffffffllu,
-                                           subscription_t,
+  assert(!UVWASI_SERDES_CHECK_ARRAY_BOUNDS(0,
+                                           0xffffffffffffffffllu,
+                                           UVWASI_SERDES_SIZE_subscription_t,
                                            0xffffffffffffffffllu));
 
-  assert(UVWASI_SERDES_CHECK_BOUNDS(19, 20, uint8_t));
-  assert(!UVWASI_SERDES_CHECK_BOUNDS(20, 20, uint8_t));
-  assert(UVWASI_SERDES_CHECK_BOUNDS(18, 20, uint16_t));
-  assert(!UVWASI_SERDES_CHECK_BOUNDS(19, 20, uint16_t));
-  assert(UVWASI_SERDES_CHECK_BOUNDS(16, 20, uint32_t));
-  assert(!UVWASI_SERDES_CHECK_BOUNDS(17, 20, uint32_t));
-  assert(UVWASI_SERDES_CHECK_BOUNDS(12, 20, uint64_t));
-  assert(!UVWASI_SERDES_CHECK_BOUNDS(13, 20, uint64_t));
-  assert(UVWASI_SERDES_CHECK_BOUNDS(0, 24, fdstat_t));
-  assert(!UVWASI_SERDES_CHECK_BOUNDS(1, 24, fdstat_t));
-  assert(UVWASI_SERDES_CHECK_BOUNDS(0, 64, filestat_t));
-  assert(!UVWASI_SERDES_CHECK_BOUNDS(1, 64, filestat_t));
-  assert(UVWASI_SERDES_CHECK_BOUNDS(0, 8, prestat_t));
-  assert(!UVWASI_SERDES_CHECK_BOUNDS(1, 8, prestat_t));
-  assert(UVWASI_SERDES_CHECK_BOUNDS(0, 32, event_t));
-  assert(!UVWASI_SERDES_CHECK_BOUNDS(1, 32, event_t));
-  assert(UVWASI_SERDES_CHECK_BOUNDS(0, 48, subscription_t));
-  assert(!UVWASI_SERDES_CHECK_BOUNDS(1, 48, subscription_t));
+  assert(UVWASI_SERDES_CHECK_BOUNDS(19, 20, UVWASI_SERDES_SIZE_uint8_t));
+  assert(!UVWASI_SERDES_CHECK_BOUNDS(20, 20, UVWASI_SERDES_SIZE_uint8_t));
+  assert(UVWASI_SERDES_CHECK_BOUNDS(18, 20, UVWASI_SERDES_SIZE_uint16_t));
+  assert(!UVWASI_SERDES_CHECK_BOUNDS(19, 20, UVWASI_SERDES_SIZE_uint16_t));
+  assert(UVWASI_SERDES_CHECK_BOUNDS(16, 20, UVWASI_SERDES_SIZE_uint32_t));
+  assert(!UVWASI_SERDES_CHECK_BOUNDS(17, 20, UVWASI_SERDES_SIZE_uint32_t));
+  assert(UVWASI_SERDES_CHECK_BOUNDS(12, 20, UVWASI_SERDES_SIZE_uint64_t));
+  assert(!UVWASI_SERDES_CHECK_BOUNDS(13, 20, UVWASI_SERDES_SIZE_uint64_t));
+  assert(UVWASI_SERDES_CHECK_BOUNDS(0, 24, UVWASI_SERDES_SIZE_fdstat_t));
+  assert(!UVWASI_SERDES_CHECK_BOUNDS(1, 24, UVWASI_SERDES_SIZE_fdstat_t));
+  assert(UVWASI_SERDES_CHECK_BOUNDS(0, 64, UVWASI_SERDES_SIZE_filestat_t));
+  assert(!UVWASI_SERDES_CHECK_BOUNDS(1, 64, UVWASI_SERDES_SIZE_filestat_t));
+  assert(UVWASI_SERDES_CHECK_BOUNDS(0, 8, UVWASI_SERDES_SIZE_prestat_t));
+  assert(!UVWASI_SERDES_CHECK_BOUNDS(1, 8, UVWASI_SERDES_SIZE_prestat_t));
+  assert(UVWASI_SERDES_CHECK_BOUNDS(0, 32, UVWASI_SERDES_SIZE_event_t));
+  assert(!UVWASI_SERDES_CHECK_BOUNDS(1, 32, UVWASI_SERDES_SIZE_event_t));
+  assert(UVWASI_SERDES_CHECK_BOUNDS(0, 48, UVWASI_SERDES_SIZE_subscription_t));
+  assert(!UVWASI_SERDES_CHECK_BOUNDS(1, 48, UVWASI_SERDES_SIZE_subscription_t));
 
-  assert(UVWASI_SERDES_CHECK_ARRAY_BOUNDS(0, 480, subscription_t, 10));
-  assert(!UVWASI_SERDES_CHECK_ARRAY_BOUNDS(1, 480, subscription_t, 10));
-  assert(UVWASI_SERDES_CHECK_ARRAY_BOUNDS(0, 8000, inode_t, 1000));
-  assert(!UVWASI_SERDES_CHECK_ARRAY_BOUNDS(1, 8000, inode_t, 1000));
+  assert(UVWASI_SERDES_CHECK_ARRAY_BOUNDS(0,
+                                          480,
+                                          UVWASI_SERDES_SIZE_subscription_t,
+                                          10));
+  assert(!UVWASI_SERDES_CHECK_ARRAY_BOUNDS(1,
+                                           480,
+                                           UVWASI_SERDES_SIZE_subscription_t,
+                                           10));
+  assert(UVWASI_SERDES_CHECK_ARRAY_BOUNDS(0,
+                                          8000,
+                                          UVWASI_SERDES_SIZE_inode_t,
+                                          1000));
+  assert(!UVWASI_SERDES_CHECK_ARRAY_BOUNDS(1,
+                                           8000,
+                                           UVWASI_SERDES_SIZE_inode_t,
+                                           1000));
 }
 
 void test_basic_types(void) {
