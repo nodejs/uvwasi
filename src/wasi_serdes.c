@@ -170,3 +170,37 @@ uint8_t uvwasi_serdes_read_uint8_t(const void* ptr,  size_t offset) {
 
 ALL_TYPES(WRITE_STRUCT, WRITE_FIELD, WRITE_ALIAS)
 ALL_TYPES(READ_STRUCT, READ_FIELD, READ_ALIAS)
+
+
+uvwasi_errno_t uvwasi_serdes_read_ciovec_t(const void* ptr,
+                                           size_t end,
+                                           size_t offset,
+                                           uvwasi_ciovec_t* value) {
+  uint32_t buf_ptr;
+
+  buf_ptr = uvwasi_serdes_read_uint32_t(ptr, offset);
+  value->buf_len = uvwasi_serdes_read_size_t(ptr, offset + 4);
+
+  if (!UVWASI_SERDES_CHECK_BOUNDS(buf_ptr, end, value->buf_len))
+    return UVWASI_EOVERFLOW;
+
+  value->buf = ((uint8_t*) ptr + buf_ptr);
+  return UVWASI_ESUCCESS;
+}
+
+
+uvwasi_errno_t uvwasi_serdes_read_iovec_t(const void* ptr,
+                                          size_t end,
+                                          size_t offset,
+                                          uvwasi_iovec_t* value) {
+  uint32_t buf_ptr;
+
+  buf_ptr = uvwasi_serdes_read_uint32_t(ptr, offset);
+  value->buf_len = uvwasi_serdes_read_size_t(ptr, offset + 4);
+
+  if (!UVWASI_SERDES_CHECK_BOUNDS(buf_ptr, end, value->buf_len))
+    return UVWASI_EOVERFLOW;
+
+  value->buf = ((uint8_t*) ptr + buf_ptr);
+  return UVWASI_ESUCCESS;
+}
