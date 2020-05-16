@@ -50,9 +50,24 @@ static uvwasi_errno_t check(char* fd_mp, char* fd_rp, char* path, char** res) {
 
 static void pass(char* mp, char* rp, char* path, char* expected) {
   char* resolved;
+  size_t res_len;
+  size_t i;
 
   assert(UVWASI_ESUCCESS == check(mp, rp, path, &resolved));
-  assert(0 == strcmp(resolved, expected));
+  res_len = strlen(resolved);
+  assert(res_len == strlen(expected));
+
+  for (i = 0; i < res_len + 1; i++) {
+#ifdef _WIN32
+    if (resolved[i] == '\\') {
+      assert(expected[i] == '/');
+      continue;
+    }
+#endif /* _WIN32 */
+
+    assert(resolved[i] == expected[i]);
+  }
+
   free(resolved);
 }
 
