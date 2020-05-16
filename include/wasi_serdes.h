@@ -137,4 +137,16 @@ STRUCT(subscription_t)
    ((count) * (size)) / (size) == (count) &&                                  \
    ((count) * (size) <= (end) - (offset)))                                    \
 
+uvwasi_errno_t uvwasi_serdes_readv_ciovec_t(const void* ptr,
+                                            size_t end,
+                                            size_t offset,
+                                            uvwasi_ciovec_t* iovs,
+                                            uvwasi_size_t iovs_len);
+
+uvwasi_errno_t uvwasi_serdes_readv_iovec_t(const void* ptr,
+                                           size_t end,
+                                           size_t offset,
+                                           uvwasi_iovec_t* iovs,
+                                           uvwasi_size_t iovs_len);
+
 #endif /* __UVWASI_SERDES_H__ */
