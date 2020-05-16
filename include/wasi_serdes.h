@@ -123,20 +123,6 @@ STRUCT(subscription_t)
 #undef STRUCT
 #undef IOVS_STRUCT
 
-/* Helper macros for bound checking. */
-
-#define UVWASI_SERDES_CHECK_BOUNDS(offset, end, size)                         \
-  ((offset) >= 0 &&                                                           \
-   (end) > (offset) &&                                                        \
-   ((size) <= (end) - (offset)))                                              \
-
-#define UVWASI_SERDES_CHECK_ARRAY_BOUNDS(offset, end, size, count)            \
-  ((offset) >= 0 &&                                                           \
-   (end) > (offset) &&                                                        \
-   (count) >= 0 &&                                                            \
-   ((count) * (size)) / (size) == (count) &&                                  \
-   ((count) * (size) <= (end) - (offset)))                                    \
-
 uvwasi_errno_t uvwasi_serdes_readv_ciovec_t(const void* ptr,
                                             size_t end,
                                             size_t offset,
@@ -148,5 +134,12 @@ uvwasi_errno_t uvwasi_serdes_readv_iovec_t(const void* ptr,
                                            size_t offset,
                                            uvwasi_iovec_t* iovs,
                                            uvwasi_size_t iovs_len);
+
+/* Helper functions for memory bounds checking. */
+int uvwasi_serdes_check_bounds(size_t offset, size_t end, size_t size);
+int uvwasi_serdes_check_array_bounds(size_t offset,
+                                     size_t end,
+                                     size_t size,
+                                     size_t count);
 
 #endif /* __UVWASI_SERDES_H__ */

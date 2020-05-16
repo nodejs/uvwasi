@@ -181,7 +181,7 @@ uvwasi_errno_t uvwasi_serdes_read_ciovec_t(const void* ptr,
   buf_ptr = uvwasi_serdes_read_uint32_t(ptr, offset);
   value->buf_len = uvwasi_serdes_read_size_t(ptr, offset + 4);
 
-  if (!UVWASI_SERDES_CHECK_BOUNDS(buf_ptr, end, value->buf_len))
+  if (!uvwasi_serdes_check_bounds(buf_ptr, end, value->buf_len))
     return UVWASI_EOVERFLOW;
 
   value->buf = ((uint8_t*) ptr + buf_ptr);
@@ -198,7 +198,7 @@ uvwasi_errno_t uvwasi_serdes_read_iovec_t(const void* ptr,
   buf_ptr = uvwasi_serdes_read_uint32_t(ptr, offset);
   value->buf_len = uvwasi_serdes_read_size_t(ptr, offset + 4);
 
-  if (!UVWASI_SERDES_CHECK_BOUNDS(buf_ptr, end, value->buf_len))
+  if (!uvwasi_serdes_check_bounds(buf_ptr, end, value->buf_len))
     return UVWASI_EOVERFLOW;
 
   value->buf = ((uint8_t*) ptr + buf_ptr);
@@ -241,4 +241,19 @@ uvwasi_errno_t uvwasi_serdes_readv_iovec_t(const void* ptr,
   }
 
   return UVWASI_ESUCCESS;
+}
+
+
+int uvwasi_serdes_check_bounds(size_t offset, size_t end, size_t size) {
+  return end > offset && size <= (end - offset);
+}
+
+
+int uvwasi_serdes_check_array_bounds(size_t offset,
+                                     size_t end,
+                                     size_t size,
+                                     size_t count) {
+  return end > offset &&
+         ((count * size) / size == count) &&
+         (count * size <= end - offset);
 }
