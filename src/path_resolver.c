@@ -351,6 +351,7 @@ static uvwasi_errno_t uvwasi__resolve_path_to_host(
 
 #ifdef _WIN32
   /* Replace / with \ on Windows. */
+  res_path = *resolved_path;
   for (i = real_path_len; i < *resolved_len; i++) {
     if (res_path[i] == '/')
       res_path[i] = '\\';
