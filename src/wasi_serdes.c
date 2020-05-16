@@ -204,3 +204,41 @@ uvwasi_errno_t uvwasi_serdes_read_iovec_t(const void* ptr,
   value->buf = ((uint8_t*) ptr + buf_ptr);
   return UVWASI_ESUCCESS;
 }
+
+
+uvwasi_errno_t uvwasi_serdes_readv_ciovec_t(const void* ptr,
+                                            size_t end,
+                                            size_t offset,
+                                            uvwasi_ciovec_t* iovs,
+                                            uvwasi_size_t iovs_len) {
+  uvwasi_errno_t err;
+  uvwasi_size_t i;
+
+  for (i = 0; i < iovs_len; i++) {
+    err = uvwasi_serdes_read_ciovec_t(ptr, end, offset, &iovs[i]);
+    if (err != UVWASI_ESUCCESS)
+      return err;
+    offset += UVWASI_SERDES_SIZE_ciovec_t;
+  }
+
+  return UVWASI_ESUCCESS;
+}
+
+
+uvwasi_errno_t uvwasi_serdes_readv_iovec_t(const void* ptr,
+                                           size_t end,
+                                           size_t offset,
+                                           uvwasi_iovec_t* iovs,
+                                           uvwasi_size_t iovs_len) {
+  uvwasi_errno_t err;
+  uvwasi_size_t i;
+
+  for (i = 0; i < iovs_len; i++) {
+    err = uvwasi_serdes_read_iovec_t(ptr, end, offset, &iovs[i]);
+    if (err != UVWASI_ESUCCESS)
+      return err;
+    offset += UVWASI_SERDES_SIZE_iovec_t;
+  }
+
+  return UVWASI_ESUCCESS;
+}
