@@ -4,15 +4,25 @@ on: [push, pull_request]
 
 jobs:
   build:
+    name: ${{ matrix.os }} - ${{ matrix.config.variation }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        config:
+          - {variation: 'standard', generate_options: ''}
+        include:
+          - os: ubuntu-latest
+            config: {variation: 'ASAN', generate_options: '-DASAN=ON -DCMAKE_BUILD_TYPE=Debug'}
+          - os: windows-latest
+            config: {variation: 'ASAN', generate_options: '-DASAN=ON -DCMAKE_BUILD_TYPE=Debug'}
+          - os: ubuntu-latest
+            config: {variation: 'debug-log', generate_options: '-DUVWASI_DEBUG_LOG=ON'}
     steps:
       - uses: actions/checkout@v2
       - name: Environment Information
         run: npx envinfo
       - name: Build and Test
         run: |
-          cmake .
+          cmake ${{ matrix.config.generate_options }} .
           cmake --build . --target check
