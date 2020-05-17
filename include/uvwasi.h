@@ -50,8 +50,8 @@ typedef struct uvwasi_s {
 } uvwasi_t;
 
 typedef struct uvwasi_preopen_s {
-  char* mapped_path;
-  char* real_path;
+  const char* mapped_path;
+  const char* real_path;
 } uvwasi_preopen_t;
 
 typedef struct uvwasi_options_s {
