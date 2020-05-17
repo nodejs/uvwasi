@@ -944,7 +944,7 @@ uvwasi_errno_t uvwasi_fd_pread(uvwasi_t* uvwasi,
   size_t uvread;
   int r;
 
-  DEBUG("uvwasi_fd_pread(uvwasi=%p, fd=%d, iovs=%p, iovs_len=%zu, "
+  DEBUG("uvwasi_fd_pread(uvwasi=%p, fd=%d, iovs=%p, iovs_len=%d, "
         "offset=%"PRIu64", nread=%p)\n",
         uvwasi,
         fd,
@@ -1023,7 +1023,7 @@ uvwasi_errno_t uvwasi_fd_prestat_dir_name(uvwasi_t* uvwasi,
   uvwasi_errno_t err;
   size_t size;
 
-  DEBUG("uvwasi_fd_prestat_dir_name(uvwasi=%p, fd=%d, path=%p, path_len=%zu)\n",
+  DEBUG("uvwasi_fd_prestat_dir_name(uvwasi=%p, fd=%d, path=%p, path_len=%d)\n",
         uvwasi,
         fd,
         path,
@@ -1067,7 +1067,7 @@ uvwasi_errno_t uvwasi_fd_pwrite(uvwasi_t* uvwasi,
   size_t uvwritten;
   int r;
 
-  DEBUG("uvwasi_fd_pwrite(uvwasi=%p, fd=%d, iovs=%p, iovs_len=%zu, "
+  DEBUG("uvwasi_fd_pwrite(uvwasi=%p, fd=%d, iovs=%p, iovs_len=%d, "
         "offset=%"PRIu64", nwritten=%p)\n",
         uvwasi,
         fd,
@@ -1119,7 +1119,7 @@ uvwasi_errno_t uvwasi_fd_read(uvwasi_t* uvwasi,
   size_t uvread;
   int r;
 
-  DEBUG("uvwasi_fd_read(uvwasi=%p, fd=%d, iovs=%p, iovs_len=%zu, nread=%p)\n",
+  DEBUG("uvwasi_fd_read(uvwasi=%p, fd=%d, iovs=%p, iovs_len=%d, nread=%p)\n",
         uvwasi,
         fd,
         iovs,
@@ -1174,7 +1174,7 @@ uvwasi_errno_t uvwasi_fd_readdir(uvwasi_t* uvwasi,
   int i;
   int r;
 
-  DEBUG("uvwasi_fd_readdir(uvwasi=%p, fd=%d, buf=%p, buf_len=%zu, "
+  DEBUG("uvwasi_fd_readdir(uvwasi=%p, fd=%d, buf=%p, buf_len=%d, "
         "cookie=%"PRIu64", bufused=%p)\n",
         uvwasi,
         fd,
@@ -1406,7 +1406,7 @@ uvwasi_errno_t uvwasi_fd_write(uvwasi_t* uvwasi,
   size_t uvwritten;
   int r;
 
-  DEBUG("uvwasi_fd_write(uvwasi=%p, fd=%d, iovs=%p, iovs_len=%zu, "
+  DEBUG("uvwasi_fd_write(uvwasi=%p, fd=%d, iovs=%p, iovs_len=%d, "
         "nwritten=%p)\n",
         uvwasi,
         fd,
@@ -1452,7 +1452,7 @@ uvwasi_errno_t uvwasi_path_create_directory(uvwasi_t* uvwasi,
   int r;
 
   DEBUG("uvwasi_path_create_directory(uvwasi=%p, fd=%d, path='%s', "
-        "path_len=%zu)\n",
+        "path_len=%d)\n",
         uvwasi,
         fd,
         path,
@@ -1502,7 +1502,7 @@ uvwasi_errno_t uvwasi_path_filestat_get(uvwasi_t* uvwasi,
   int r;
 
   DEBUG("uvwasi_path_filestat_get(uvwasi=%p, fd=%d, flags=%d, path='%s', "
-        "path_len=%zu, buf=%p)\n",
+        "path_len=%d, buf=%p)\n",
         uvwasi,
         fd,
         flags,
@@ -1563,7 +1563,7 @@ uvwasi_errno_t uvwasi_path_filestat_set_times(uvwasi_t* uvwasi,
   int r;
 
   DEBUG("uvwasi_path_filestat_set_times(uvwasi=%p, fd=%d, flags=%d, path='%s', "
-        "path_len=%zu, st_atim=%"PRIu64", st_mtim=%"PRIu64", fst_flags=%d)\n",
+        "path_len=%d, st_atim=%"PRIu64", st_mtim=%"PRIu64", fst_flags=%d)\n",
         uvwasi,
         fd,
         flags,
@@ -1632,7 +1632,7 @@ uvwasi_errno_t uvwasi_path_link(uvwasi_t* uvwasi,
   int r;
 
   DEBUG("uvwasi_path_link(uvwasi=%p, old_fd=%d, old_flags=%d, old_path='%s', "
-        "old_path_len=%zu, new_fd=%d, new_path='%s', new_path_len=%zu)\n",
+        "old_path_len=%d, new_fd=%d, new_path='%s', new_path_len=%d)\n",
         uvwasi,
         old_fd,
         old_flags,
@@ -1746,7 +1746,7 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
   int r;
 
   DEBUG("uvwasi_path_open(uvwasi=%p, dirfd=%d, dirflags=%d, path='%s', "
-        "path_len=%zu, o_flags=%d, fs_rights_base=%"PRIu64", "
+        "path_len=%d, o_flags=%d, fs_rights_base=%"PRIu64", "
         "fs_rights_inheriting=%"PRIu64", fs_flags=%d, fd=%p)\n",
         uvwasi,
         dirfd,
@@ -1892,8 +1892,8 @@ uvwasi_errno_t uvwasi_path_readlink(uvwasi_t* uvwasi,
   size_t len;
   int r;
 
-  DEBUG("uvwasi_path_readlink(uvwasi=%p, fd=%d, path='%s', path_len=%zu, "
-        "buf=%p, buf_len=%zu, bufused=%p)\n",
+  DEBUG("uvwasi_path_readlink(uvwasi=%p, fd=%d, path='%s', path_len=%d, "
+        "buf=%p, buf_len=%d, bufused=%p)\n",
         uvwasi,
         fd,
         path,
@@ -1952,7 +1952,7 @@ uvwasi_errno_t uvwasi_path_remove_directory(uvwasi_t* uvwasi,
   int r;
 
   DEBUG("uvwasi_path_remove_directory(uvwasi=%p, fd=%d, path='%s', "
-        "path_len=%zu)\n",
+        "path_len=%d)\n",
         uvwasi,
         fd,
         path,
@@ -2003,7 +2003,7 @@ uvwasi_errno_t uvwasi_path_rename(uvwasi_t* uvwasi,
   int r;
 
   DEBUG("uvwasi_path_rename(uvwasi=%p, old_fd=%d, old_path='%s', "
-        "old_path_len=%zu, new_fd=%d, new_path='%s', new_path_len=%zu)\n",
+        "old_path_len=%d, new_fd=%d, new_path='%s', new_path_len=%d)\n",
         uvwasi,
         old_fd,
         old_path,
@@ -2102,8 +2102,8 @@ uvwasi_errno_t uvwasi_path_symlink(uvwasi_t* uvwasi,
   uv_fs_t req;
   int r;
 
-  DEBUG("uvwasi_path_symlink(uvwasi=%p, old_path='%s', old_path_len=%zu, "
-        "fd=%d, new_path='%s', new_path_len=%zu)\n",
+  DEBUG("uvwasi_path_symlink(uvwasi=%p, old_path='%s', old_path_len=%d, "
+        "fd=%d, new_path='%s', new_path_len=%d)\n",
         uvwasi,
         old_path,
         old_path_len,
@@ -2155,7 +2155,7 @@ uvwasi_errno_t uvwasi_path_unlink_file(uvwasi_t* uvwasi,
   uvwasi_errno_t err;
   int r;
 
-  DEBUG("uvwasi_path_unlink_file(uvwasi=%p, fd=%d, path='%s', path_len=%zu)\n",
+  DEBUG("uvwasi_path_unlink_file(uvwasi=%p, fd=%d, path='%s', path_len=%d)\n",
         uvwasi,
         fd,
         path,
@@ -2207,7 +2207,7 @@ uvwasi_errno_t uvwasi_poll_oneoff(uvwasi_t* uvwasi,
   int has_timeout;
   uvwasi_size_t i;
 
-  DEBUG("uvwasi_poll_oneoff(uvwasi=%p, in=%p, out=%p, nsubscriptions=%zu, "
+  DEBUG("uvwasi_poll_oneoff(uvwasi=%p, in=%p, out=%p, nsubscriptions=%d, "
         "nevents=%p)\n",
         uvwasi,
         in,
@@ -2344,7 +2344,7 @@ uvwasi_errno_t uvwasi_random_get(uvwasi_t* uvwasi,
                                  uvwasi_size_t buf_len) {
   int r;
 
-  DEBUG("uvwasi_random_get(uvwasi=%p, buf=%p, buf_len=%zu)\n",
+  DEBUG("uvwasi_random_get(uvwasi=%p, buf=%p, buf_len=%d)\n",
         uvwasi,
         buf,
         buf_len);
