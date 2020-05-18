@@ -1530,7 +1530,7 @@ uvwasi_errno_t uvwasi_path_filestat_get(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     goto exit;
 
-  r = uv_fs_stat(NULL, &req, resolved_path, NULL);
+  r = uv_fs_lstat(NULL, &req, resolved_path, NULL);
   uvwasi__free(uvwasi, resolved_path);
   if (r != 0) {
     uv_fs_req_cleanup(&req);

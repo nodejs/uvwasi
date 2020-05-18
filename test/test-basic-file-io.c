@@ -8,6 +8,7 @@
 
 int main(void) {
   const char* path = "./path-open-create-file.txt";
+  const char* linkname = "./symlink.txt";
   uvwasi_fd_t fd;
   uvwasi_t uvwasi;
   uvwasi_options_t init_options;
@@ -168,8 +169,54 @@ int main(void) {
   assert(stats2.st_mtim > 0);
   assert(stats2.st_ctim > 0);
 
-  /* Unlink the file. */
+  /* Create symlink */
+  err = uvwasi_path_symlink(&uvwasi,
+                            path,
+                            strlen(path) + 1,
+                            3,
+                            linkname,
+                            strlen(linkname)+1);
+  assert(err == 0);
+
+  /* Stat of symlink with UVWASI_LOOKUP_SYMLINK_FOLLOW should yield results
+   * idential the stat'ing the target file */
+  err = uvwasi_path_filestat_get(&uvwasi,
+                                 3,
+                                 UVWASI_LOOKUP_SYMLINK_FOLLOW,
+                                 linkname,
+                                 strlen(path) + 1,
+                                 &stats2);
+  assert(err == 0);
+  assert(stats2.st_dev == stats.st_dev);
+  assert(stats2.st_ino == stats.st_ino);
+  assert(stats2.st_nlink == 1);
+  assert(stats2.st_size == 8);
+  assert(stats2.st_filetype == UVWASI_FILETYPE_REGULAR_FILE);
+  assert(stats2.st_atim > 0);
+  assert(stats2.st_mtim > 0);
+  assert(stats2.st_ctim > 0);
+
+  /* If UVWASI_LOOKUP_SYMLINK_FOLLOW is not set we stat the link itself */
+  err = uvwasi_path_filestat_get(&uvwasi,
+                                 3,
+                                 0,
+                                 linkname,
+                                 strlen(path) + 1,
+                                 &stats2);
+  assert(err == 0);
+  assert(stats2.st_dev == stats.st_dev);
+  assert(stats2.st_ino != stats.st_ino);
+  assert(stats2.st_nlink == 1);
+  assert(stats2.st_filetype == UVWASI_FILETYPE_SYMBOLIC_LINK);
+  assert(stats2.st_atim > 0);
+  assert(stats2.st_mtim > 0);
+  assert(stats2.st_ctim > 0);
+
+
+  /* Unlink the files. */
   err = uvwasi_path_unlink_file(&uvwasi, 3, path, strlen(path) + 1);
+  assert(err == 0);
+  err = uvwasi_path_unlink_file(&uvwasi, 3, linkname, strlen(linkname) + 1);
   assert(err == 0);
 
   /* Clean things up. */
