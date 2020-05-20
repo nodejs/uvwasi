@@ -79,8 +79,6 @@ static void fail(char* mp, char* rp, char* path, uvwasi_errno_t expected) {
 }
 
 int main(void) {
-  uvwasi_errno_t err;
-
   init_options.in = 0;
   init_options.out = 1;
   init_options.err = 2;

@@ -18,7 +18,6 @@ int main(void) {
   uvwasi_size_t env_buf_size;
   char** env_get_env;
   char* buf;
-  uvwasi_size_t i;
 
   init_options.in = 0;
   init_options.out = 1;

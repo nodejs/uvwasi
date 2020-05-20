@@ -6,7 +6,6 @@
 int main(void) {
   uvwasi_t uvwasi;
   uvwasi_options_t init_options;
-  uvwasi_errno_t err;
 
   init_options.in = 0;
   init_options.out = 1;
