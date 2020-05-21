@@ -1,4 +1,4 @@
-name: uvwasi Android CI
+name: uvwasi Android BUILD CI
 
 on: [push, pull_request]
 
