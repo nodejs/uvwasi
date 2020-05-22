@@ -29,6 +29,78 @@
 # undef POSIX_FADV_NORMAL
 #endif
 
+#define VALIDATE_FSTFLAGS_OR_RETURN(flags)                                    \
+  do {                                                                        \
+    if ((flags) & ~(UVWASI_FILESTAT_SET_ATIM |                                \
+                    UVWASI_FILESTAT_SET_ATIM_NOW |                            \
+                    UVWASI_FILESTAT_SET_MTIM |                                \
+                    UVWASI_FILESTAT_SET_MTIM_NOW)) {                          \
+      return UVWASI_EINVAL;                                                   \
+    }                                                                         \
+  } while (0)
+
+static uvwasi_errno_t uvwasi__get_filestat_set_times(
+                                                    uvwasi_timestamp_t* st_atim,
+                                                    uvwasi_timestamp_t* st_mtim,
+                                                    uvwasi_fstflags_t fst_flags,
+                                                    uv_file* fd,
+                                                    char* path
+                                                  ) {
+  uvwasi_filestat_t stat;
+  uvwasi_timestamp_t now;
+  uvwasi_errno_t err;
+  uv_fs_t req;
+  int r;
+
+  /* Check if either value requires the current time. */
+  if ((fst_flags &
+      (UVWASI_FILESTAT_SET_ATIM_NOW | UVWASI_FILESTAT_SET_MTIM_NOW)) != 0) {
+    err = uvwasi__clock_gettime_realtime(&now);
+    if (err != UVWASI_ESUCCESS)
+      return err;
+  }
+
+  /* Check if either value is omitted. libuv doesn't have an 'omitted' option,
+     so get the current stats for the file. This approach isn't perfect, but it
+     will do until libuv can get better support here. */
+  if ((fst_flags &
+       (UVWASI_FILESTAT_SET_ATIM | UVWASI_FILESTAT_SET_ATIM_NOW)) == 0 ||
+      (fst_flags &
+       (UVWASI_FILESTAT_SET_MTIM | UVWASI_FILESTAT_SET_MTIM_NOW)) == 0) {
+
+    if (fd != NULL)
+      r = uv_fs_fstat(NULL, &req, *fd, NULL);
+    else
+      r = uv_fs_lstat(NULL, &req, path, NULL);
+
+    if (r != 0) {
+      uv_fs_req_cleanup(&req);
+      return uvwasi__translate_uv_error(r);
+    }
+
+    uvwasi__stat_to_filestat(&req.statbuf, &stat);
+    uv_fs_req_cleanup(&req);
+  }
+
+  /* Choose the provided time or 'now' and convert WASI timestamps from
+     nanoseconds to seconds due to libuv. */
+  if ((fst_flags & UVWASI_FILESTAT_SET_ATIM_NOW) != 0)
+    *st_atim = now / NANOS_PER_SEC;
+  else if ((fst_flags & UVWASI_FILESTAT_SET_ATIM) != 0)
+    *st_atim = *st_atim / NANOS_PER_SEC;
+  else
+    *st_atim = stat.st_atim / NANOS_PER_SEC;
+
+  if ((fst_flags & UVWASI_FILESTAT_SET_MTIM_NOW) != 0)
+    *st_mtim = now / NANOS_PER_SEC;
+  else if ((fst_flags & UVWASI_FILESTAT_SET_MTIM) != 0)
+    *st_mtim = *st_mtim / NANOS_PER_SEC;
+  else
+    *st_mtim = stat.st_mtim / NANOS_PER_SEC;
+
+  return UVWASI_ESUCCESS;
+}
+
 static void* default_malloc(size_t size, void* mem_user_data) {
   return malloc(size);
 }
@@ -906,8 +978,9 @@ uvwasi_errno_t uvwasi_fd_filestat_set_times(uvwasi_t* uvwasi,
                                             uvwasi_timestamp_t st_atim,
                                             uvwasi_timestamp_t st_mtim,
                                             uvwasi_fstflags_t fst_flags) {
-  /* TODO(cjihrig): libuv does not currently support nanosecond precision. */
   struct uvwasi_fd_wrap_t* wrap;
+  uvwasi_timestamp_t atim;
+  uvwasi_timestamp_t mtim;
   uv_fs_t req;
   uvwasi_errno_t err;
   int r;
@@ -923,10 +996,7 @@ uvwasi_errno_t uvwasi_fd_filestat_set_times(uvwasi_t* uvwasi,
   if (uvwasi == NULL)
     return UVWASI_EINVAL;
 
-  if (fst_flags & ~(UVWASI_FILESTAT_SET_ATIM | UVWASI_FILESTAT_SET_ATIM_NOW |
-                    UVWASI_FILESTAT_SET_MTIM | UVWASI_FILESTAT_SET_MTIM_NOW)) {
-    return UVWASI_EINVAL;
-  }
+  VALIDATE_FSTFLAGS_OR_RETURN(fst_flags);
 
   err = uvwasi_fd_table_get(uvwasi->fds,
                             fd,
@@ -936,8 +1006,20 @@ uvwasi_errno_t uvwasi_fd_filestat_set_times(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  /* TODO(cjihrig): st_atim and st_mtim should not be unconditionally passed. */
-  r = uv_fs_futime(NULL, &req, wrap->fd, st_atim, st_mtim, NULL);
+  atim = st_atim;
+  mtim = st_mtim;
+  err = uvwasi__get_filestat_set_times(&atim,
+                                       &mtim,
+                                       fst_flags,
+                                       &wrap->fd,
+                                       NULL);
+  if (err != UVWASI_ESUCCESS) {
+    uv_mutex_unlock(&wrap->mutex);
+    return err;
+  }
+
+  /* libuv does not currently support nanosecond precision. */
+  r = uv_fs_futime(NULL, &req, wrap->fd, atim, mtim, NULL);
   uv_mutex_unlock(&wrap->mutex);
   uv_fs_req_cleanup(&req);
 
@@ -1572,9 +1654,10 @@ uvwasi_errno_t uvwasi_path_filestat_set_times(uvwasi_t* uvwasi,
                                               uvwasi_timestamp_t st_atim,
                                               uvwasi_timestamp_t st_mtim,
                                               uvwasi_fstflags_t fst_flags) {
-  /* TODO(cjihrig): libuv does not currently support nanosecond precision. */
   char* resolved_path;
   struct uvwasi_fd_wrap_t* wrap;
+  uvwasi_timestamp_t atim;
+  uvwasi_timestamp_t mtim;
   uv_fs_t req;
   uvwasi_errno_t err;
   int r;
@@ -1593,10 +1676,7 @@ uvwasi_errno_t uvwasi_path_filestat_set_times(uvwasi_t* uvwasi,
   if (uvwasi == NULL || path == NULL)
     return UVWASI_EINVAL;
 
-  if (fst_flags & ~(UVWASI_FILESTAT_SET_ATIM | UVWASI_FILESTAT_SET_ATIM_NOW |
-                    UVWASI_FILESTAT_SET_MTIM | UVWASI_FILESTAT_SET_MTIM_NOW)) {
-    return UVWASI_EINVAL;
-  }
+  VALIDATE_FSTFLAGS_OR_RETURN(fst_flags);
 
   err = uvwasi_fd_table_get(uvwasi->fds,
                             fd,
@@ -1615,8 +1695,20 @@ uvwasi_errno_t uvwasi_path_filestat_set_times(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     goto exit;
 
-  /* TODO(cjihrig): st_atim and st_mtim should not be unconditionally passed. */
-  r = uv_fs_utime(NULL, &req, resolved_path, st_atim, st_mtim, NULL);
+  atim = st_atim;
+  mtim = st_mtim;
+  err = uvwasi__get_filestat_set_times(&atim,
+                                       &mtim,
+                                       fst_flags,
+                                       NULL,
+                                       resolved_path);
+  if (err != UVWASI_ESUCCESS) {
+    uvwasi__free(uvwasi, resolved_path);
+    goto exit;
+  }
+
+  /* libuv does not currently support nanosecond precision. */
+  r = uv_fs_lutime(NULL, &req, resolved_path, atim, mtim, NULL);
   uvwasi__free(uvwasi, resolved_path);
   uv_fs_req_cleanup(&req);
 
