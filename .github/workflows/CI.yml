@@ -13,11 +13,11 @@ jobs:
           - {variation: 'standard', generate_options: ''}
         include:
           - os: ubuntu-latest
-            config: {variation: 'ASAN', generate_options: '-DASAN=ON -DCMAKE_BUILD_TYPE=Debug'}
+            config: {variation: 'ASAN', generate_options: '-DASAN=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-Wall -Werror"'}
           - os: windows-latest
             config: {variation: 'ASAN', generate_options: '-DASAN=ON -DCMAKE_BUILD_TYPE=Debug'}
           - os: ubuntu-latest
-            config: {variation: 'debug-log', generate_options: '-DUVWASI_DEBUG_LOG=ON'}
+            config: {variation: 'debug-log', generate_options: '-DUVWASI_DEBUG_LOG=ON -DCMAKE_C_FLAGS="-Wall -Werror"'}
     steps:
       - uses: actions/checkout@v2
       - name: Environment Information
