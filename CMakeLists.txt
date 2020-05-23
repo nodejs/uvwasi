@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.11)
 project (uvwasi LANGUAGES C)
 
 # This can be a commit hash or tag
-set(LIBUV_VERSION v1.37.0)
+set(LIBUV_VERSION v1.38.0)
 
 include(CMakeDependentOption)
 cmake_dependent_option(UVWASI_BUILD_TESTS
