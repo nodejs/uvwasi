@@ -20,18 +20,11 @@ int main(void) {
   uv_fs_req_cleanup(&req);
   assert(r == 0 || r == UV_EEXIST);
 
-  init_options.in = 0;
-  init_options.out = 1;
-  init_options.err = 2;
-  init_options.fd_table_size = 3;
-  init_options.argc = 0;
-  init_options.argv = NULL;
-  init_options.envp = NULL;
+  uvwasi_options_init(&init_options);
   init_options.preopenc = 1;
   init_options.preopens = calloc(1, sizeof(uvwasi_preopen_t));
   init_options.preopens[0].mapped_path = "/var";
   init_options.preopens[0].real_path = TEST_TMP_DIR;
-  init_options.allocator = NULL;
 
   err = uvwasi_init(&uvwasi, &init_options);
   assert(err == 0);

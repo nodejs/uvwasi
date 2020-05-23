@@ -12,19 +12,12 @@ int main(void) {
   char** args_get_argv;
   char* buf;
 
-  init_options.in = 0;
-  init_options.out = 1;
-  init_options.err = 2;
-  init_options.fd_table_size = 3;
+  uvwasi_options_init(&init_options);
   init_options.argc = 3;
   init_options.argv = calloc(3, sizeof(char*));
   init_options.argv[0] = "--foo=bar";
   init_options.argv[1] = "-baz";
   init_options.argv[2] = "100";
-  init_options.envp = NULL;
-  init_options.preopenc = 0;
-  init_options.preopens = NULL;
-  init_options.allocator = NULL;
 
   err = uvwasi_init(&uvwasi, &init_options);
   assert(err == 0);

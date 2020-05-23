@@ -70,6 +70,7 @@ typedef struct uvwasi_options_s {
 /* Embedder API. */
 uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options);
 void uvwasi_destroy(uvwasi_t* uvwasi);
+void uvwasi_options_init(uvwasi_options_t* options);
 /* Use int instead of uv_file to avoid needing uv.h */
 uvwasi_errno_t uvwasi_embedder_remap_fd(uvwasi_t* uvwasi,
                                         const uvwasi_fd_t fd,
