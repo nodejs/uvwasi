@@ -19,16 +19,8 @@ int main(void) {
   char** env_get_env;
   char* buf;
 
-  init_options.in = 0;
-  init_options.out = 1;
-  init_options.err = 2;
-  init_options.fd_table_size = 3;
-  init_options.argc = 0;
-  init_options.argv = NULL;
+  uvwasi_options_init(&init_options);
   init_options.envp = (const char**) environ;
-  init_options.preopenc = 0;
-  init_options.preopens = NULL;
-  init_options.allocator = NULL;
 
   err = uvwasi_init(&uvwasi, &init_options);
   assert(err == 0);

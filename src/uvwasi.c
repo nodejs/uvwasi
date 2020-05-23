@@ -308,6 +308,23 @@ void uvwasi_destroy(uvwasi_t* uvwasi) {
 }
 
 
+void uvwasi_options_init(uvwasi_options_t* options) {
+  if (options == NULL)
+    return;
+
+  options->in = 0;
+  options->out = 1;
+  options->err = 2;
+  options->fd_table_size = 3;
+  options->argc = 0;
+  options->argv = NULL;
+  options->envp = NULL;
+  options->preopenc = 0;
+  options->preopens = NULL;
+  options->allocator = NULL;
+}
+
+
 uvwasi_errno_t uvwasi_embedder_remap_fd(uvwasi_t* uvwasi,
                                         const uvwasi_fd_t fd,
                                         uv_file new_host_fd) {
