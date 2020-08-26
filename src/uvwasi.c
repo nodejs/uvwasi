@@ -2325,7 +2325,7 @@ uvwasi_errno_t uvwasi_poll_oneoff(uvwasi_t* uvwasi,
                                   uvwasi_size_t* nevents) {
   struct uvwasi_poll_oneoff_state_t state;
   struct uvwasi__poll_fdevent_t* fdevent;
-  uvwasi_userdata_t timer_userdata = 0;
+  uvwasi_userdata_t timer_userdata;
   uvwasi_timestamp_t min_timeout;
   uvwasi_timestamp_t cur_timeout;
   uvwasi_timestamp_t now;
@@ -2334,6 +2334,7 @@ uvwasi_errno_t uvwasi_poll_oneoff(uvwasi_t* uvwasi,
   uvwasi_errno_t err;
   int has_timeout;
   uvwasi_size_t i;
+  timer_userdata = 0;
 
   UVWASI_DEBUG("uvwasi_poll_oneoff(uvwasi=%p, in=%p, out=%p, "
                "nsubscriptions=%d, nevents=%p)\n",
