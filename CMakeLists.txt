@@ -115,7 +115,7 @@ if(UVWASI_BUILD_TESTS)
     )
 endif()
 
-message(STATUS "summary of build options:
+message(STATUS "summary of uvwasi build options:
 
     Install prefix:  ${CMAKE_INSTALL_PREFIX}
     Target system:   ${CMAKE_SYSTEM_NAME}
