@@ -2334,7 +2334,6 @@ uvwasi_errno_t uvwasi_poll_oneoff(uvwasi_t* uvwasi,
   uvwasi_errno_t err;
   int has_timeout;
   uvwasi_size_t i;
-  timer_userdata = 0;
 
   UVWASI_DEBUG("uvwasi_poll_oneoff(uvwasi=%p, in=%p, out=%p, "
                "nsubscriptions=%d, nevents=%p)\n",
@@ -2354,6 +2353,7 @@ uvwasi_errno_t uvwasi_poll_oneoff(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
+  timer_userdata = 0;
   has_timeout = 0;
   min_timeout = 0;
 
