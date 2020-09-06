@@ -1349,7 +1349,8 @@ uvwasi_errno_t uvwasi_fd_readdir(uvwasi_t* uvwasi,
 
       name_len = strlen(dirents[i].name);
       dirent.d_next = (uvwasi_dircookie_t) tell;
-      /* TODO(cjihrig): Missing ino libuv (and Windows) support. fstat()? */
+      /* TODO(cjihrig): libuv doesn't provide d_ino, and d_type is not
+                        supported on all platforms. Use stat()? */
       dirent.d_ino = 0;
       dirent.d_namlen = name_len;
 
