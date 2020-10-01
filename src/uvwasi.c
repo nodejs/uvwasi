@@ -229,7 +229,7 @@ static uvwasi_errno_t uvwasi__setup_ciovs(const uvwasi_t* uvwasi,
 }
 
 
-uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, uvwasi_options_t* options) {
+uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, const uvwasi_options_t* options) {
   uv_fs_t realpath_req;
   uv_fs_t open_req;
   uvwasi_errno_t err;
