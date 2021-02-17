@@ -2453,4 +2453,4 @@ Possible values:
 
 [WASI]: https://github.com/WebAssembly/WASI
 [libuv]: https://github.com/libuv/libuv
-[snapshot_1]: https://github.com/WebAssembly/WASI/blob/master/phases/snapshot/docs.md
+[snapshot_1]: https://github.com/WebAssembly/WASI/blob/main/phases/snapshot/docs.md
