@@ -52,7 +52,7 @@
     struct timespec ts;                                                       \
     if (0 != clock_gettime((clk), &ts))                                       \
       return uvwasi__translate_uv_error(uv_translate_sys_error(errno));       \
-    (time) = (ts.tv_sec * NANOS_PER_SEC) + ts.tv_nsec;                        \
+    (time) = ((uvwasi_timestamp_t)(ts.tv_sec) * NANOS_PER_SEC) + ts.tv_nsec;  \
     return UVWASI_ESUCCESS;                                                   \
   } while (0)
 
