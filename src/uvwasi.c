@@ -127,6 +127,9 @@ void* uvwasi__malloc(const uvwasi_t* uvwasi, size_t size) {
 }
 
 void uvwasi__free(const uvwasi_t* uvwasi, void* ptr) {
+  if (ptr == NULL)
+    return;
+
   uvwasi->allocator->free(ptr, uvwasi->allocator->mem_user_data);
 }
 
