@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.11)
 project (uvwasi LANGUAGES C)
 
+# Point CMake at any custom modules we may ship
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+
 # This can be a commit hash or tag
 set(LIBUV_VERSION v1.40.0)
 
@@ -25,19 +28,27 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   list(APPEND uvwasi_defines _GNU_SOURCE _POSIX_C_SOURCE=200112)
 endif()
 
-include(FetchContent)
-## https://libuv.org
-FetchContent_Declare(
-        libuv
-        GIT_REPOSITORY https://github.com/libuv/libuv.git
-        GIT_TAG ${LIBUV_VERSION})
+option(WITH_SYSTEM_LIBUV "Link to a system libuv library instead of bundling" OFF)
 
-FetchContent_GetProperties(libuv)
-if(NOT libuv_POPULATED)
-    FetchContent_Populate(libuv)
-    include_directories("${libuv_SOURCE_DIR}/include")
-    add_subdirectory(${libuv_SOURCE_DIR} ${libuv_BINARY_DIR} EXCLUDE_FROM_ALL)
-endif()
+if (WITH_SYSTEM_LIBUV)
+  find_package(LibUV REQUIRED)
+  include_directories(${LIBUV_INCLUDE_DIR})
+else (WITH_SYSTEM_LIBUV)
+  include(FetchContent)
+  ## https://libuv.org
+  FetchContent_Declare(
+          libuv
+          GIT_REPOSITORY https://github.com/libuv/libuv.git
+          GIT_TAG ${LIBUV_VERSION})
+  
+  FetchContent_GetProperties(libuv)
+  if(NOT libuv_POPULATED)
+      FetchContent_Populate(libuv)
+      include_directories("${libuv_SOURCE_DIR}/include")
+      add_subdirectory(${libuv_SOURCE_DIR} ${libuv_BINARY_DIR} EXCLUDE_FROM_ALL)
+  endif()
+  set(LIBUV_LIBRARIES uv_a)
+endif (WITH_SYSTEM_LIBUV)
 
 ## uvwasi source code files.
 set(uvwasi_sources
@@ -87,9 +98,20 @@ target_compile_definitions(uvwasi_a PRIVATE ${uvwasi_defines})
 target_compile_options(uvwasi_a PRIVATE ${uvwasi_cflags})
 target_include_directories(uvwasi_a PRIVATE ${PROJECT_SOURCE_DIR}/include)
 if(CODE_COVERAGE)
-    target_link_libraries(uvwasi_a PUBLIC uv_a coverage_config)
+    target_link_libraries(uvwasi_a PUBLIC ${LIBUV_LIBRARIES} coverage_config)
 else()
-    target_link_libraries(uvwasi_a PRIVATE uv_a)
+    target_link_libraries(uvwasi_a PRIVATE ${LIBUV_LIBRARIES})
+endif()
+
+## Shared library target.
+add_library(uvwasi SHARED ${uvwasi_sources})
+target_compile_definitions(uvwasi PRIVATE ${uvwasi_defines})
+target_compile_options(uvwasi PRIVATE ${uvwasi_cflags})
+target_include_directories(uvwasi PRIVATE ${PROJECT_SOURCE_DIR}/include)
+if(CODE_COVERAGE)
+    target_link_libraries(uvwasi PUBLIC ${LIBUV_LIBRARIES} coverage_config)
+else()
+    target_link_libraries(uvwasi PRIVATE ${LIBUV_LIBRARIES})
 endif()
 
 
@@ -105,7 +127,7 @@ if(UVWASI_BUILD_TESTS)
         target_include_directories(${test_name}
                                     PRIVATE
                                     ${PROJECT_SOURCE_DIR}/include)
-        target_link_libraries(${test_name} PRIVATE uv_a uvwasi_a)
+        target_link_libraries(${test_name} PRIVATE ${LIBUV_LIBRARIES} uvwasi_a)
         list(APPEND test_list ${test_name})
     endforeach()
 
@@ -122,6 +144,4 @@ message(STATUS "summary of uvwasi build options:
     Compiler:
       C compiler:    ${CMAKE_C_COMPILER}
       CFLAGS:        ${CMAKE_C_FLAGS_${_build_type}} ${CMAKE_C_FLAGS}
-    Libuv version:   ${LIBUV_VERSION}
-    Libuv lib:       ${libuv_BINARY_DIR}
 ")
