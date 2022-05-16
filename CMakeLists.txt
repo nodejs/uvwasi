@@ -144,4 +144,10 @@ message(STATUS "summary of uvwasi build options:
     Compiler:
       C compiler:    ${CMAKE_C_COMPILER}
       CFLAGS:        ${CMAKE_C_FLAGS_${_build_type}} ${CMAKE_C_FLAGS}
+
+    System libuv:    ${WITH_SYSTEM_LIBUV}
+    Debug logging:   ${UVWASI_DEBUG_LOG}
+    Code coverage:   ${CODE_COVERAGE}
+    ASAN:            ${ASAN}
+    Build tests:     ${UVWASI_BUILD_TESTS}
 ")
