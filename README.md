@@ -1,7 +1,29 @@
 # uvwasi
 
-`uvwasi` implements the [WASI][] system call API. Under the hood, `uvwasi`
+`uvwasi` implements the [WASI][] system call API, so that WebAssembly
+runtimes can easily implement WASI calls.  Under the hood, `uvwasi`
 leverages [libuv][] where possible for maximum portability.
+
+                                  |
+    WebAssembly code              |      WebAssembly application code
+                                  |                 |
+                                  |                 v
+                                  | WASI syscalls (inserted by compiler toolchain)
+                                  |                 |
+    ------------------------------+                 |
+                                  |                 v
+    WebAssembly runtime (Node.js) |    uvwasi (implementation of WASI)
+                                  |                 |
+                                  |                 v
+                                  |               libuv
+                                  |                 |
+                                  |                 v
+                                  |        platform-specific calls
+                                  |
+
+*(Hence uvwasi isn't for making C-programs-that-use-libuv-APIs execute on
+WASI runtimes.  That would either be a new platform added by libuv, or done
+through POSIX emulation by the Emscripten or wasi-sdk toolchains.)*
 
 ## Building Locally
 
