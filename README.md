@@ -17,6 +17,7 @@ $ ctest -C Debug --output-on-failure  # run tests
 ## Example Usage
 
 ```c
+#include <stdlib.h>
 #include <assert.h>
 #include "uv.h"
 #include "uvwasi.h"
