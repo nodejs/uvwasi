@@ -37,14 +37,12 @@ int main(void) {
   uvwasi_t uvwasi;
   uvwasi_options_t init_options;
   uvwasi_dircookie_t cookie;
-  uvwasi_dirent_t dirent;
   uvwasi_size_t buf_size;
   uvwasi_size_t buf_used;
   uvwasi_errno_t err;
   uv_fs_t req;
   uvwasi_fd_t tmp_fd = 3;
   char buf[4096];
-  char* name;
   int r;
 
   r = uv_fs_mkdir(NULL, &req, TEST_TMP_DIR, 0777, NULL);
