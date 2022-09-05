@@ -58,7 +58,6 @@ int main(void) {
     int len = strlen(format) + 3;
     char file_name[len];
     snprintf(file_name, len, format, i);
-    //fprintf(stderr, "%s\n", file_name);
     touch_file(file_name);
   }
 
