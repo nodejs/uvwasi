@@ -6,7 +6,7 @@
 # define __STDC_FORMAT_MACROS
 #endif
 # include <inttypes.h>
-# define UVWASI_DEBUG(...)                                                           \
+# define UVWASI_DEBUG(...)                                                    \
     do { fprintf(stderr, __VA_ARGS__); } while (0)
 #else
 # define UVWASI_DEBUG(fmt, ...)
