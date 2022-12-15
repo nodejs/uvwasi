@@ -14,8 +14,10 @@ jobs:
         include:
           - os: ubuntu-latest
             config: {variation: 'ASAN', generate_options: '-DASAN=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-Wall -Werror"'}
-          - os: windows-latest
-            config: {variation: 'ASAN', generate_options: '-DASAN=ON -DCMAKE_BUILD_TYPE=Debug'}
+          # This is currently broken in the latest libuv release, but fixed on
+          # the main branch. Just disable this until libuv v1.45.0 is released.
+          # - os: windows-latest
+          #   config: {variation: 'ASAN', generate_options: '-DASAN=ON -DCMAKE_BUILD_TYPE=Debug'}
           - os: ubuntu-latest
             config: {variation: 'debug-log', generate_options: '-DUVWASI_DEBUG_LOG=ON -DCMAKE_C_FLAGS="-Wall -Werror"'}
     steps:
