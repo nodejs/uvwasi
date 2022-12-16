@@ -5,7 +5,7 @@ project (uvwasi LANGUAGES C)
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 # This can be a commit hash or tag
-set(LIBUV_VERSION v1.42.0)
+set(LIBUV_VERSION v1.44.2)
 
 include(CMakeDependentOption)
 cmake_dependent_option(UVWASI_BUILD_TESTS
@@ -40,7 +40,7 @@ else (WITH_SYSTEM_LIBUV)
           libuv
           GIT_REPOSITORY https://github.com/libuv/libuv.git
           GIT_TAG ${LIBUV_VERSION})
-  
+
   FetchContent_GetProperties(libuv)
   if(NOT libuv_POPULATED)
       FetchContent_Populate(libuv)
