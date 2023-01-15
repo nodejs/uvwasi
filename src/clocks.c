@@ -17,32 +17,17 @@
     FILETIME exit;                                                            \
     FILETIME system;                                                          \
     FILETIME user;                                                            \
-    SYSTEMTIME sys_system;                                                    \
-    SYSTEMTIME sys_user;                                                      \
     if (0 == get_times((handle), &create, &exit, &system, &user)) {           \
       return uvwasi__translate_uv_error(                                      \
         uv_translate_sys_error(GetLastError())                                \
       );                                                                      \
     }                                                                         \
                                                                               \
-    if (0 == FileTimeToSystemTime(&system, &sys_system)) {                    \
-      return uvwasi__translate_uv_error(                                      \
-        uv_translate_sys_error(GetLastError())                                \
-      );                                                                      \
-    }                                                                         \
-                                                                              \
-    if (0 == FileTimeToSystemTime(&user, &sys_user)) {                        \
-      return uvwasi__translate_uv_error(                                      \
-        uv_translate_sys_error(GetLastError())                                \
-      );                                                                      \
-    }                                                                         \
-                                                                              \
-    (time) = (((uvwasi_timestamp_t)(sys_system.wHour * 3600) +                \
-              (sys_system.wMinute * 60) + sys_system.wSecond) * NANOS_PER_SEC) + \
-             ((uvwasi_timestamp_t)(sys_system.wMilliseconds) * 1000000) +     \
-             (((uvwasi_timestamp_t)(sys_user.wHour * 3600) +                  \
-              (sys_user.wMinute * 60) + sys_user.wSecond) * NANOS_PER_SEC) +  \
-             ((uvwasi_timestamp_t)(sys_user.wMilliseconds) * 1000000);        \
+    /* FILETIME times are in units of 100 nanoseconds */                      \
+    (time) = (((uvwasi_timestamp_t)                                           \
+               system.dwHighDateTime << 32 | system.dwLowDateTime) * 100 +    \
+              ((uvwasi_timestamp_t)                                           \
+               user.dwHighDateTime << 32 | user.dwLowDateTime) * 100);        \
     return UVWASI_ESUCCESS;                                                   \
   } while (0)
 
