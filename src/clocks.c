@@ -11,7 +11,7 @@
 #include "uv_mapping.h"
 
 
-#define UVWASI__WIN_TIME_AND_RETURN(handle, time)                             \
+#define UVWASI__WIN_TIME_AND_RETURN(handle, get_times, time)                  \
   do {                                                                        \
     FILETIME create;                                                          \
     FILETIME exit;                                                            \
@@ -19,7 +19,7 @@
     FILETIME user;                                                            \
     SYSTEMTIME sys_system;                                                    \
     SYSTEMTIME sys_user;                                                      \
-    if (0 == GetProcessTimes((handle), &create, &exit, &system, &user)) {     \
+    if (0 == get_times((handle), &create, &exit, &system, &user)) {           \
       return uvwasi__translate_uv_error(                                      \
         uv_translate_sys_error(GetLastError())                                \
       );                                                                      \
@@ -137,7 +137,7 @@ uvwasi_errno_t uvwasi__clock_gettime_realtime(uvwasi_timestamp_t* time) {
 
 uvwasi_errno_t uvwasi__clock_gettime_process_cputime(uvwasi_timestamp_t* time) {
 #if defined(_WIN32)
-  UVWASI__WIN_TIME_AND_RETURN(GetCurrentProcess(), *time);
+  UVWASI__WIN_TIME_AND_RETURN(GetCurrentProcess(), GetProcessTimes, *time);
 #elif defined(CLOCK_PROCESS_CPUTIME_ID) && \
       !defined(__APPLE__)               && \
       !defined(__sun)
@@ -150,7 +150,7 @@ uvwasi_errno_t uvwasi__clock_gettime_process_cputime(uvwasi_timestamp_t* time) {
 
 uvwasi_errno_t uvwasi__clock_gettime_thread_cputime(uvwasi_timestamp_t* time) {
 #if defined(_WIN32)
-  UVWASI__WIN_TIME_AND_RETURN(GetCurrentThread(), *time);
+  UVWASI__WIN_TIME_AND_RETURN(GetCurrentThread(), GetThreadTimes, *time);
 #elif defined(__APPLE__)
   UVWASI__OSX_THREADTIME_AND_RETURN(*time);
 #elif defined(CLOCK_THREAD_CPUTIME_ID) && !defined(__sun) && !defined(__PASE__)
