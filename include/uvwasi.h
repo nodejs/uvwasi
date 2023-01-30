@@ -267,6 +267,10 @@ uvwasi_errno_t uvwasi_sock_send(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_sock_shutdown(uvwasi_t* uvwasi,
                                     uvwasi_fd_t sock,
                                     uvwasi_sdflags_t how);
+uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
+                                  uvwasi_fd_t sock,
+                                  uvwasi_fdflags_t flags,
+                                  uvwasi_fd_t* fd);
 
 #ifdef __cplusplus
 }
