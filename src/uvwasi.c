@@ -2561,8 +2561,7 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
                                   uvwasi_fd_t sock,
                                   uvwasi_fdflags_t flags,
                                   uvwasi_fd_t* fd) {
-  /* TODO(mhdawson): Waiting to implement, pending
-                    https://github.com/WebAssembly/WASI/issues/4 */
+  /* TODO(mhdawson): Needs implementation */
   UVWASI_DEBUG("uvwasi_sock_accept(uvwasi=%p, unimplemented)\n", uvwasi);
   return UVWASI_ENOTSUP;
 };

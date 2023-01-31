@@ -251,6 +251,10 @@ uvwasi_errno_t uvwasi_random_get(uvwasi_t* uvwasi,
                                  void* buf,
                                  uvwasi_size_t buf_len);
 uvwasi_errno_t uvwasi_sched_yield(uvwasi_t* uvwasi);
+uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
+                                  uvwasi_fd_t sock,
+                                  uvwasi_fdflags_t flags,
+                                  uvwasi_fd_t* fd);
 uvwasi_errno_t uvwasi_sock_recv(uvwasi_t* uvwasi,
                                 uvwasi_fd_t sock,
                                 const uvwasi_iovec_t* ri_data,
@@ -267,10 +271,6 @@ uvwasi_errno_t uvwasi_sock_send(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_sock_shutdown(uvwasi_t* uvwasi,
                                     uvwasi_fd_t sock,
                                     uvwasi_sdflags_t how);
-uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
-                                  uvwasi_fd_t sock,
-                                  uvwasi_fdflags_t flags,
-                                  uvwasi_fd_t* fd);
 
 #ifdef __cplusplus
 }
