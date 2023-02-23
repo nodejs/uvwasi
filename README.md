@@ -2488,7 +2488,7 @@ To do a release complete the following steps:
   adding the notable changes. See
   https://github.com/nodejs/uvwasi/commit/6ad5fc996420d0e4e75983ce3deb65f327321f33
   as an example.
-* PR the release commit. once it lands, create a github release with
+* PR the release commit. Once it lands, create a GitHub release with
   the same notable changes. When doing the GitHub release you will need to select
   `Choose a tag` and type in the new tag. That should result in 
   ` Create new tag: vX.Y.Z on publish` where X.Y.Z matches the tag you specificed.
