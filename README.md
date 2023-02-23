@@ -2492,7 +2492,7 @@ To do a release complete the following steps:
   the same notable changes. When doing the GitHub release you will need to select
   `Choose a tag` and type in the new tag. That should result in 
   ` Create new tag: vX.Y.Z on publish` where X.Y.Z matches the tag you specificed.
-* Update uvwasi in node or any projects you want to update - there are several
+* Update uvwasi in Node.js or any projects you want to update - there are several
   other projects that use uvwasi.
 
 [WASI]: https://github.com/WebAssembly/WASI
