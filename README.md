@@ -2491,7 +2491,7 @@ To do a release complete the following steps:
 * PR the release commit. Once it lands, create a GitHub release with
   the same notable changes. When doing the GitHub release you will need to select
   `Choose a tag` and type in the new tag. That should result in 
-  ` Create new tag: vX.Y.Z on publish` where X.Y.Z matches the tag you specificed.
+  ` Create new tag: vX.Y.Z on publish` where vX.Y.Z matches the tag you specified.
 * Update uvwasi in Node.js or any projects you want to update - there are several
   other projects that use uvwasi.
 
