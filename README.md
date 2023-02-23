@@ -2484,7 +2484,7 @@ To do a release complete the following steps:
   or any of the other releases for example. Use that list in the release commit,
   the GitHub release, and the PR to update uvwasi in Node.js (or any other
   projects where you updat it)
-* Create a release commit. this should just involve changing one line and
+* Create a release commit. This should just involve changing one line and
   adding the notable changes. See
   https://github.com/nodejs/uvwasi/commit/6ad5fc996420d0e4e75983ce3deb65f327321f33
   as an example.
