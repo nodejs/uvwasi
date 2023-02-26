@@ -2474,6 +2474,27 @@ Possible values:
 
     Seek relative to start-of-file.
 
+## Doing a release
+
+To do a release complete the following steps:
+
+* Look at the list of changes - https://github.com/nodejs/uvwasi/commits/main.
+* Put together a list of notable changes.
+  See https://github.com/nodejs/uvwasi/releases/tag/v0.0.14
+  or any of the other releases for example. Use that list in the release commit,
+  the GitHub release, and the PR to update uvwasi in Node.js (or any other
+  projects where you update it)
+* Create a release commit. This should just involve changing one line and
+  adding the notable changes. See
+  https://github.com/nodejs/uvwasi/commit/6ad5fc996420d0e4e75983ce3deb65f327321f33
+  as an example.
+* PR the release commit. Once it lands, create a GitHub release with
+  the same notable changes. When doing the GitHub release you will need to select
+  `Choose a tag` and type in the new tag. That should result in 
+  ` Create new tag: vX.Y.Z on publish` where vX.Y.Z matches the tag you specified.
+* Update uvwasi in Node.js or any projects you want to update - there are several
+  other projects that use uvwasi.
+
 [WASI]: https://github.com/WebAssembly/WASI
 [libuv]: https://github.com/libuv/libuv
 [snapshot_1]: https://github.com/WebAssembly/WASI/blob/main/phases/snapshot/docs.md
