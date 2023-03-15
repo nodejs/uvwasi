@@ -80,8 +80,8 @@ int main(void) {
 
 ## API
 
-The WASI API is versioned. This documentation is based on [snapshot_1][].
-`uvwasi` implements the WASI system call API with the following
+The WASI API is versioned. This documentation is based on the WASI [preview 1][]
+snapshot. `uvwasi` implements the WASI system call API with the following
 additions/modifications:
 
 - Each system call takes an additional `uvwasi_t*` as its first argument. The
@@ -2497,4 +2497,4 @@ To do a release complete the following steps:
 
 [WASI]: https://github.com/WebAssembly/WASI
 [libuv]: https://github.com/libuv/libuv
-[snapshot_1]: https://github.com/WebAssembly/WASI/blob/main/phases/snapshot/docs.md
+[preview_1]: https://github.com/WebAssembly/WASI/blob/main/legacy/preview1/docs.md
