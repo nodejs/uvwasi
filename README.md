@@ -2497,4 +2497,4 @@ To do a release complete the following steps:
 
 [WASI]: https://github.com/WebAssembly/WASI
 [libuv]: https://github.com/libuv/libuv
-[preview_1]: https://github.com/WebAssembly/WASI/blob/main/legacy/preview1/docs.md
+[preview 1]: https://github.com/WebAssembly/WASI/blob/main/legacy/preview1/docs.md
