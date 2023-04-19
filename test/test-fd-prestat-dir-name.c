@@ -34,16 +34,17 @@ int main(void) {
   assert(err == 0);
   assert(prestat.pr_type == UVWASI_PREOPENTYPE_DIR);
   assert(prestat.u.dir.pr_name_len ==
-         strlen(init_options.preopens[0].mapped_path) + 1);
+         strlen(init_options.preopens[0].mapped_path));
 
   /* Verify uvwasi_fd_prestat_dir_name(). */
-  prestat_buf_size = prestat.u.dir.pr_name_len + 1;
-  prestat_buf = malloc(prestat_buf_size);
+  prestat_buf_size = prestat.u.dir.pr_name_len;
+  prestat_buf = malloc(prestat_buf_size + 1);
   assert(prestat_buf != NULL);
   err = uvwasi_fd_prestat_dir_name(&uvwasi,
                                    3,
                                    prestat_buf,
                                    prestat_buf_size);
+  prestat_buf[prestat_buf_size] = '\0';
   assert(err == 0);
   assert(strcmp(prestat_buf, init_options.preopens[0].mapped_path) == 0);
   free(prestat_buf);
