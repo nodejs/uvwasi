@@ -1,0 +1,14 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=@CMAKE_INSTALL_FULL_LIBDIR@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
+bindir=@CMAKE_INSTALL_FULL_BINDIR@
+libuv_includedir=@LIBUV_INCLUDE_DIR@
+
+Name: @PROJECT_NAME@
+Description: @PROJECT_DESCRIPTION@
+Version: @PROJECT_VERSION@
+
+Libs: -L${libdir}
+Libs.private: -l@LIBUV_LIBRARIES@
+Cflags: -I${includedir} -I${libuv_includedir} @uvwasi_cflags@
