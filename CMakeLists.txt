@@ -142,7 +142,7 @@ if(UVWASI_BUILD_TESTS)
 endif()
 
 option(INSTALL_UVWASI "Enable installation of uvwasi. (Projects embedding uvwasi may want to turn this OFF.)" ON)
-if(INSTALL_UVWASI)
+if(INSTALL_UVWASI AND NOT CODE_COVERAGE)
     include(GNUInstallDirs)
     include(CMakePackageConfigHelpers)
 
