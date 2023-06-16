@@ -29,6 +29,9 @@
 #include "wasi_serdes.h"
 #include "debug.h"
 
+uv_loop_t *loop;
+struct sockaddr_in addr;
+
 /* IBMi PASE does not support posix_fadvise() */
 #ifdef __PASE__
 # undef POSIX_FADV_NORMAL
@@ -232,6 +235,21 @@ static uvwasi_errno_t uvwasi__setup_ciovs(const uvwasi_t* uvwasi,
 }
 
 
+void on_new_connection(uv_stream_t *server, int status) {
+    // if (status < 0) {
+    //     fprintf(stderr, "New connection error %s\n", uv_strerror(status));
+    //     // error!
+    //     return;
+    // }
+
+    // uv_tcp_t *client = (uv_tcp_t*) malloc(sizeof(uv_tcp_t));
+    // uv_tcp_init(loop, client);
+    // if (uv_accept(server, (uv_stream_t*) client) == 0) {
+    //     uv_read_start((uv_stream_t*) client, alloc_buffer, echo_read);
+    // }
+  return;
+}
+
 uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, const uvwasi_options_t* options) {
   uv_fs_t realpath_req;
   uv_fs_t open_req;
@@ -243,6 +261,8 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, const uvwasi_options_t* options) {
   uvwasi_size_t env_buf_size;
   uvwasi_size_t i;
   int r;
+
+  loop = uv_default_loop();
 
   if (uvwasi == NULL || options == NULL || options->fd_table_size == 0)
     return UVWASI_EINVAL;
@@ -328,6 +348,14 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, const uvwasi_options_t* options) {
     }
   }
 
+  for (i = 0; i < options->preopen_socketc; ++i) {
+    if (options->preopen_sockets[i].address == NULL ||
+        options->preopen_sockets[i].port > 65535) {
+      err = UVWASI_EINVAL;
+      goto exit;
+    }
+  }
+
   err = uvwasi_fd_table_init(uvwasi, options);
   if (err != UVWASI_ESUCCESS)
     goto exit;
@@ -358,6 +386,27 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, const uvwasi_options_t* options) {
                                          realpath_req.ptr);
     uv_fs_req_cleanup(&realpath_req);
     uv_fs_req_cleanup(&open_req);
+
+    if (err != UVWASI_ESUCCESS)
+      goto exit;
+  }
+
+  for (i = 0; i < options->preopen_socketc; ++i) {
+    uv_tcp_t *socket = (uv_tcp_t*) malloc(sizeof(uv_tcp_t));
+    uv_tcp_init(loop, socket);
+
+    uv_ip4_addr(options->preopen_sockets[i].address, options->preopen_sockets[i].port, &addr);
+
+    uv_tcp_bind(socket, (const struct sockaddr*)&addr, 0);
+    r = uv_listen((uv_stream_t*) socket, 128, on_new_connection);
+    if (r != 0) {
+      err = uvwasi__translate_uv_error(r);
+      goto exit;
+    }
+
+    err = uvwasi_fd_table_insert_preopen_socket(uvwasi,
+                                         uvwasi->fds,
+                                         socket);
 
     if (err != UVWASI_ESUCCESS)
       goto exit;
@@ -1997,6 +2046,7 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
   err = uvwasi_fd_table_insert(uvwasi,
                                uvwasi->fds,
                                r,
+                               NULL,
                                resolved_path,
                                resolved_path,
                                filetype,

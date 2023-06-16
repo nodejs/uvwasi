@@ -37,6 +37,7 @@ static uvwasi_errno_t uvwasi__insert_stdio(uvwasi_t* uvwasi,
   err = uvwasi_fd_table_insert(uvwasi,
                                table,
                                fd,
+                               NULL,
                                name,
                                name,
                                type,
@@ -58,6 +59,7 @@ static uvwasi_errno_t uvwasi__insert_stdio(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_fd_table_insert(uvwasi_t* uvwasi,
                                       struct uvwasi_fd_table_t* table,
                                       uv_file fd,
+                                      uv_tcp_t* sock,
                                       const char* mapped_path,
                                       const char* real_path,
                                       uvwasi_filetype_t type,
@@ -150,6 +152,7 @@ uvwasi_errno_t uvwasi_fd_table_insert(uvwasi_t* uvwasi,
 
   entry->id = index;
   entry->fd = fd;
+  entry->sock = sock;
   entry->path = mp_copy;
   entry->real_path = rp_copy;
   entry->normalized_path = np_copy;
@@ -280,11 +283,32 @@ uvwasi_errno_t uvwasi_fd_table_insert_preopen(uvwasi_t* uvwasi,
   return uvwasi_fd_table_insert(uvwasi,
                                 table,
                                 fd,
+                                NULL,
                                 path,
                                 real_path,
                                 UVWASI_FILETYPE_DIRECTORY,
                                 UVWASI__RIGHTS_DIRECTORY_BASE,
                                 UVWASI__RIGHTS_DIRECTORY_INHERITING,
+                                1,
+                                NULL);
+}
+
+
+uvwasi_errno_t uvwasi_fd_table_insert_preopen_socket(uvwasi_t* uvwasi,
+                                              struct uvwasi_fd_table_t* table,
+                                              uv_tcp_t* sock) {
+  if (table == NULL || sock == NULL)
+    return UVWASI_EINVAL;
+
+  return uvwasi_fd_table_insert(uvwasi,
+                                table,
+                                -1,
+                                sock,
+                                NULL,
+                                NULL,
+                                UVWASI_FILETYPE_SOCKET_STREAM,
+                                UVWASI__RIGHTS_SOCKET_BASE,
+                                UVWASI__RIGHTS_SOCKET_INHERITING,
                                 1,
                                 NULL);
 }

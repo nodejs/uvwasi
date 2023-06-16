@@ -85,7 +85,7 @@
                                     UVWASI_RIGHT_FD_FILESTAT_GET |            \
                                     UVWASI_RIGHT_POLL_FD_READWRITE |          \
                                     UVWASI_RIGHT_SOCK_SHUTDOWN)
-#define UVWASI__RIGHTS_SOCKET_INHERITING UVWASI__RIGHTS_ALL;
+#define UVWASI__RIGHTS_SOCKET_INHERITING UVWASI__RIGHTS_ALL
 
 #define UVWASI__RIGHTS_TTY_BASE (UVWASI_RIGHT_FD_READ |                       \
                                  UVWASI_RIGHT_FD_FDSTAT_SET_FLAGS |           \

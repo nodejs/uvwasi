@@ -54,10 +54,17 @@ typedef struct uvwasi_preopen_s {
   const char* real_path;
 } uvwasi_preopen_t;
 
+typedef struct uvwasi_preopen_socket_s {
+  const char* address;
+  int port;
+} uvwasi_preopen_socket_t;
+
 typedef struct uvwasi_options_s {
   uvwasi_size_t fd_table_size;
   uvwasi_size_t preopenc;
   uvwasi_preopen_t* preopens;
+  uvwasi_size_t preopen_socketc;
+  uvwasi_preopen_socket_t* preopen_sockets;
   uvwasi_size_t argc;
   const char** argv;
   const char** envp;
