@@ -4,8 +4,18 @@
 #  LIBUV_LIBRARIES
 #  LIBUV_INCLUDE_DIR, where to find uv.h
 
-FIND_PATH(LIBUV_INCLUDE_DIR NAMES uv.h)
-FIND_LIBRARY(LIBUV_LIBRARIES NAMES uv libuv)
+find_path(LIBUV_INCLUDE_DIR NAMES uv.h)
+find_library(LIBUV_LIBRARIES NAMES uv libuv)
+
+include(FindPackageHandleStandardArgs)
+
+find_package_handle_standard_args(
+  LIBUV
+  FOUND_VAR LIBUV_FOUND
+  REQUIRED_VARS
+    LIBUV_LIBRARIES
+    LIBUV_INCLUDE_DIR
+)
 
 if(WIN32)
   list(APPEND LIBUV_LIBRARIES iphlpapi)

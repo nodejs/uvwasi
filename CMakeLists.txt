@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.11)
-project (uvwasi LANGUAGES C)
+project (
+    uvwasi
+    DESCRIPTION "WASI syscall API built atop libuv"
+    VERSION 0.0.18
+    LANGUAGES C
+)
 
 # Point CMake at any custom modules we may ship
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
@@ -28,12 +33,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   list(APPEND uvwasi_defines _GNU_SOURCE _POSIX_C_SOURCE=200112)
 endif()
 
-option(WITH_SYSTEM_LIBUV "Link to a system libuv library instead of bundling" OFF)
-
-if (WITH_SYSTEM_LIBUV)
-  find_package(LibUV REQUIRED)
+find_package(LIBUV QUIET)
+if(LIBUV_FOUND)
   include_directories(${LIBUV_INCLUDE_DIR})
-else (WITH_SYSTEM_LIBUV)
+else()
   include(FetchContent)
   ## https://libuv.org
   FetchContent_Declare(
@@ -47,8 +50,9 @@ else (WITH_SYSTEM_LIBUV)
       include_directories("${libuv_SOURCE_DIR}/include")
       add_subdirectory(${libuv_SOURCE_DIR} ${libuv_BINARY_DIR} EXCLUDE_FROM_ALL)
   endif()
+  set(LIBUV_INCLUDE_DIR ${libuv_SOURCE_DIR}/include)
   set(LIBUV_LIBRARIES uv_a)
-endif (WITH_SYSTEM_LIBUV)
+endif()
 
 ## uvwasi source code files.
 set(uvwasi_sources
@@ -137,6 +141,49 @@ if(UVWASI_BUILD_TESTS)
     )
 endif()
 
+option(INSTALL_UVWASI "Enable installation of uvwasi. (Projects embedding uvwasi may want to turn this OFF.)" ON)
+if(INSTALL_UVWASI AND NOT CODE_COVERAGE)
+    include(GNUInstallDirs)
+    include(CMakePackageConfigHelpers)
+
+    set(target_export_name ${PROJECT_NAME}Targets CACHE INTERNAL "")
+    set(cmake_files_install_dir ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+
+    set(pkg_config ${PROJECT_BINARY_DIR}/uvwasi.pc)
+    set(version_file ${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake)
+    set(config_file ${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake)
+
+    configure_file(${PROJECT_SOURCE_DIR}/cmake/uvwasi.pc.in ${pkg_config} @ONLY)
+    write_basic_package_version_file(${version_file} VERSION ${PROJECT_VERSION} COMPATIBILITY AnyNewerVersion)
+    configure_package_config_file(${PROJECT_SOURCE_DIR}/cmake/Config.cmake.in ${config_file} INSTALL_DESTINATION ${cmake_files_install_dir})
+
+    install(
+        TARGETS uvwasi_a uvwasi
+        EXPORT ${target_export_name}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+    install(
+        DIRECTORY ${PROJECT_SOURCE_DIR}/include/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uvwasi
+        FILES_MATCHING PATTERN "*.h"
+    )
+    install(
+        FILES ${pkg_config}
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+    )
+    install(
+        EXPORT ${target_export_name}
+        NAMESPACE ${PROJECT_NAME}::
+        DESTINATION ${cmake_files_install_dir}
+    )
+    install(
+        FILES ${version_file} ${config_file}
+        DESTINATION ${cmake_files_install_dir}
+    )
+endif()
+
 message(STATUS "summary of uvwasi build options:
 
     Install prefix:  ${CMAKE_INSTALL_PREFIX}
@@ -145,7 +192,8 @@ message(STATUS "summary of uvwasi build options:
       C compiler:    ${CMAKE_C_COMPILER}
       CFLAGS:        ${CMAKE_C_FLAGS_${_build_type}} ${CMAKE_C_FLAGS}
 
-    System libuv:    ${WITH_SYSTEM_LIBUV}
+    LibUV libraries: ${LIBUV_LIBRARIES}
+    LibUV includes:  ${LIBUV_INCLUDE_DIR}
     Debug logging:   ${UVWASI_DEBUG_LOG}
     Code coverage:   ${CODE_COVERAGE}
     ASAN:            ${ASAN}
