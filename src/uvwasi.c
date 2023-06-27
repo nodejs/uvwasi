@@ -450,6 +450,8 @@ void uvwasi_options_init(uvwasi_options_t* options) {
   options->envp = NULL;
   options->preopenc = 0;
   options->preopens = NULL;
+  options->preopen_socketc = 0;
+  options->preopen_sockets = NULL;
   options->allocator = NULL;
 }
 
