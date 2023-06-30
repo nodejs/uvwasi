@@ -11,6 +11,9 @@
 
 #define TEST_PORT_1 10500
 
+int delayedThreadTime =  5000;
+int immedateThreadTime =  0;
+
 void on_client_connect(uv_connect_t * req, int status) {
   if (status < 0) {
       fprintf(stderr, "New connection error %s\n", uv_strerror(status));
@@ -33,7 +36,22 @@ void makeClientConnection(uv_loop_t* loop) {
   r = uv_tcp_connect(connect, socket, (const struct sockaddr*)&dest, on_client_connect);
   assert(r == 0);
   uv_run(loop, UV_RUN_NOWAIT);
+  uv_sleep(1000);
   free(socket);
+}
+
+void delayedClientConnection(void* time) {
+  uv_loop_t *loop = malloc(sizeof(uv_loop_t));
+  uv_loop_init(loop);
+  uv_sleep(*((int*) time));
+  makeClientConnection(loop);
+  uv_loop_close(loop);
+  free(loop);
+}
+
+void makeDelayedClientConnection(int* time) {
+  uv_thread_t delayed_thread;
+  uv_thread_create(&delayed_thread, delayedClientConnection, time);
 }
 
 int main(void) {
@@ -63,10 +81,32 @@ int main(void) {
   assert(err == UVWASI_EAGAIN);
 
   // make a connection to the server
-  makeClientConnection(loop);
+  makeDelayedClientConnection(&immedateThreadTime);
 
   // validate case where there is a pending connection when we do a sock
   // accept
+  uv_sleep(2000);
+  err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
+  assert(err == 0);
+  assert(fd != 0);
+
+  // validate case where there is no connection when we do a sock accept
+  // but one comes in afterwards
+  makeDelayedClientConnection(&delayedThreadTime);
+  err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, UVWASI_FDFLAG_NONBLOCK, &fd);
+  assert(err == UVWASI_EAGAIN);
+  err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
+  assert(err == 0);
+  assert(fd != 0);
+
+  // validate two accepts queue up properly
+  makeDelayedClientConnection(&delayedThreadTime);
+  makeDelayedClientConnection(&delayedThreadTime);
+  err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, UVWASI_FDFLAG_NONBLOCK, &fd);
+  assert(err == UVWASI_EAGAIN);
+  err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
+  assert(err == 0);
+  assert(fd != 0);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
   assert(err == 0);
   assert(fd != 0);

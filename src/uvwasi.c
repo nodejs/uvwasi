@@ -2631,7 +2631,7 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
   uv_tcp_t *uv_connect_sock = (uv_tcp_t*) malloc(sizeof(uv_tcp_t));
   uv_tcp_init(loop, uv_connect_sock);
   if (uv_accept((uv_stream_t*) wrap->sock, (uv_stream_t*) uv_connect_sock) != 0 ) {
-    if (flags | UVWASI_FDFLAG_NONBLOCK) {
+    if (flags & UVWASI_FDFLAG_NONBLOCK) {
       uv_mutex_unlock(&wrap->mutex);
       return UVWASI_EAGAIN;
     }
