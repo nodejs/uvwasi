@@ -6,7 +6,10 @@
 #include "wasi_serdes.h"
 
 #define PREOPEN_SOCK 3
+#define INVALID_SOCK 42
 #define DEFAULT_BACKLOG 5
+
+#define TEST_PORT_1 10500
 
 void on_client_connect(uv_connect_t * req, int status) {
   if (status < 0) {
@@ -16,14 +19,18 @@ void on_client_connect(uv_connect_t * req, int status) {
   }
 }
 
-int makeClientConnection(uv_loop_t* loop) {
+void makeClientConnection(uv_loop_t* loop) {
+  int r = 0;
   uv_tcp_t* socket = (uv_tcp_t*)malloc(sizeof(uv_tcp_t));
   uv_tcp_init(loop, socket);
   uv_connect_t* connect = (uv_connect_t*)malloc(sizeof(uv_connect_t));
   struct sockaddr_in dest;
-  uv_ip4_addr("127.0.0.1", 10500, &dest);
-  uv_tcp_connect(connect, socket, (const struct sockaddr*)&dest, on_client_connect);
-  return uv_run(loop, UV_RUN_NOWAIT);
+  r = uv_ip4_addr("127.0.0.1", TEST_PORT_1, &dest);
+  assert(r == 0);
+
+  r = uv_tcp_connect(connect, socket, (const struct sockaddr*)&dest, on_client_connect);
+  assert(r == 0);
+  uv_run(loop, UV_RUN_NOWAIT);
 }
 
 int main(void) {
@@ -42,22 +49,24 @@ int main(void) {
   err = uvwasi_init(&uvwasi, &init_options);
   assert(err == 0);
 
-/*
+  // validate when we ask for an invalid socket
+  uvwasi_fd_t fd;
+  err = uvwasi_sock_accept(&uvwasi, INVALID_SOCK, 0, &fd);
+  assert(err == UVWASI_EBADF);
+
   // validate the case where there is no connection and we are not
   // blocking
-  uvwasi_fd_t* fd;
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, UVWASI_FDFLAG_NONBLOCK, &fd);
   assert(err == UVWASI_EAGAIN);
 
   // make a connection to the server
-  assert(makeClientConnection(loop) ==0);
+  makeClientConnection(loop);
 
-  // validate that when do sock accept we get the connection
-  assert(uv_run(loop, UV_RUN_NOWAIT) == 0);
+  // validate case where there is a pending connection when we do a sock
+  // accept
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
   assert(err == 0);
   assert(fd != 0);
-  */
 
   uvwasi_destroy(&uvwasi);
   free(init_options.preopen_sockets);

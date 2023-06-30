@@ -313,7 +313,7 @@ uvwasi_errno_t uvwasi_fd_table_insert_preopen_socket(uvwasi_t* uvwasi,
                                 NULL,
                                 NULL,
                                 UVWASI_FILETYPE_SOCKET_STREAM,
-                                UVWASI__RIGHTS_SOCKET_BASE,
+                                UVWASI__RIGHTS_SOCKET_BASE | UVWASI_RIGHT_SOCK_ACCEPT,
                                 UVWASI__RIGHTS_SOCKET_INHERITING,
                                 1,
                                 NULL);

@@ -6,7 +6,6 @@ int main(void) {
   assert(UVWASI_ENOTSUP == uvwasi_sock_recv(NULL, 0, NULL, 0, 0, NULL, NULL));
   assert(UVWASI_ENOTSUP == uvwasi_sock_send(NULL, 0, NULL, 0, 0, NULL));
   assert(UVWASI_ENOTSUP == uvwasi_sock_shutdown(NULL, 0, 0));
-  assert(UVWASI_ENOTSUP == uvwasi_sock_accept(NULL, 0, 0, NULL));
 
   return 0;
 }

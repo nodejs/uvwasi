@@ -2612,11 +2612,74 @@ uvwasi_errno_t uvwasi_sock_shutdown(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
                                   uvwasi_fd_t sock,
                                   uvwasi_fdflags_t flags,
-                                  uvwasi_fd_t* fd) {
-  /* TODO(mhdawson): Needs implementation */
-  UVWASI_DEBUG("uvwasi_sock_accept(uvwasi=%p, unimplemented)\n", uvwasi);
-  return UVWASI_ENOTSUP;
-};
+                                  uvwasi_fd_t* connect_sock) {
+  struct uvwasi_fd_wrap_t *wrap;
+  struct uvwasi_fd_wrap_t *connected_wrap;
+  uvwasi_errno_t err = 0;
+  int accept_flags = 0;;
+  int r = 0;
+
+  if (uvwasi == NULL || connect_sock == NULL)
+    return UVWASI_EINVAL;
+
+  err = uvwasi_fd_table_get(uvwasi->fds,
+                            sock,
+                            &wrap,
+                            UVWASI__RIGHTS_SOCKET_BASE | UVWASI_RIGHT_SOCK_ACCEPT,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  // covert from the uvwasi flags to the libuv equivalent
+
+  uv_tcp_t *uv_connect_sock = (uv_tcp_t*) malloc(sizeof(uv_tcp_t));
+  uv_tcp_init(loop, uv_connect_sock);
+  if (uv_accept((uv_stream_t*) wrap->sock, (uv_stream_t*) uv_connect_sock) != 0 ) {
+    if (flags | UVWASI_FDFLAG_NONBLOCK) {
+      uv_mutex_unlock(&wrap->mutex);
+      return UVWASI_EAGAIN;
+    }
+  };
+
+  // request was blocking and we have no connection yet. run
+  // the loop until a connection comes in
+  while (0) {
+    if (uv_run(loop, UV_RUN_ONCE) == 0) {
+      err = UVWASI_ECONNABORTED;
+      goto close_sock_and_error_exit;
+    }
+
+    if (uv_accept((uv_stream_t*) wrap->sock, (uv_stream_t*) uv_connect_sock) == 0 )
+      break;
+  }
+
+  if (err != UVWASI_ESUCCESS)
+    goto close_sock_and_error_exit;
+
+  err = uvwasi_fd_table_insert(uvwasi,
+                               uvwasi->fds,
+                               -1,
+                               uv_connect_sock,
+                               NULL,
+                               NULL,
+                               UVWASI_FILETYPE_SOCKET_STREAM,
+                               UVWASI__RIGHTS_SOCKET_BASE,
+                               UVWASI__RIGHTS_SOCKET_INHERITING,
+                               1,
+                               &connected_wrap);
+
+  if (err != UVWASI_ESUCCESS)
+    goto close_sock_and_error_exit;
+
+  *connect_sock = wrap->id;
+  uv_mutex_unlock(&wrap->mutex);
+  uv_mutex_unlock(&connected_wrap->mutex);
+  return UVWASI_ESUCCESS;
+
+close_sock_and_error_exit:
+  uv_mutex_unlock(&wrap->mutex);
+  return err;
+}
 
 
 const char* uvwasi_embedder_err_code_to_string(uvwasi_errno_t code) {
