@@ -2616,8 +2616,6 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
   struct uvwasi_fd_wrap_t *wrap;
   struct uvwasi_fd_wrap_t *connected_wrap;
   uvwasi_errno_t err = 0;
-  int accept_flags = 0;;
-  int r = 0;
 
   if (uvwasi == NULL || connect_sock == NULL)
     return UVWASI_EINVAL;
@@ -2629,8 +2627,6 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
                             0);
   if (err != UVWASI_ESUCCESS)
     return err;
-
-  // covert from the uvwasi flags to the libuv equivalent
 
   uv_tcp_t *uv_connect_sock = (uv_tcp_t*) malloc(sizeof(uv_tcp_t));
   uv_tcp_init(loop, uv_connect_sock);
