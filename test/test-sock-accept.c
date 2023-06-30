@@ -56,7 +56,6 @@ void makeDelayedClientConnection(int* time) {
 
 int main(void) {
 #if !defined(_WIN32) && !defined(__ANDROID__)
-  uv_loop_t *loop = uv_default_loop();
   uvwasi_t uvwasi;
   uvwasi_options_t init_options;
   uvwasi_errno_t err = 0;
