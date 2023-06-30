@@ -17,6 +17,8 @@ void on_client_connect(uv_connect_t * req, int status) {
       // error!
       return;
   }
+  uv_close((uv_handle_t *)req->handle, NULL);
+  free(req);
 }
 
 void makeClientConnection(uv_loop_t* loop) {
@@ -31,6 +33,7 @@ void makeClientConnection(uv_loop_t* loop) {
   r = uv_tcp_connect(connect, socket, (const struct sockaddr*)&dest, on_client_connect);
   assert(r == 0);
   uv_run(loop, UV_RUN_NOWAIT);
+  free(socket);
 }
 
 int main(void) {
