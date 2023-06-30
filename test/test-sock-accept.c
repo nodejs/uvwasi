@@ -79,11 +79,9 @@ int main(void) {
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, UVWASI_FDFLAG_NONBLOCK, &fd);
   assert(err == UVWASI_EAGAIN);
 
-  // make a connection to the server
-  makeDelayedClientConnection(&immedateThreadTime);
-
   // validate case where there is a pending connection when we do a sock
   // accept
+  makeDelayedClientConnection(&immedateThreadTime);
   uv_sleep(2000);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
   assert(err == 0);
