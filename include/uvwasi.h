@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include "uv.h"
 #include "wasi_serdes.h"
 #include "wasi_types.h"
 
@@ -47,6 +48,7 @@ typedef struct uvwasi_s {
   char* env_buf;
   uvwasi_size_t env_buf_size;
   const uvwasi_mem_t* allocator;
+  uv_loop_t *loop;
 } uvwasi_t;
 
 typedef struct uvwasi_preopen_s {
