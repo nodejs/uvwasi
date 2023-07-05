@@ -102,8 +102,6 @@ int main(void) {
   uvwasi_fd_t fd;
   makeDelayedClientConnection2(&immedateThreadTime);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
-  printf("socket accepted\n");
-  fflush(stdout);
   assert(err == 0);
   assert(fd != 0);
   send_ciovec_size = 2;
@@ -132,10 +130,21 @@ int main(void) {
   recv_iovecs = calloc(recv_iovec_size, sizeof(*recv_iovecs));
   recv_iovecs[0].buf_len = 1000; 
   recv_iovecs[0].buf = malloc(recv_iovecs[0].buf_len); 
-
   err = uvwasi_sock_recv(&uvwasi, fd, recv_iovecs, 1, 0, &received_len, &out_flags);
   assert(err == 0);
   assert(received_len == 8);
+  err = uvwasi_fd_close(&uvwasi, fd);
+  assert(err == 0);
+
+  // validate we get expected error trying to send after socket shutdown
+  makeDelayedClientConnection2(&immedateThreadTime);
+  err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
+  assert(err == 0);
+  err = uvwasi_sock_shutdown(&uvwasi, fd, UVWASI_SHUT_WR);
+  assert(err == 0);
+  err = uvwasi_sock_send(&uvwasi, fd, send_ciovecs, send_ciovec_size, 0, &nio);
+  assert(err != 0);
+  assert(err == UVWASI_EPIPE);
 
   uvwasi_destroy(&uvwasi);
   free(init_options.preopen_sockets);

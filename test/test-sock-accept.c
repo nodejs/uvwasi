@@ -86,6 +86,8 @@ int main(void) {
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
   assert(err == 0);
   assert(fd != 0);
+  err = uvwasi_fd_close(&uvwasi, fd);
+  assert(err == 0);
 
   // validate case where there is no connection when we do a sock accept
   // but one comes in afterwards
@@ -95,6 +97,8 @@ int main(void) {
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
   assert(err == 0);
   assert(fd != 0);
+  err = uvwasi_fd_close(&uvwasi, fd);
+  assert(err == 0);
 
   // validate two accepts queue up properly
   makeDelayedClientConnection(&delayedThreadTime);
@@ -104,9 +108,17 @@ int main(void) {
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
   assert(err == 0);
   assert(fd != 0);
+  /*err = uvwasi_fd_close(&uvwasi, fd);
+    */
+  assert(err == 0);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
   assert(err == 0);
   assert(fd != 0);
+  err = uvwasi_fd_close(&uvwasi, fd);
+  assert(err == 0);
+
+  err = uvwasi_fd_close(&uvwasi, PREOPEN_SOCK);
+  assert(err == 0);
 
   uvwasi_destroy(&uvwasi);
   free(init_options.preopen_sockets);

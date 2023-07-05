@@ -231,8 +231,12 @@ static uvwasi_errno_t uvwasi__setup_ciovs(const uvwasi_t* uvwasi,
   return UVWASI_ESUCCESS;
 }
 
+typedef struct new_connection_data_s {
+  int done;
+} new_connection_data_t;
 
 void on_new_connection(uv_stream_t *server, int status) {
+
     // if (status < 0) {
     //     fprintf(stderr, "New connection error %s\n", uv_strerror(status));
     //     // error!
@@ -760,11 +764,22 @@ exit:
 }
 
 
+typedef struct close_data_s {
+  int done;
+} close_data_t;
+
+void do_close_callback(uv_handle_t *handle) {
+  close_data_t* close_data = uv_handle_get_data((uv_handle_t*) handle);
+  close_data->done = 1;
+}
+
 uvwasi_errno_t uvwasi_fd_close(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
   uv_fs_t req;
   int r;
+  close_data_t close_data = {0};
+  uv_loop_t *sock_loop = NULL;
 
   UVWASI_DEBUG("uvwasi_fd_close(uvwasi=%p, fd=%d)\n", uvwasi, fd);
 
@@ -777,9 +792,23 @@ uvwasi_errno_t uvwasi_fd_close(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
   if (err != UVWASI_ESUCCESS)
     goto exit;
 
-  r = uv_fs_close(NULL, &req, wrap->fd, NULL);
-  uv_mutex_unlock(&wrap->mutex);
-  uv_fs_req_cleanup(&req);
+  if (wrap->sock == NULL) {
+    r = uv_fs_close(NULL, &req, wrap->fd, NULL);
+    uv_mutex_unlock(&wrap->mutex);
+    uv_fs_req_cleanup(&req);
+  } else {
+    sock_loop = uv_handle_get_loop((uv_handle_t*) wrap->sock);
+    uv_handle_set_data((uv_handle_t*) wrap->sock, (void*) &close_data);
+    uv_close((uv_handle_t*) wrap->sock, do_close_callback);
+    r = 0;
+    while(!close_data.done) {
+      if (uv_run(sock_loop, UV_RUN_ONCE) == 0) {
+        break;
+      }
+    }
+    uvwasi__free(uvwasi, wrap->sock);
+    uv_mutex_unlock(&wrap->mutex);
+  }
 
   if (r != 0) {
     err = uvwasi__translate_uv_error(r);
@@ -2701,13 +2730,61 @@ uvwasi_errno_t uvwasi_sock_send(uvwasi_t* uvwasi,
   return UVWASI_ESUCCESS;
 }
 
+typedef struct shutdown_data_s {
+  int status;
+  int done;
+} shutdown_data_t;
+
+void do_sock_shutdown(uv_shutdown_t *req, int status) {
+  shutdown_data_t *shutdown_data;
+  shutdown_data = uv_handle_get_data((uv_handle_t *) req->handle);
+  shutdown_data->status = status;
+  shutdown_data->done = 1;
+ }
+ 
 uvwasi_errno_t uvwasi_sock_shutdown(uvwasi_t* uvwasi,
                                     uvwasi_fd_t sock,
                                     uvwasi_sdflags_t how) {
-  /* TODO(cjihrig): Waiting to implement, pending
-                    https://github.com/WebAssembly/WASI/issues/4 */
-  UVWASI_DEBUG("uvwasi_sock_shutdown(uvwasi=%p, unimplemented)\n", uvwasi);
-  return UVWASI_ENOTSUP;
+  struct uvwasi_fd_wrap_t *wrap;
+  uvwasi_errno_t err = 0;
+  uv_loop_t *sock_loop = NULL;
+  uv_shutdown_t req; 
+  shutdown_data_t shutdown_data;
+  shutdown_data.done = 0;
+  shutdown_data.status = 0;
+
+  if (uvwasi == NULL)
+    return UVWASI_EINVAL;
+
+  err = uvwasi_fd_table_get(uvwasi->fds,
+                            sock,
+                            &wrap,
+                            UVWASI__RIGHTS_SOCKET_BASE,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  sock_loop = uv_handle_get_loop((uv_handle_t*) wrap->sock);
+
+  uv_handle_set_data((uv_handle_t*) wrap->sock, (void*) &shutdown_data);
+  if (how & UVWASI_SHUT_WR) {
+    uv_shutdown(&req, (uv_stream_t*) wrap->sock, do_sock_shutdown);
+    while (!shutdown_data.done) {
+      if (uv_run(sock_loop, UV_RUN_ONCE) == 0) {
+        break;
+      }
+    }
+  }
+
+  uv_mutex_unlock(&wrap->mutex);
+
+  if (!shutdown_data.done)
+    return UVWASI_ECANCELED; 
+
+  if (shutdown_data.status != 0) 
+    return uvwasi__translate_uv_error(shutdown_data.status);
+
+  return UVWASI_ESUCCESS;
 }
 
 uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
@@ -2731,10 +2808,11 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
     return err;
 
   sock_loop = uv_handle_get_loop((uv_handle_t*) wrap->sock);
-  uv_tcp_t *uv_connect_sock = (uv_tcp_t*) malloc(sizeof(uv_tcp_t));
+  uv_tcp_t *uv_connect_sock = (uv_tcp_t*) uvwasi__malloc(uvwasi, sizeof(uv_tcp_t));
   uv_tcp_init(sock_loop, uv_connect_sock);
   if (uv_accept((uv_stream_t*) wrap->sock, (uv_stream_t*) uv_connect_sock) != 0 ) {
     if (flags & UVWASI_FDFLAG_NONBLOCK) {
+      uvwasi__free(uvwasi, uv_connect_sock);
       uv_mutex_unlock(&wrap->mutex);
       return UVWASI_EAGAIN;
     }
@@ -2778,6 +2856,7 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
   return UVWASI_ESUCCESS;
 
 close_sock_and_error_exit:
+  uvwasi__free(uvwasi, uv_connect_sock);
   uv_mutex_unlock(&wrap->mutex);
   return err;
 }
