@@ -2572,6 +2572,17 @@ uvwasi_errno_t uvwasi_sched_yield(uvwasi_t* uvwasi) {
   return UVWASI_ESUCCESS;
 }
 
+uvwasi_iovec_t* recv_ri_data;
+static void recv_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
+  buf-> base = recv_ri_data->buf;
+  buf->len = recv_ri_data->buf_len;
+}
+
+ssize_t recv_read;
+void do_sock_recv(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
+  uv_read_stop(stream);
+  recv_read = nread;
+}
 
 uvwasi_errno_t uvwasi_sock_recv(uvwasi_t* uvwasi,
                                 uvwasi_fd_t sock,
@@ -2580,10 +2591,37 @@ uvwasi_errno_t uvwasi_sock_recv(uvwasi_t* uvwasi,
                                 uvwasi_riflags_t ri_flags,
                                 uvwasi_size_t* ro_datalen,
                                 uvwasi_roflags_t* ro_flags) {
-  /* TODO(cjihrig): Waiting to implement, pending
-                    https://github.com/WebAssembly/WASI/issues/4 */
-  UVWASI_DEBUG("uvwasi_sock_recv(uvwasi=%p, unimplemented)\n", uvwasi);
-  return UVWASI_ENOTSUP;
+  struct uvwasi_fd_wrap_t *wrap;
+  uvwasi_errno_t err = 0;
+  uv_buf_t* bufs;
+  int r = 0;
+
+  if (uvwasi == NULL || ri_data == NULL || ro_datalen == NULL || ro_flags == NULL)
+    return UVWASI_EINVAL;
+
+  err = uvwasi_fd_table_get(uvwasi->fds,
+                            sock,
+                            &wrap,
+                            UVWASI__RIGHTS_SOCKET_BASE,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  recv_ri_data = ri_data;
+  r = uv_read_start((uv_stream_t*) wrap->sock, recv_alloc_cb, do_sock_recv);
+  if (r != 0) {
+    uv_mutex_unlock(&wrap->mutex);
+    return uvwasi__translate_uv_error(r);
+  }
+
+  if (uv_run(loop, UV_RUN_ONCE) == 0) {
+    uv_mutex_unlock(&wrap->mutex);
+    return UVWASI_ECONNABORTED;
+  }
+
+  uv_mutex_unlock(&wrap->mutex);
+  *ro_datalen = recv_read;
+  return UVWASI_ESUCCESS;
 }
 
 
@@ -2593,12 +2631,38 @@ uvwasi_errno_t uvwasi_sock_send(uvwasi_t* uvwasi,
                                 uvwasi_size_t si_data_len,
                                 uvwasi_siflags_t si_flags,
                                 uvwasi_size_t* so_datalen) {
-  /* TODO(cjihrig): Waiting to implement, pending
-                    https://github.com/WebAssembly/WASI/issues/4 */
-  UVWASI_DEBUG("uvwasi_sock_send(uvwasi=%p, unimplemented)\n", uvwasi);
-  return UVWASI_ENOTSUP;
-}
 
+  struct uvwasi_fd_wrap_t *wrap;
+  uvwasi_errno_t err = 0;
+  uv_buf_t* bufs;
+  int r = 0;
+
+  if (uvwasi == NULL || si_data == NULL || so_datalen == NULL)
+    return UVWASI_EINVAL;
+
+  err = uvwasi_fd_table_get(uvwasi->fds,
+                            sock,
+                            &wrap,
+                            UVWASI__RIGHTS_SOCKET_BASE,
+                            0);
+  if (err != UVWASI_ESUCCESS)
+    return err;
+
+  err = uvwasi__setup_ciovs(uvwasi, &bufs, si_data, si_data_len);
+  if (err != UVWASI_ESUCCESS) {
+    uv_mutex_unlock(&wrap->mutex);
+    return err;
+  }
+
+  r = uv_try_write((uv_stream_t*) wrap->sock, bufs, si_data_len);
+  uvwasi__free(uvwasi, bufs);
+  uv_mutex_unlock(&wrap->mutex);
+  if (r < 0)
+    return uvwasi__translate_uv_error(r);
+
+  *so_datalen = (uvwasi_size_t) r;
+  return UVWASI_ESUCCESS;
+}
 
 uvwasi_errno_t uvwasi_sock_shutdown(uvwasi_t* uvwasi,
                                     uvwasi_fd_t sock,
@@ -2639,7 +2703,7 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
 
   // request was blocking and we have no connection yet. run
   // the loop until a connection comes in
-  while (0) {
+  while (1) {
     if (uv_run(loop, UV_RUN_ONCE) == 0) {
       err = UVWASI_ECONNABORTED;
       goto close_sock_and_error_exit;
@@ -2647,6 +2711,8 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
 
     if (uv_accept((uv_stream_t*) wrap->sock, (uv_stream_t*) uv_connect_sock) == 0 )
       break;
+
+    // add in additional checks for other errors here
   }
 
   if (err != UVWASI_ESUCCESS)
@@ -2667,7 +2733,7 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     goto close_sock_and_error_exit;
 
-  *connect_sock = wrap->id;
+  *connect_sock = connected_wrap->id;
   uv_mutex_unlock(&wrap->mutex);
   uv_mutex_unlock(&connected_wrap->mutex);
   return UVWASI_ESUCCESS;
