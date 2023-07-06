@@ -236,19 +236,7 @@ typedef struct new_connection_data_s {
 } new_connection_data_t;
 
 void on_new_connection(uv_stream_t *server, int status) {
-
-    // if (status < 0) {
-    //     fprintf(stderr, "New connection error %s\n", uv_strerror(status));
-    //     // error!
-    //     return;
-    // }
-
-    // uv_tcp_t *client = (uv_tcp_t*) malloc(sizeof(uv_tcp_t));
-    // uv_tcp_init(loop, client);
-    // if (uv_accept(server, (uv_stream_t*) client) == 0) {
-    //     uv_read_start((uv_stream_t*) client, alloc_buffer, echo_read);
-    // }
-  return;
+  // just do nothing
 }
 
 uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, const uvwasi_options_t* options) {
@@ -2795,6 +2783,7 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
   struct uvwasi_fd_wrap_t *connected_wrap;
   uvwasi_errno_t err = 0;
   uv_loop_t *sock_loop = NULL;
+  int r = 0;
 
   if (uvwasi == NULL || connect_sock == NULL)
     return UVWASI_EINVAL;
@@ -2810,30 +2799,47 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
   sock_loop = uv_handle_get_loop((uv_handle_t*) wrap->sock);
   uv_tcp_t *uv_connect_sock = (uv_tcp_t*) uvwasi__malloc(uvwasi, sizeof(uv_tcp_t));
   uv_tcp_init(sock_loop, uv_connect_sock);
-  if (uv_accept((uv_stream_t*) wrap->sock, (uv_stream_t*) uv_connect_sock) != 0 ) {
-    if (flags & UVWASI_FDFLAG_NONBLOCK) {
-      uvwasi__free(uvwasi, uv_connect_sock);
-      uv_mutex_unlock(&wrap->mutex);
-      return UVWASI_EAGAIN;
-    }
-  };
 
-  // request was blocking and we have no connection yet. run
-  // the loop until a connection comes in
-  while (1) {
-    if (uv_run(sock_loop, UV_RUN_ONCE) == 0) {
-      err = UVWASI_ECONNABORTED;
+  r = uv_accept((uv_stream_t*) wrap->sock, (uv_stream_t*) uv_connect_sock);
+  if (r != 0) {
+    if (r == UV_EAGAIN) {
+      // if not blocking then just return as we have to wait for a connection
+      if (flags & UVWASI_FDFLAG_NONBLOCK) {
+        uvwasi__free(uvwasi, uv_connect_sock);
+        uv_mutex_unlock(&wrap->mutex);
+        return UVWASI_EAGAIN;
+      }
+    } else {
+      err = uvwasi__translate_uv_error(r);
       goto close_sock_and_error_exit;
     }
 
-    if (uv_accept((uv_stream_t*) wrap->sock, (uv_stream_t*) uv_connect_sock) == 0 )
+    // request was blocking and we have no connection yet. run
+    // the loop until a connection comes in
+    while (1) {
+      err = 0;
+      if (uv_run(sock_loop, UV_RUN_ONCE) == 0) {
+        err = UVWASI_ECONNABORTED;
+        goto close_sock_and_error_exit;
+      }
+
+      int r = uv_accept((uv_stream_t*) wrap->sock, (uv_stream_t*) uv_connect_sock);
+      if (r == UV_EAGAIN) {
+	// still no connection or error so run the look again
+        continue;
+      }
+
+      if (r != 0) {
+	// and error occured accepting the connection breakout of the loop and
+	// report and error
+        err = uvwasi__translate_uv_error(r);
+        goto close_sock_and_error_exit;
+      }
+
+      // if we get here a new connection was successfully accepted
       break;
-
-    // add in additional checks for other errors here
+    }
   }
-
-  if (err != UVWASI_ESUCCESS)
-    goto close_sock_and_error_exit;
 
   err = uvwasi_fd_table_insert(uvwasi,
                                uvwasi->fds,

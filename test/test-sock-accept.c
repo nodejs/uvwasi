@@ -12,7 +12,7 @@
 #define TEST_PORT_1 10500
 
 int delayedThreadTime =  5000;
-int immedateThreadTime =  0;
+int immediateThreadTime =  0;
 
 void on_client_connect(uv_connect_t * req, int status) {
   if (status < 0) {
@@ -68,7 +68,6 @@ int main(void) {
 
   err = uvwasi_init(&uvwasi, &init_options);
   assert(err == 0);
-
   // validate when we ask for an invalid socket
   uvwasi_fd_t fd;
   err = uvwasi_sock_accept(&uvwasi, INVALID_SOCK, 0, &fd);
@@ -81,7 +80,7 @@ int main(void) {
 
   // validate case where there is a pending connection when we do a sock
   // accept
-  makeDelayedClientConnection(&immedateThreadTime);
+  makeDelayedClientConnection(&immediateThreadTime);
   uv_sleep(2000);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
   assert(err == 0);
@@ -100,7 +99,7 @@ int main(void) {
   err = uvwasi_fd_close(&uvwasi, fd);
   assert(err == 0);
 
-  // validate two accepts queue up properly
+  // validate case where one accept may queue while one is being handled
   makeDelayedClientConnection(&delayedThreadTime);
   makeDelayedClientConnection(&delayedThreadTime);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, UVWASI_FDFLAG_NONBLOCK, &fd);
@@ -108,10 +107,33 @@ int main(void) {
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
   assert(err == 0);
   assert(fd != 0);
-  /*err = uvwasi_fd_close(&uvwasi, fd);
-    */
+  err = uvwasi_fd_close(&uvwasi, fd);
   assert(err == 0);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
+  assert(err == 0);
+  assert(fd != 0);
+  err = uvwasi_fd_close(&uvwasi, fd);
+  assert(err == 0);
+
+  // validate two accepts queue up properly
+  makeDelayedClientConnection(&immediateThreadTime);
+  makeDelayedClientConnection(&immediateThreadTime);
+  makeDelayedClientConnection(&immediateThreadTime);
+  uv_sleep(2000);
+  // wait for a connection and then close the fd
+  // closing the fd runs the event loop which triggers
+  // the connect callback such that we not have
+  // to wait for the next accept
+  err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
+  assert(err == 0);
+  err = uvwasi_fd_close(&uvwasi, fd);
+  assert(err == 0);
+  err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, UVWASI_FDFLAG_NONBLOCK, &fd);
+  assert(err == 0);
+  assert(fd != 0);
+  err = uvwasi_fd_close(&uvwasi, fd);
+  assert(err == 0);
+  err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, UVWASI_FDFLAG_NONBLOCK, &fd);
   assert(err == 0);
   assert(fd != 0);
   err = uvwasi_fd_close(&uvwasi, fd);
