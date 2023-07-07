@@ -432,6 +432,7 @@ void uvwasi_destroy(uvwasi_t* uvwasi) {
   uvwasi__free(uvwasi, uvwasi->env);
   if (uvwasi->loop != NULL) {
     uv_stop(uvwasi->loop);
+    uv_loop_close(uvwasi->loop);
     uvwasi__free(uvwasi, uvwasi->loop);
     uvwasi->loop = NULL;
   }

@@ -35,6 +35,7 @@ void echo_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
   send_buf.len = nread;
   uv_try_write(stream, &send_buf, 1);
   uv_close((uv_handle_t *) stream, on_uv_close);
+  free(buf->base);
 }
 
 void on_client_connect2(uv_connect_t * req, int status) {
@@ -84,7 +85,6 @@ int main(void) {
   uvwasi_ciovec_t* send_ciovecs;
   uvwasi_iovec_t* recv_iovecs;
   void* send_buf;
-  void* recv_buf;
   uvwasi_size_t send_ciovec_size;
   uvwasi_size_t recv_iovec_size;
   uvwasi_size_t nio;
@@ -124,7 +124,7 @@ int main(void) {
   assert(err == 0);
   assert(nio == 8);
 
-  int received_len = 0;
+  uvwasi_size_t received_len = 0;
   uvwasi_roflags_t out_flags;
   recv_iovec_size = 1;
   recv_iovecs = calloc(recv_iovec_size, sizeof(*recv_iovecs));
@@ -146,6 +146,17 @@ int main(void) {
   assert(err != 0);
   assert(err == UVWASI_EPIPE);
 
+  // cleanpup
+  err = uvwasi_fd_close(&uvwasi, fd);
+  assert(err == 0);
+  err = uvwasi_fd_close(&uvwasi, PREOPEN_SOCK);
+  assert(err == 0);
+  for (uvwasi_size_t i = 0; i < send_ciovec_size; ++i) {
+    free((void*) send_ciovecs[i].buf);
+  }
+  free(send_ciovecs);
+  free(recv_iovecs[0].buf);
+  free(recv_iovecs);
   uvwasi_destroy(&uvwasi);
   free(init_options.preopen_sockets);
 #endif /* !defined(_WIN32) && !defined(__ANDROID__) */
