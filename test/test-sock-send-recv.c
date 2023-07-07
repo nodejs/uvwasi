@@ -27,13 +27,13 @@ static void alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) 
 }
 
 void echo_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
-  printf("Received:%s\n", buf->base);
-  fflush(stdout);
-  uv_buf_t send_buf;
-  uv_read_stop(stream);
-  send_buf.base = buf->base;
-  send_buf.len = nread;
-  uv_try_write(stream, &send_buf, 1);
+  if (nread > 0) {
+    uv_buf_t send_buf;
+    uv_read_stop(stream);
+    send_buf.base = buf->base;
+    send_buf.len = nread;
+    uv_try_write(stream, &send_buf, 1);
+  }
   uv_close((uv_handle_t *) stream, on_uv_close);
   free(buf->base);
 }
