@@ -7,12 +7,16 @@
 
 #define PREOPEN_SOCK 3
 #define INVALID_SOCK 42
-#define DEFAULT_BACKLOG 5
 
+#define CONNECT_ADDRESS "127.0.0.1"
 #define TEST_PORT_1 10500
+#define CONNECTION_WAIT_TIME 2000
+int delayedThreadTime = 4000;
+int immediateThreadTime = 0;
 
-int delayedThreadTime =  5000;
-int immediateThreadTime =  0;
+void on_uv_close(uv_handle_t* handle) {
+  free(handle);
+}
 
 void on_client_connect(uv_connect_t * req, int status) {
   if (status < 0) {
@@ -20,38 +24,34 @@ void on_client_connect(uv_connect_t * req, int status) {
       // error!
       return;
   }
-  uv_close((uv_handle_t *)req->handle, NULL);
+  uv_close((uv_handle_t *)req->handle, on_uv_close);
   free(req);
 }
 
-void makeClientConnection(uv_loop_t* loop) {
+void client_connection_thread(void* time) {
   int r = 0;
+  uv_loop_t *loop = malloc(sizeof(uv_loop_t));
+  uv_loop_init(loop);
+
+  uv_sleep(*((int*) time));
+
   uv_tcp_t* socket = (uv_tcp_t*)malloc(sizeof(uv_tcp_t));
   uv_tcp_init(loop, socket);
   uv_connect_t* connect = (uv_connect_t*)malloc(sizeof(uv_connect_t));
   struct sockaddr_in dest;
-  r = uv_ip4_addr("127.0.0.1", TEST_PORT_1, &dest);
+  r = uv_ip4_addr(CONNECT_ADDRESS, TEST_PORT_1, &dest);
   assert(r == 0);
-
   r = uv_tcp_connect(connect, socket, (const struct sockaddr*)&dest, on_client_connect);
   assert(r == 0);
-  uv_run(loop, UV_RUN_NOWAIT);
-  uv_sleep(1000);
-  free(socket);
-}
 
-void delayedClientConnection(void* time) {
-  uv_loop_t *loop = malloc(sizeof(uv_loop_t));
-  uv_loop_init(loop);
-  uv_sleep(*((int*) time));
-  makeClientConnection(loop);
+  uv_run(loop, UV_RUN_NOWAIT);
   uv_loop_close(loop);
   free(loop);
 }
 
-void makeDelayedClientConnection(int* time) {
+void start_client_connection_thread(int* time) {
   uv_thread_t delayed_thread;
-  uv_thread_create(&delayed_thread, delayedClientConnection, time);
+  uv_thread_create(&delayed_thread, client_connection_thread, time);
 }
 
 int main(void) {
@@ -63,8 +63,8 @@ int main(void) {
   uvwasi_options_init(&init_options);
   init_options.preopen_socketc = 1;
   init_options.preopen_sockets = calloc(1, sizeof(uvwasi_preopen_socket_t));
-  init_options.preopen_sockets->address = "0.0.0.0";
-  init_options.preopen_sockets->port = 10500;
+  init_options.preopen_sockets->address = CONNECT_ADDRESS;
+  init_options.preopen_sockets->port = TEST_PORT_1;
 
   err = uvwasi_init(&uvwasi, &init_options);
   assert(err == 0);
@@ -80,8 +80,8 @@ int main(void) {
 
   // validate case where there is a pending connection when we do a sock
   // accept
-  makeDelayedClientConnection(&immediateThreadTime);
-  uv_sleep(2000);
+  start_client_connection_thread(&immediateThreadTime);
+  uv_sleep(CONNECTION_WAIT_TIME);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
   assert(err == 0);
   assert(fd != 0);
@@ -90,7 +90,7 @@ int main(void) {
 
   // validate case where there is no connection when we do a sock accept
   // but one comes in afterwards
-  makeDelayedClientConnection(&delayedThreadTime);
+  start_client_connection_thread(&delayedThreadTime);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, UVWASI_FDFLAG_NONBLOCK, &fd);
   assert(err == UVWASI_EAGAIN);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
@@ -100,8 +100,8 @@ int main(void) {
   assert(err == 0);
 
   // validate case where one accept may queue while one is being handled
-  makeDelayedClientConnection(&delayedThreadTime);
-  makeDelayedClientConnection(&delayedThreadTime);
+  start_client_connection_thread(&delayedThreadTime);
+  start_client_connection_thread(&delayedThreadTime);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, UVWASI_FDFLAG_NONBLOCK, &fd);
   assert(err == UVWASI_EAGAIN);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
@@ -116,10 +116,10 @@ int main(void) {
   assert(err == 0);
 
   // validate two accepts queue up properly
-  makeDelayedClientConnection(&immediateThreadTime);
-  makeDelayedClientConnection(&immediateThreadTime);
-  makeDelayedClientConnection(&immediateThreadTime);
-  uv_sleep(2000);
+  start_client_connection_thread(&immediateThreadTime);
+  start_client_connection_thread(&immediateThreadTime);
+  start_client_connection_thread(&immediateThreadTime);
+  uv_sleep(CONNECTION_WAIT_TIME);
   // wait for a connection and then close the fd
   // closing the fd runs the event loop which triggers
   // the connect callback such that we not have

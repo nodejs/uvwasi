@@ -44,6 +44,29 @@
     }                                                                         \
   } while (0)
 
+typedef struct free_handle_data_s {
+  uvwasi_t* uvwasi;
+  int done;
+} free_handle_data_t;
+
+void free_handle_cb(uv_handle_t* handle) {
+  free_handle_data_t* free_handle_data = uv_handle_get_data((uv_handle_t*) handle);
+  uvwasi__free(free_handle_data->uvwasi, handle);
+  free_handle_data->done = 1;
+}
+
+void free_handle(uvwasi_t* uvwasi, uv_handle_t* handle) {
+  free_handle_data_t free_handle_data = { uvwasi, 0 };
+  uv_handle_set_data(handle, (void*) &free_handle_data);
+  uv_close(handle, free_handle_cb);
+  uv_loop_t* handle_loop = uv_handle_get_loop(handle);
+  while(!free_handle_data.done) {
+    if (uv_run(handle_loop, UV_RUN_ONCE) == 0) {
+      break;
+    }
+  }
+}
+
 static uvwasi_errno_t uvwasi__get_filestat_set_times(
                                                     uvwasi_timestamp_t* st_atim,
                                                     uvwasi_timestamp_t* st_mtim,
@@ -767,8 +790,6 @@ uvwasi_errno_t uvwasi_fd_close(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
   uvwasi_errno_t err;
   uv_fs_t req;
   int r;
-  close_data_t close_data = {0};
-  uv_loop_t *sock_loop = NULL;
 
   UVWASI_DEBUG("uvwasi_fd_close(uvwasi=%p, fd=%d)\n", uvwasi, fd);
 
@@ -786,16 +807,8 @@ uvwasi_errno_t uvwasi_fd_close(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
     uv_mutex_unlock(&wrap->mutex);
     uv_fs_req_cleanup(&req);
   } else {
-    sock_loop = uv_handle_get_loop((uv_handle_t*) wrap->sock);
-    uv_handle_set_data((uv_handle_t*) wrap->sock, (void*) &close_data);
-    uv_close((uv_handle_t*) wrap->sock, do_close_callback);
     r = 0;
-    while(!close_data.done) {
-      if (uv_run(sock_loop, UV_RUN_ONCE) == 0) {
-        break;
-      }
-    }
-    uvwasi__free(uvwasi, wrap->sock);
+    free_handle(uvwasi, (uv_handle_t*) wrap->sock);
     uv_mutex_unlock(&wrap->mutex);
   }
 
@@ -2806,7 +2819,7 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
     if (r == UV_EAGAIN) {
       // if not blocking then just return as we have to wait for a connection
       if (flags & UVWASI_FDFLAG_NONBLOCK) {
-        uvwasi__free(uvwasi, uv_connect_sock);
+        free_handle(uvwasi, (uv_handle_t*) uv_connect_sock);
         uv_mutex_unlock(&wrap->mutex);
         return UVWASI_EAGAIN;
       }

@@ -10,15 +10,14 @@
 #define INVALID_SOCK 42
 #define DEFAULT_BACKLOG 5
 
-#define TEST_PORT_1 10500
-
 int delayedThreadTime =  5000;
 int immedateThreadTime =  0;
 
+#define CONNECT_ADDRESS "127.0.0.1"
+#define TEST_PORT_1 10500
+
 void on_uv_close(uv_handle_t* handle) {
-    if (handle != NULL) {
-        free(handle);
-    }
+  free(handle);
 }
 
 static void alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
@@ -38,7 +37,7 @@ void echo_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
   free(buf->base);
 }
 
-void on_client_connect2(uv_connect_t * req, int status) {
+void on_client_connect(uv_connect_t * req, int status) {
   if (status < 0) {
       fprintf(stderr, "New connection error %s\n", uv_strerror(status));
       // error!
@@ -48,34 +47,32 @@ void on_client_connect2(uv_connect_t * req, int status) {
   free(req);
 }
 
-void makeClientConnection2(uv_loop_t* loop) {
+void client_connection_echo_thread(void* time) {
   int r = 0;
+  uv_loop_t *loop = malloc(sizeof(uv_loop_t));
+  uv_loop_init(loop);
+
+  uv_sleep(*((int*) time));
+
   uv_tcp_t* socket = (uv_tcp_t*)malloc(sizeof(uv_tcp_t));
   uv_tcp_init(loop, socket);
   uv_connect_t* connect = (uv_connect_t*)malloc(sizeof(uv_connect_t));
   struct sockaddr_in dest;
-  r = uv_ip4_addr("127.0.0.1", TEST_PORT_1, &dest);
+  r = uv_ip4_addr(CONNECT_ADDRESS, TEST_PORT_1, &dest);
   assert(r == 0);
-  r = uv_tcp_connect(connect, socket, (const struct sockaddr*)&dest, on_client_connect2);
+  r = uv_tcp_connect(connect, socket, (const struct sockaddr*)&dest, on_client_connect);
   assert(r == 0);
+
   uv_run(loop, UV_RUN_NOWAIT);
   uv_run(loop, UV_RUN_ONCE);
-}
-
-void delayedClientConnection2(void* time) {
-  uv_loop_t *loop = malloc(sizeof(uv_loop_t));
-  uv_loop_init(loop);
-  uv_sleep(*((int*) time));
-  makeClientConnection2(loop);
   uv_loop_close(loop);
   free(loop);
 }
 
-void makeDelayedClientConnection2(int* time) {
+void start_client_connection_echo_thread(int* time) {
   uv_thread_t delayed_thread;
-  uv_thread_create(&delayed_thread, delayedClientConnection2, time);
+  uv_thread_create(&delayed_thread, client_connection_echo_thread, time);
 }
-
 
 int main(void) {
 #if !defined(_WIN32) && !defined(__ANDROID__)
@@ -92,15 +89,15 @@ int main(void) {
   uvwasi_options_init(&init_options);
   init_options.preopen_socketc = 1;
   init_options.preopen_sockets = calloc(1, sizeof(uvwasi_preopen_socket_t));
-  init_options.preopen_sockets->address = "0.0.0.0";
-  init_options.preopen_sockets->port = 10500;
+  init_options.preopen_sockets->address = CONNECT_ADDRESS;
+  init_options.preopen_sockets->port = TEST_PORT_1;
 
   err = uvwasi_init(&uvwasi, &init_options);
   assert(err == 0);
 
   // validate we can send data
   uvwasi_fd_t fd;
-  makeDelayedClientConnection2(&immedateThreadTime);
+  start_client_connection_echo_thread(&immedateThreadTime);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
   assert(err == 0);
   assert(fd != 0);
@@ -133,11 +130,12 @@ int main(void) {
   err = uvwasi_sock_recv(&uvwasi, fd, recv_iovecs, 1, 0, &received_len, &out_flags);
   assert(err == 0);
   assert(received_len == 8);
+  assert(strcmp(recv_iovecs[0].buf, "hihihih") == 0);
   err = uvwasi_fd_close(&uvwasi, fd);
   assert(err == 0);
 
   // validate we get expected error trying to send after socket shutdown
-  makeDelayedClientConnection2(&immedateThreadTime);
+  start_client_connection_echo_thread(&immedateThreadTime);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
   assert(err == 0);
   err = uvwasi_sock_shutdown(&uvwasi, fd, UVWASI_SHUT_WR);
@@ -146,7 +144,7 @@ int main(void) {
   assert(err != 0);
   assert(err == UVWASI_EPIPE);
 
-  // cleanpup
+  // clean up
   err = uvwasi_fd_close(&uvwasi, fd);
   assert(err == 0);
   err = uvwasi_fd_close(&uvwasi, PREOPEN_SOCK);
