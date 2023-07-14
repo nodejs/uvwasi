@@ -25,6 +25,7 @@
 #include "clocks.h"
 #include "path_resolver.h"
 #include "poll_oneoff.h"
+#include "sync_helpers.h"
 #include "wasi_rights.h"
 #include "wasi_serdes.h"
 #include "debug.h"
@@ -43,29 +44,6 @@
       return UVWASI_EINVAL;                                                   \
     }                                                                         \
   } while (0)
-
-typedef struct free_handle_data_s {
-  uvwasi_t* uvwasi;
-  int done;
-} free_handle_data_t;
-
-void free_handle_cb(uv_handle_t* handle) {
-  free_handle_data_t* free_handle_data = uv_handle_get_data((uv_handle_t*) handle);
-  uvwasi__free(free_handle_data->uvwasi, handle);
-  free_handle_data->done = 1;
-}
-
-void free_handle(uvwasi_t* uvwasi, uv_handle_t* handle) {
-  free_handle_data_t free_handle_data = { uvwasi, 0 };
-  uv_handle_set_data(handle, (void*) &free_handle_data);
-  uv_close(handle, free_handle_cb);
-  uv_loop_t* handle_loop = uv_handle_get_loop(handle);
-  while(!free_handle_data.done) {
-    if (uv_run(handle_loop, UV_RUN_ONCE) == 0) {
-      break;
-    }
-  }
-}
 
 static uvwasi_errno_t uvwasi__get_filestat_set_times(
                                                     uvwasi_timestamp_t* st_atim,
@@ -775,19 +753,9 @@ exit:
   return err;
 }
 
-
-typedef struct close_data_s {
-  int done;
-} close_data_t;
-
-void do_close_callback(uv_handle_t *handle) {
-  close_data_t* close_data = uv_handle_get_data((uv_handle_t*) handle);
-  close_data->done = 1;
-}
-
 uvwasi_errno_t uvwasi_fd_close(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
   struct uvwasi_fd_wrap_t* wrap;
-  uvwasi_errno_t err;
+  uvwasi_errno_t err = 0;
   uv_fs_t req;
   int r;
 
@@ -808,8 +776,11 @@ uvwasi_errno_t uvwasi_fd_close(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
     uv_fs_req_cleanup(&req);
   } else {
     r = 0;
-    free_handle(uvwasi, (uv_handle_t*) wrap->sock);
+    err = free_handle_sync(uvwasi, (uv_handle_t*) wrap->sock);
     uv_mutex_unlock(&wrap->mutex);
+    if (err != UVWASI_ESUCCESS) {
+      goto exit;
+    }   
   }
 
   if (r != 0) {
@@ -2617,26 +2588,6 @@ uvwasi_errno_t uvwasi_sched_yield(uvwasi_t* uvwasi) {
   return UVWASI_ESUCCESS;
 }
 
-typedef struct recv_data_s {
-  char* base;
-  size_t len;
-  ssize_t nread;
-} recv_data_t;
-
-static void recv_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
-  recv_data_t* recv_data;
-  recv_data = uv_handle_get_data(handle);
-  buf->base = recv_data->base;
-  buf->len = recv_data->len;
-}
-
-void do_sock_recv(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
-  recv_data_t* recv_data;
-  recv_data = uv_handle_get_data((uv_handle_t*) stream);
-  uv_read_stop(stream);
-  recv_data->nread = nread;
-}
-
 uvwasi_errno_t uvwasi_sock_recv(uvwasi_t* uvwasi,
                                 uvwasi_fd_t sock,
                                 const uvwasi_iovec_t* ri_data,
@@ -2647,8 +2598,6 @@ uvwasi_errno_t uvwasi_sock_recv(uvwasi_t* uvwasi,
   struct uvwasi_fd_wrap_t *wrap;
   uvwasi_errno_t err = 0;
   recv_data_t recv_data;
-  int r = 0;
-  uv_loop_t* sock_loop = NULL;
 
   if (uvwasi == NULL || ri_data == NULL || ro_datalen == NULL || ro_flags == NULL)
     return UVWASI_EINVAL;
@@ -2661,31 +2610,18 @@ uvwasi_errno_t uvwasi_sock_recv(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  sock_loop = uv_handle_get_loop((uv_handle_t*) wrap->sock);
-
-  // setup structure used to share data with callbacks
-  recv_data.nread = 0;
   recv_data.base = ri_data->buf;
   recv_data.len = ri_data->buf_len;
-  uv_handle_set_data((uv_handle_t*) wrap->sock, (void*) &recv_data);
-
-  r = uv_read_start((uv_stream_t*) wrap->sock, recv_alloc_cb, do_sock_recv);
-  if (r != 0) {
-    uv_mutex_unlock(&wrap->mutex);
-    return uvwasi__translate_uv_error(r);
-  }
-
-  if (uv_run(sock_loop, UV_RUN_ONCE) == 0) {
-    uv_mutex_unlock(&wrap->mutex);
-    return UVWASI_ECONNABORTED;
-  }
-
+  err = read_stream_sync(uvwasi, (uv_stream_t*) wrap->sock, &recv_data);
   uv_mutex_unlock(&wrap->mutex);
+  if (err != 0) {
+    return err;
+  }
 
   if (recv_data.nread == 0) {
     return UVWASI_EAGAIN;
   } else if (recv_data.nread < 0) {
-    return uvwasi__translate_uv_error(r);
+    return uvwasi__translate_uv_error(recv_data.nread);
   }
 
   *ro_datalen = recv_data.nread;
@@ -2732,28 +2668,12 @@ uvwasi_errno_t uvwasi_sock_send(uvwasi_t* uvwasi,
   return UVWASI_ESUCCESS;
 }
 
-typedef struct shutdown_data_s {
-  int status;
-  int done;
-} shutdown_data_t;
-
-void do_sock_shutdown(uv_shutdown_t *req, int status) {
-  shutdown_data_t* shutdown_data;
-  shutdown_data = uv_handle_get_data((uv_handle_t *) req->handle);
-  shutdown_data->status = status;
-  shutdown_data->done = 1;
- }
- 
 uvwasi_errno_t uvwasi_sock_shutdown(uvwasi_t* uvwasi,
                                     uvwasi_fd_t sock,
                                     uvwasi_sdflags_t how) {
   struct uvwasi_fd_wrap_t *wrap;
   uvwasi_errno_t err = 0;
-  uv_loop_t* sock_loop = NULL;
-  uv_shutdown_t req; 
   shutdown_data_t shutdown_data;
-  shutdown_data.done = 0;
-  shutdown_data.status = 0;
 
   if (uvwasi == NULL)
     return UVWASI_EINVAL;
@@ -2766,22 +2686,15 @@ uvwasi_errno_t uvwasi_sock_shutdown(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
-  sock_loop = uv_handle_get_loop((uv_handle_t*) wrap->sock);
-
-  uv_handle_set_data((uv_handle_t*) wrap->sock, (void*) &shutdown_data);
   if (how & UVWASI_SHUT_WR) {
-    uv_shutdown(&req, (uv_stream_t*) wrap->sock, do_sock_shutdown);
-    while (!shutdown_data.done) {
-      if (uv_run(sock_loop, UV_RUN_ONCE) == 0) {
-        break;
-      }
+    err = shutdown_stream_sync(uvwasi, (uv_stream_t*) wrap->sock, &shutdown_data);
+    if (err != UVWASI_ESUCCESS) {
+      uv_mutex_unlock(&wrap->mutex);
+      return err;
     }
   }
 
   uv_mutex_unlock(&wrap->mutex);
-
-  if (!shutdown_data.done)
-    return UVWASI_ECANCELED; 
 
   if (shutdown_data.status != 0) 
     return uvwasi__translate_uv_error(shutdown_data.status);
@@ -2819,8 +2732,11 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
     if (r == UV_EAGAIN) {
       // if not blocking then just return as we have to wait for a connection
       if (flags & UVWASI_FDFLAG_NONBLOCK) {
-        free_handle(uvwasi, (uv_handle_t*) uv_connect_sock);
+        err = free_handle_sync(uvwasi, (uv_handle_t*) uv_connect_sock);
         uv_mutex_unlock(&wrap->mutex);
+        if (err != UVWASI_ESUCCESS) {
+          return err;
+	}
         return UVWASI_EAGAIN;
       }
     } else {
