@@ -2845,7 +2845,7 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
 
       if (r != 0) {
 	// and error occured accepting the connection breakout of the loop and
-	// report and error
+	// report an error.
         err = uvwasi__translate_uv_error(r);
         goto close_sock_and_error_exit;
       }
