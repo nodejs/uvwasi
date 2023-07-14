@@ -10,7 +10,7 @@
 #define INVALID_SOCK 42
 #define DEFAULT_BACKLOG 5
 
-int delayedThreadTime =  5000;
+static int delayed_thread_time = 5000;
 int immedateThreadTime =  0;
 
 #define CONNECT_ADDRESS "127.0.0.1"
