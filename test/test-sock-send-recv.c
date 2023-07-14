@@ -10,7 +10,6 @@
 #define INVALID_SOCK 42
 #define DEFAULT_BACKLOG 5
 
-static int delayed_thread_time = 5000;
 static int immediate_thread_time = 0;
 
 #define CONNECT_ADDRESS "127.0.0.1"
@@ -39,9 +38,9 @@ void echo_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
 
 void on_client_connect(uv_connect_t * req, int status) {
   if (status < 0) {
-      fprintf(stderr, "New connection error %s\n", uv_strerror(status));
-      // error!
-      return;
+    fprintf(stderr, "New connection error %s\n", uv_strerror(status));
+    // error!
+    return;
   }
   uv_read_start((uv_stream_t*) req->handle, alloc_cb, echo_read);
   free(req);
@@ -75,7 +74,6 @@ void start_client_connection_echo_thread(int* time) {
 }
 
 int main(void) {
-#if !defined(_WIN32) && !defined(__ANDROID__)
   uvwasi_t uvwasi;
   uvwasi_options_t init_options;
   uvwasi_errno_t err = 0;
@@ -97,7 +95,7 @@ int main(void) {
 
   // validate we can send data
   uvwasi_fd_t fd;
-  start_client_connection_echo_thread(&immedateThreadTime);
+  start_client_connection_echo_thread(&immediate_thread_time);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
   assert(err == 0);
   assert(fd != 0);
@@ -135,7 +133,7 @@ int main(void) {
   assert(err == 0);
 
   // validate we get expected error trying to send after socket shutdown
-  start_client_connection_echo_thread(&immedateThreadTime);
+  start_client_connection_echo_thread(&immediate_thread_time);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
   assert(err == 0);
   err = uvwasi_sock_shutdown(&uvwasi, fd, UVWASI_SHUT_WR);
@@ -157,6 +155,5 @@ int main(void) {
   free(recv_iovecs);
   uvwasi_destroy(&uvwasi);
   free(init_options.preopen_sockets);
-#endif /* !defined(_WIN32) && !defined(__ANDROID__) */
   return 0;
 }

@@ -416,7 +416,7 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, const uvwasi_options_t* options) {
   }
 
   for (i = 0; i < options->preopen_socketc; ++i) {
-    uv_tcp_t *socket = (uv_tcp_t*) malloc(sizeof(uv_tcp_t));
+    uv_tcp_t* socket = (uv_tcp_t*) malloc(sizeof(uv_tcp_t));
     uv_tcp_init(uvwasi->loop, socket);
 
     uv_ip4_addr(options->preopen_sockets[i].address, options->preopen_sockets[i].port, &addr);
@@ -2624,14 +2624,14 @@ typedef struct recv_data_s {
 } recv_data_t;
 
 static void recv_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
-  recv_data_t *recv_data;
+  recv_data_t* recv_data;
   recv_data = uv_handle_get_data(handle);
   buf->base = recv_data->base;
   buf->len = recv_data->len;
 }
 
 void do_sock_recv(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
-  recv_data_t *recv_data;
+  recv_data_t* recv_data;
   recv_data = uv_handle_get_data((uv_handle_t*) stream);
   uv_read_stop(stream);
   recv_data->nread = nread;
@@ -2648,7 +2648,7 @@ uvwasi_errno_t uvwasi_sock_recv(uvwasi_t* uvwasi,
   uvwasi_errno_t err = 0;
   recv_data_t recv_data;
   int r = 0;
-  uv_loop_t *sock_loop = NULL;
+  uv_loop_t* sock_loop = NULL;
 
   if (uvwasi == NULL || ri_data == NULL || ro_datalen == NULL || ro_flags == NULL)
     return UVWASI_EINVAL;
@@ -2700,7 +2700,7 @@ uvwasi_errno_t uvwasi_sock_send(uvwasi_t* uvwasi,
                                 uvwasi_siflags_t si_flags,
                                 uvwasi_size_t* so_datalen) {
 
-  struct uvwasi_fd_wrap_t *wrap;
+  struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err = 0;
   uv_buf_t* bufs;
   int r = 0;
@@ -2738,7 +2738,7 @@ typedef struct shutdown_data_s {
 } shutdown_data_t;
 
 void do_sock_shutdown(uv_shutdown_t *req, int status) {
-  shutdown_data_t *shutdown_data;
+  shutdown_data_t* shutdown_data;
   shutdown_data = uv_handle_get_data((uv_handle_t *) req->handle);
   shutdown_data->status = status;
   shutdown_data->done = 1;
@@ -2749,7 +2749,7 @@ uvwasi_errno_t uvwasi_sock_shutdown(uvwasi_t* uvwasi,
                                     uvwasi_sdflags_t how) {
   struct uvwasi_fd_wrap_t *wrap;
   uvwasi_errno_t err = 0;
-  uv_loop_t *sock_loop = NULL;
+  uv_loop_t* sock_loop = NULL;
   uv_shutdown_t req; 
   shutdown_data_t shutdown_data;
   shutdown_data.done = 0;
@@ -2793,10 +2793,10 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
                                   uvwasi_fd_t sock,
                                   uvwasi_fdflags_t flags,
                                   uvwasi_fd_t* connect_sock) {
-  struct uvwasi_fd_wrap_t *wrap;
-  struct uvwasi_fd_wrap_t *connected_wrap;
+  struct uvwasi_fd_wrap_t* wrap;
+  struct uvwasi_fd_wrap_t* connected_wrap;
   uvwasi_errno_t err = 0;
-  uv_loop_t *sock_loop = NULL;
+  uv_loop_t* sock_loop = NULL;
   int r = 0;
 
   if (uvwasi == NULL || connect_sock == NULL)
@@ -2805,13 +2805,13 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
   err = uvwasi_fd_table_get(uvwasi->fds,
                             sock,
                             &wrap,
-                            UVWASI__RIGHTS_SOCKET_BASE | UVWASI_RIGHT_SOCK_ACCEPT,
+                            UVWASI__RIGHTS_SOCKET_BASE,
                             0);
   if (err != UVWASI_ESUCCESS)
     return err;
 
   sock_loop = uv_handle_get_loop((uv_handle_t*) wrap->sock);
-  uv_tcp_t *uv_connect_sock = (uv_tcp_t*) uvwasi__malloc(uvwasi, sizeof(uv_tcp_t));
+  uv_tcp_t* uv_connect_sock = (uv_tcp_t*) uvwasi__malloc(uvwasi, sizeof(uv_tcp_t));
   uv_tcp_init(sock_loop, uv_connect_sock);
 
   r = uv_accept((uv_stream_t*) wrap->sock, (uv_stream_t*) uv_connect_sock);

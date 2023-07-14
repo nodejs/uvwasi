@@ -74,16 +74,18 @@ uvwasi_errno_t uvwasi_fd_table_insert(uvwasi_t* uvwasi,
   uint32_t index;
   uint32_t i;
   int r;
-  size_t mp_len = 0;
+  size_t mp_len;
   char* mp_copy;
-  size_t rp_len = 0;
+  size_t rp_len;
   char* rp_copy;
   char* np_copy;
 
   if (type != UVWASI_FILETYPE_SOCKET_STREAM ) {
     mp_len = strlen(mapped_path);
     rp_len = strlen(real_path);
-
+  } else {
+    mp_len = 0;
+    rp_len = 0;
   }
 
   /* Reserve room for the mapped path, real path, and normalized mapped path. */
@@ -313,7 +315,7 @@ uvwasi_errno_t uvwasi_fd_table_insert_preopen_socket(uvwasi_t* uvwasi,
                                 NULL,
                                 NULL,
                                 UVWASI_FILETYPE_SOCKET_STREAM,
-                                UVWASI__RIGHTS_SOCKET_BASE | UVWASI_RIGHT_SOCK_ACCEPT,
+                                UVWASI__RIGHTS_SOCKET_BASE,
                                 UVWASI__RIGHTS_SOCKET_INHERITING,
                                 1,
                                 NULL);

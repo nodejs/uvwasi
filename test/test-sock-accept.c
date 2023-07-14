@@ -55,7 +55,6 @@ void start_client_connection_thread(int* time) {
 }
 
 int main(void) {
-#if !defined(_WIN32) && !defined(__ANDROID__)
   uvwasi_t uvwasi;
   uvwasi_options_t init_options;
   uvwasi_errno_t err = 0;
@@ -144,6 +143,5 @@ int main(void) {
 
   uvwasi_destroy(&uvwasi);
   free(init_options.preopen_sockets);
-#endif /* !defined(_WIN32) && !defined(__ANDROID__) */
   return 0;
 }
