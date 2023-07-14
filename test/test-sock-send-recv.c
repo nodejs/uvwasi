@@ -11,7 +11,7 @@
 #define DEFAULT_BACKLOG 5
 
 static int delayed_thread_time = 5000;
-int immedateThreadTime =  0;
+static int immediate_thread_time = 0;
 
 #define CONNECT_ADDRESS "127.0.0.1"
 #define TEST_PORT_1 10500
