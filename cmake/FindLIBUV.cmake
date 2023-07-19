@@ -5,7 +5,7 @@
 #  LIBUV_INCLUDE_DIR, where to find uv.h
 
 find_path(LIBUV_INCLUDE_DIR NAMES uv.h)
-find_library(LIBUV_LIBRARIES NAMES uv uv_a libuv)
+find_library(LIBUV_LIBRARIES NAMES uv libuv)
 
 include(FindPackageHandleStandardArgs)
 
