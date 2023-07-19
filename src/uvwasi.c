@@ -2564,7 +2564,7 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
   /* TODO(mhdawson): Needs implementation */
   UVWASI_DEBUG("uvwasi_sock_accept(uvwasi=%p, unimplemented)\n", uvwasi);
   return UVWASI_ENOTSUP;
-};
+}
 
 
 const char* uvwasi_embedder_err_code_to_string(uvwasi_errno_t code) {
