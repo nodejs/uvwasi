@@ -86,6 +86,9 @@ uvwasi_errno_t uvwasi_fd_table_insert(uvwasi_t* uvwasi,
   } else {
     mp_len = 0;
     rp_len = 0;
+    rp_copy = NULL;
+    mp_copy = NULL;
+    np_copy = NULL;
   }
 
   /* Reserve room for the mapped path, real path, and normalized mapped path. */
