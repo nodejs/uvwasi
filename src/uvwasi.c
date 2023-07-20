@@ -2599,6 +2599,16 @@ uvwasi_errno_t uvwasi_sock_recv(uvwasi_t* uvwasi,
   uvwasi_errno_t err = 0;
   recv_data_t recv_data;
 
+  UVWASI_DEBUG("uvwasi_sock_recv(uvwasi=%p, sock=%d, ri_data=%p, "
+	       "ri_data_len=%d, ri_flags=%p, ro_datalen=%p, ro_flags=%p)\n",
+               uvwasi,
+               sock,
+               ri_data,
+               ri_data_len,
+               ri_flags,
+               ro_datalen,
+               ro_flags);
+
   if (uvwasi == NULL || ri_data == NULL || ro_datalen == NULL || ro_flags == NULL)
     return UVWASI_EINVAL;
 
@@ -2641,6 +2651,15 @@ uvwasi_errno_t uvwasi_sock_send(uvwasi_t* uvwasi,
   uv_buf_t* bufs;
   int r = 0;
 
+  UVWASI_DEBUG("uvwasi_sock_send(uvwasi=%p, sock=%d, si_data=%p, "
+	       "si_data_len=%d, si_flags=d, so_datalen=%p)\n",
+               uvwasi,
+               sock,
+               si_data,
+               si_data_len,
+               si_flags,
+               so_datalen);
+
   if (uvwasi == NULL || si_data == NULL || so_datalen == NULL)
     return UVWASI_EINVAL;
 
@@ -2674,6 +2693,11 @@ uvwasi_errno_t uvwasi_sock_shutdown(uvwasi_t* uvwasi,
   struct uvwasi_fd_wrap_t *wrap;
   uvwasi_errno_t err = 0;
   shutdown_data_t shutdown_data;
+
+  UVWASI_DEBUG("uvwasi_sock_shutdown(uvwasi=%p, sock=%d, how=%\nd"
+               uvwasi,
+               sock,
+               how);
 
   if (uvwasi == NULL)
     return UVWASI_EINVAL;
@@ -2711,6 +2735,13 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
   uvwasi_errno_t err = 0;
   uv_loop_t* sock_loop = NULL;
   int r = 0;
+
+  UVWASI_DEBUG("uvwasi_sock_accept(uvwasi=%p, sock=%d, flags=%d, "
+               "connect_sock=%p\n"
+               uvwasi,
+               sock,
+               flags,
+               connect_sock);
 
   if (uvwasi == NULL || connect_sock == NULL)
     return UVWASI_EINVAL;
