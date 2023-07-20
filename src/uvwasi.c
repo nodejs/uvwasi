@@ -2600,7 +2600,7 @@ uvwasi_errno_t uvwasi_sock_recv(uvwasi_t* uvwasi,
   recv_data_t recv_data;
 
   UVWASI_DEBUG("uvwasi_sock_recv(uvwasi=%p, sock=%d, ri_data=%p, "
-	       "ri_data_len=%d, ri_flags=%p, ro_datalen=%p, ro_flags=%p)\n",
+	       "ri_data_len=%d, ri_flags=%d, ro_datalen=%p, ro_flags=%p)\n",
                uvwasi,
                sock,
                ri_data,
@@ -2652,7 +2652,7 @@ uvwasi_errno_t uvwasi_sock_send(uvwasi_t* uvwasi,
   int r = 0;
 
   UVWASI_DEBUG("uvwasi_sock_send(uvwasi=%p, sock=%d, si_data=%p, "
-	       "si_data_len=%d, si_flags=d, so_datalen=%p)\n",
+	       "si_data_len=%d, si_flags=%d, so_datalen=%p)\n",
                uvwasi,
                sock,
                si_data,
@@ -2694,7 +2694,7 @@ uvwasi_errno_t uvwasi_sock_shutdown(uvwasi_t* uvwasi,
   uvwasi_errno_t err = 0;
   shutdown_data_t shutdown_data;
 
-  UVWASI_DEBUG("uvwasi_sock_shutdown(uvwasi=%p, sock=%d, how=%\nd"
+  UVWASI_DEBUG("uvwasi_sock_shutdown(uvwasi=%p, sock=%d, how=%d)\n",
                uvwasi,
                sock,
                how);
@@ -2737,7 +2737,7 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
   int r = 0;
 
   UVWASI_DEBUG("uvwasi_sock_accept(uvwasi=%p, sock=%d, flags=%d, "
-               "connect_sock=%p\n"
+               "connect_sock=%p)\n",
                uvwasi,
                sock,
                flags,
