@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "wasi_serdes.h"
+#include "test-common.h"
 
 void test_bound_checks(void);
 void test_basic_types(void);
@@ -12,6 +13,8 @@ void test_event_t(void);
 void test_subscription_t(void);
 
 int main(void) {
+  setup_test_environment();
+
   test_bound_checks();
   test_basic_types();
   test_fdstat_t();

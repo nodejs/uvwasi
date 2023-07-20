@@ -3,6 +3,7 @@
 #include <string.h>
 #include "uvwasi.h"
 #include "uv.h"
+#include "test-common.h"
 
 #define TEST_TMP_DIR "./out/tmp"
 
@@ -26,6 +27,8 @@ int main(void) {
   uvwasi_size_t nio;
   uvwasi_size_t i;
   int r;
+
+  setup_test_environment();
 
   r = uv_fs_mkdir(NULL, &req, TEST_TMP_DIR, 0777, NULL);
   uv_fs_req_cleanup(&req);

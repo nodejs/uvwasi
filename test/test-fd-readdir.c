@@ -4,6 +4,7 @@
 #include "uv.h"
 #include "uvwasi.h"
 #include "wasi_serdes.h"
+#include "test-common.h"
 
 #define TEST_TMP_DIR "./out/tmp"
 #define TEST_PATH_READDIR TEST_TMP_DIR "/test_readdir"
@@ -44,6 +45,8 @@ int main(void) {
   char buf[1024];
   char* name;
   int r;
+
+  setup_test_environment();
 
   r = uv_fs_mkdir(NULL, &req, TEST_TMP_DIR, 0777, NULL);
   uv_fs_req_cleanup(&req);

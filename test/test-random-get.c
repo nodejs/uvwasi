@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "uvwasi.h"
+#include "test-common.h"
 
 #define BUFFER_SIZE 1024
 
@@ -12,6 +13,8 @@ int main(void) {
   unsigned char* buf;
   int success;
   int i;
+
+  setup_test_environment();
 
   uvwasi_options_init(&init_options);
   err = uvwasi_init(&uvwasi, &init_options);

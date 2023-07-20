@@ -5,6 +5,7 @@
 #include "../src/fd_table.h"
 #include "../src/path_resolver.h"
 #include "../src/wasi_rights.h"
+#include "test-common.h"
 
 #define BUFFER_SIZE 1024
 
@@ -28,6 +29,8 @@ static uvwasi_errno_t check(char* fd_mp, char* fd_rp, char* path, char** res) {
   struct uvwasi_fd_wrap_t fd;
   uvwasi_errno_t err;
   uvwasi_size_t len;
+
+  setup_test_environment();
 
   len = strlen(path);
   fd.id = 3;

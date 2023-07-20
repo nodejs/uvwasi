@@ -2,10 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include "uvwasi.h"
+#include "test-common.h"
 
 int main(void) {
   uvwasi_t uvwasi;
   uvwasi_options_t init_options;
+
+  setup_test_environment();
 
   uvwasi_options_init(&init_options);
   assert(init_options.in == 0);
