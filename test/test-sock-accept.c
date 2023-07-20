@@ -30,13 +30,13 @@ void on_client_connect(uv_connect_t * req, int status) {
 
 void client_connection_thread(void* time) {
   int r = 0;
-  uv_loop_t *loop = malloc(sizeof(uv_loop_t));
-  uv_loop_init(loop);
+  uv_loop_t loop;
+  uv_loop_init(&loop);
 
   uv_sleep(*((int*) time));
 
   uv_tcp_t* socket = (uv_tcp_t*)malloc(sizeof(uv_tcp_t));
-  uv_tcp_init(loop, socket);
+  uv_tcp_init(&loop, socket);
   uv_connect_t* connect = (uv_connect_t*)malloc(sizeof(uv_connect_t));
   struct sockaddr_in dest;
   r = uv_ip4_addr(CONNECT_ADDRESS, TEST_PORT_1, &dest);
@@ -44,9 +44,8 @@ void client_connection_thread(void* time) {
   r = uv_tcp_connect(connect, socket, (const struct sockaddr*)&dest, on_client_connect);
   assert(r == 0);
 
-  uv_run(loop, UV_RUN_NOWAIT);
-  uv_loop_close(loop);
-  free(loop);
+  uv_run(&loop, UV_RUN_NOWAIT);
+  uv_loop_close(&loop);
 }
 
 void start_client_connection_thread(int* time) {
