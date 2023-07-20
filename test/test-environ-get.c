@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "uvwasi.h"
+#include "test-common.h"
 
 #ifdef __APPLE__
 # include <crt_externs.h>
@@ -18,6 +19,8 @@ int main(void) {
   uvwasi_size_t env_buf_size;
   char** env_get_env;
   char* buf;
+
+  setup_test_environment();
 
   uvwasi_options_init(&init_options);
   init_options.envp = (const char**) environ;

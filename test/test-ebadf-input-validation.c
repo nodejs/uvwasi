@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <string.h>
 #include "uvwasi.h"
+#include "test-common.h"
 
 #define CHECK(expr) assert(UVWASI_EBADF == (expr))
 
@@ -19,6 +20,8 @@ int main(void) {
   char* test_str = "foo";
   uvwasi_size_t test_size = 5;
   void* test_void;
+
+  setup_test_environment();
 
   test_void = (void*) &test_fdstat;
 
