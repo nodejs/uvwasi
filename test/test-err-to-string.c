@@ -1,12 +1,15 @@
 #include <assert.h>
 #include <string.h>
 #include "uvwasi.h"
+#include "test-common.h"
 
 static void check(uvwasi_errno_t err, const char* str) {
   assert(0 == strcmp(uvwasi_embedder_err_code_to_string(err), str));
 }
 
 int main(void) {
+  setup_test_environment();
+
   check(UVWASI_E2BIG, "UVWASI_E2BIG");
   check(UVWASI_EACCES, "UVWASI_EACCES");
   check(UVWASI_EADDRINUSE, "UVWASI_EADDRINUSE");

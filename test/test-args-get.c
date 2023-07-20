@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "uvwasi.h"
+#include "test-common.h"
 
 int main(void) {
   uvwasi_t uvwasi;
@@ -11,6 +12,8 @@ int main(void) {
   uvwasi_size_t argv_buf_size;
   char** args_get_argv;
   char* buf;
+
+  setup_test_environment();
 
   uvwasi_options_init(&init_options);
   init_options.argc = 3;

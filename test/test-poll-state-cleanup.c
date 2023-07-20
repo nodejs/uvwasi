@@ -1,5 +1,6 @@
 #include <assert.h>
 #include "uvwasi.h"
+#include "test-common.h"
 
 int main(void) {
   uvwasi_t uvwasi;
@@ -8,6 +9,8 @@ int main(void) {
   uvwasi_event_t event;
   uvwasi_size_t nevents;
   uvwasi_errno_t err;
+
+  setup_test_environment();
 
   uvwasi_options_init(&init_options);
   err = uvwasi_init(&uvwasi, &init_options);

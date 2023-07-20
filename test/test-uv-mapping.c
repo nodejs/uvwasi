@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "../src/uv_mapping.h"
+#include "test-common.h"
 
 #define CHECK_ERR(err) assert(uvwasi__translate_uv_error(UV_ ## err ) ==      \
                               UVWASI_ ## err)
@@ -10,6 +11,8 @@
 #endif /* _WIN32 */
 
 int main(void) {
+  setup_test_environment();
+
   /* Verify error code translation. */
   CHECK_ERR(E2BIG);
   CHECK_ERR(EACCES);

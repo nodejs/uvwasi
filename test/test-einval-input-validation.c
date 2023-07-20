@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "uvwasi.h"
+#include "test-common.h"
 
 #define CHECK(expr) assert(UVWASI_EINVAL == (expr))
 
@@ -23,6 +24,8 @@ int main(void) {
   uvwasi_subscription_t test_sub;
   uvwasi_event_t test_event;
   uvwasi_fd_t test_fd;
+
+  setup_test_environment();
 
   test_void = (void*) &test_fdstat;
 
