@@ -2612,6 +2612,9 @@ uvwasi_errno_t uvwasi_sock_recv(uvwasi_t* uvwasi,
   if (uvwasi == NULL || ri_data == NULL || ro_datalen == NULL || ro_flags == NULL)
     return UVWASI_EINVAL;
 
+  if (ri_flags != 0)
+    return UVWASI_ENOTSUP;
+
   err = uvwasi_fd_table_get(uvwasi->fds,
                             sock,
                             &wrap,
@@ -2660,7 +2663,8 @@ uvwasi_errno_t uvwasi_sock_send(uvwasi_t* uvwasi,
                si_flags,
                so_datalen);
 
-  if (uvwasi == NULL || si_data == NULL || so_datalen == NULL)
+  if (uvwasi == NULL || si_data == NULL || so_datalen == NULL ||
+      si_flags != 0)
     return UVWASI_EINVAL;
 
   err = uvwasi_fd_table_get(uvwasi->fds,
@@ -2693,6 +2697,9 @@ uvwasi_errno_t uvwasi_sock_shutdown(uvwasi_t* uvwasi,
   struct uvwasi_fd_wrap_t *wrap;
   uvwasi_errno_t err = 0;
   shutdown_data_t shutdown_data;
+
+  if (how & ~UVWASI_SHUT_WR)
+    return UVWASI_ENOTSUP;
 
   UVWASI_DEBUG("uvwasi_sock_shutdown(uvwasi=%p, sock=%d, how=%d)\n",
                uvwasi,
@@ -2745,6 +2752,9 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
 
   if (uvwasi == NULL || connect_sock == NULL)
     return UVWASI_EINVAL;
+
+  if (flags & ~UVWASI_FDFLAG_NONBLOCK)
+    return UVWASI_ENOTSUP;
 
   err = uvwasi_fd_table_get(uvwasi->fds,
                             sock,

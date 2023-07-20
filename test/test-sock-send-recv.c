@@ -117,13 +117,29 @@ int main(void) {
 
   uvwasi_size_t received_len = 0;
   uvwasi_roflags_t out_flags;
-
   recv_iovecs[0].buf_len = 1000; 
   recv_iovecs[0].buf = recv_iovecs_buffers[0];
+
+  // validate we get an error if we try to ask for
+  // UVWASI_SOCK_RECV_PEEK
+  // UVWASI_SOCK_RECV_WAITALL
+  err = uvwasi_sock_recv(&uvwasi, fd, recv_iovecs, 1, UVWASI_SOCK_RECV_PEEK,
+                         &received_len, &out_flags);
+  assert(err == UVWASI_ENOTSUP);
+  err = uvwasi_sock_recv(&uvwasi, fd, recv_iovecs, 1, UVWASI_SOCK_RECV_WAITALL,
+                         &received_len, &out_flags);
+  assert(err == UVWASI_ENOTSUP);
+
+  // validate we can successfully receive data
   err = uvwasi_sock_recv(&uvwasi, fd, recv_iovecs, 1, 0, &received_len, &out_flags);
   assert(err == 0);
   assert(received_len == 8);
   assert(strcmp(recv_iovecs[0].buf, "hihihih") == 0);
+
+  // validate that we get an error if we try to set any flags
+  err = uvwasi_sock_send(&uvwasi, fd, send_ciovecs, 2, 1, &nio);
+  assert(err == UVWASI_EINVAL);
+
   err = uvwasi_fd_close(&uvwasi, fd);
   assert(err == 0);
 
@@ -136,6 +152,11 @@ int main(void) {
   err = uvwasi_sock_send(&uvwasi, fd, send_ciovecs, 2, 0, &nio);
   assert(err != 0);
   assert(err == UVWASI_EPIPE);
+
+  // validate we get expected error if we try to request
+  // UVWASI_SHUT_RD
+  err = uvwasi_sock_shutdown(&uvwasi, fd, UVWASI_SHUT_RD);
+  assert(err == UVWASI_ENOTSUP);
 
   // clean up
   err = uvwasi_fd_close(&uvwasi, fd);

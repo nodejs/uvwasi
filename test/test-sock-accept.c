@@ -71,6 +71,16 @@ int main(void) {
   err = uvwasi_sock_accept(&uvwasi, INVALID_SOCK, 0, &fd);
   assert(err == UVWASI_EBADF);
 
+  // validate when we ask for an invalid option
+  err = uvwasi_sock_accept(&uvwasi, TEST_PORT_1, UVWASI_FDFLAG_APPEND, &fd);
+  assert(err == UVWASI_ENOTSUP);
+  err = uvwasi_sock_accept(&uvwasi, TEST_PORT_1, UVWASI_FDFLAG_DSYNC, &fd);
+  assert(err == UVWASI_ENOTSUP);
+  err = uvwasi_sock_accept(&uvwasi, TEST_PORT_1, UVWASI_FDFLAG_RSYNC, &fd);
+  assert(err == UVWASI_ENOTSUP);
+  err = uvwasi_sock_accept(&uvwasi, TEST_PORT_1, UVWASI_FDFLAG_SYNC, &fd);
+  assert(err == UVWASI_ENOTSUP);
+
   // validate the case where there is no connection and we are not
   // blocking
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, UVWASI_FDFLAG_NONBLOCK, &fd);
