@@ -62,8 +62,7 @@ void client_connection_echo_thread(void* time) {
   r = uv_tcp_connect(connect, socket, (const struct sockaddr*)&dest, on_client_connect);
   assert(r == 0);
 
-  uv_run(loop, UV_RUN_NOWAIT);
-  uv_run(loop, UV_RUN_ONCE);
+  uv_run(loop, UV_RUN_DEFAULT);
   uv_loop_close(loop);
   free(loop);
 }
