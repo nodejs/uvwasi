@@ -24,7 +24,7 @@ void on_client_connect(uv_connect_t * req, int status) {
       // error!
       return;
   }
-  uv_close((uv_handle_t *)req->handle, on_uv_close);
+  uv_close((uv_handle_t*)req->handle, on_uv_close);
   free(req);
 }
 
