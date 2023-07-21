@@ -32,7 +32,7 @@ void echo_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     send_buf.len = nread;
     uv_try_write(stream, &send_buf, 1);
   }
-  uv_close((uv_handle_t *) stream, on_uv_close);
+  uv_close((uv_handle_t*) stream, on_uv_close);
   free(buf->base);
 }
 
