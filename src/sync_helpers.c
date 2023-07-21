@@ -61,7 +61,7 @@ static void recv_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* 
   buf->len = recv_data->len;
 }
 
-void do_stream_recv(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
+void do_stream_recv(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   recv_data_t* recv_data;
   recv_data = uv_handle_get_data((uv_handle_t*) stream);
   uv_read_stop(stream);
