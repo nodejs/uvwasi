@@ -24,7 +24,7 @@ static void alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) 
   buf->len = suggested_size;
 }
 
-void echo_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
+void echo_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   if (nread > 0) {
     uv_buf_t send_buf;
     uv_read_stop(stream);
