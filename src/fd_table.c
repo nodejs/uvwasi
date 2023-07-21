@@ -80,7 +80,7 @@ uvwasi_errno_t uvwasi_fd_table_insert(uvwasi_t* uvwasi,
   char* rp_copy;
   char* np_copy;
 
-  if (type != UVWASI_FILETYPE_SOCKET_STREAM ) {
+  if (type != UVWASI_FILETYPE_SOCKET_STREAM) {
     mp_len = strlen(mapped_path);
     rp_len = strlen(real_path);
   } else {
