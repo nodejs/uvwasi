@@ -2595,7 +2595,7 @@ uvwasi_errno_t uvwasi_sock_recv(uvwasi_t* uvwasi,
                                 uvwasi_riflags_t ri_flags,
                                 uvwasi_size_t* ro_datalen,
                                 uvwasi_roflags_t* ro_flags) {
-  struct uvwasi_fd_wrap_t *wrap;
+  struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err = 0;
   recv_data_t recv_data;
 
