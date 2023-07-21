@@ -11,8 +11,8 @@
 #define CONNECT_ADDRESS "127.0.0.1"
 #define TEST_PORT_1 10500
 #define CONNECTION_WAIT_TIME 2000
-int delayedThreadTime = 4000;
-int immediateThreadTime = 0;
+int delayed_thread_time = 4000;
+int immediate_thread_time = 0;
 
 void on_uv_close(uv_handle_t* handle) {
   free(handle);
@@ -88,7 +88,7 @@ int main(void) {
 
   // validate case where there is a pending connection when we do a sock
   // accept
-  start_client_connection_thread(&immediateThreadTime);
+  start_client_connection_thread(&immediate_thread_time);
   uv_sleep(CONNECTION_WAIT_TIME);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
   assert(err == 0);
@@ -98,7 +98,7 @@ int main(void) {
 
   // validate case where there is no connection when we do a sock accept
   // but one comes in afterwards
-  start_client_connection_thread(&delayedThreadTime);
+  start_client_connection_thread(&delayed_thread_time);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, UVWASI_FDFLAG_NONBLOCK, &fd);
   assert(err == UVWASI_EAGAIN);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
@@ -108,8 +108,8 @@ int main(void) {
   assert(err == 0);
 
   // validate case where one accept may queue while one is being handled
-  start_client_connection_thread(&delayedThreadTime);
-  start_client_connection_thread(&delayedThreadTime);
+  start_client_connection_thread(&delayed_thread_time);
+  start_client_connection_thread(&delayed_thread_time);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, UVWASI_FDFLAG_NONBLOCK, &fd);
   assert(err == UVWASI_EAGAIN);
   err = uvwasi_sock_accept(&uvwasi, PREOPEN_SOCK, 0, &fd);
@@ -124,9 +124,9 @@ int main(void) {
   assert(err == 0);
 
   // validate two accepts queue up properly
-  start_client_connection_thread(&immediateThreadTime);
-  start_client_connection_thread(&immediateThreadTime);
-  start_client_connection_thread(&immediateThreadTime);
+  start_client_connection_thread(&immediate_thread_time);
+  start_client_connection_thread(&immediate_thread_time);
+  start_client_connection_thread(&immediate_thread_time);
   uv_sleep(CONNECTION_WAIT_TIME);
   // wait for a connection and then close the fd
   // closing the fd runs the event loop which triggers
