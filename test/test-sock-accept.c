@@ -18,7 +18,7 @@ void on_uv_close(uv_handle_t* handle) {
   free(handle);
 }
 
-void on_client_connect(uv_connect_t * req, int status) {
+void on_client_connect(uv_connect_t* req, int status) {
   if (status < 0) {
       fprintf(stderr, "New connection error %s\n", uv_strerror(status));
       // error!
