@@ -2694,7 +2694,7 @@ uvwasi_errno_t uvwasi_sock_send(uvwasi_t* uvwasi,
 uvwasi_errno_t uvwasi_sock_shutdown(uvwasi_t* uvwasi,
                                     uvwasi_fd_t sock,
                                     uvwasi_sdflags_t how) {
-  struct uvwasi_fd_wrap_t *wrap;
+  struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err = 0;
   shutdown_data_t shutdown_data;
 
