@@ -29,7 +29,7 @@ int free_handle_sync(struct uvwasi_s* uvwasi, uv_handle_t* handle) {
 
 static void do_stream_shutdown(uv_shutdown_t* req, int status) {
   shutdown_data_t* shutdown_data;
-  shutdown_data = uv_handle_get_data((uv_handle_t *) req->handle);
+  shutdown_data = uv_handle_get_data((uv_handle_t*) req->handle);
   shutdown_data->status = status;
   shutdown_data->done = 1;
  }
