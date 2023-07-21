@@ -97,7 +97,7 @@ uvwasi_errno_t uvwasi_fd_table_insert(uvwasi_t* uvwasi,
   if (entry == NULL)
     return UVWASI_ENOMEM;
 
-  if (type != UVWASI_FILETYPE_SOCKET_STREAM ) {
+  if (type != UVWASI_FILETYPE_SOCKET_STREAM) {
     mp_copy = (char*)(entry + 1);
     rp_copy = mp_copy + mp_len + 1;
     np_copy = rp_copy + rp_len + 1;
