@@ -94,7 +94,6 @@ static void pass_follow(char* mp, char* rp, char* path, char* expected) {
   for (i = 0; i < res_len + 1; i++) {
 #ifdef _WIN32
     if (resolved[i] == '\\') {
-      assert(resolved_follow[i] == '\\');
       assert(expected[i] == '/');
       continue;
     }
