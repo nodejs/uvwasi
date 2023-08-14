@@ -79,6 +79,7 @@ static void pass(char* mp, char* rp, char* path, char* expected) {
   }
 
   free(resolved);
+  free(resolved_follow);
 }
 
 static void pass_follow(char* mp, char* rp, char* path, char* expected) {
