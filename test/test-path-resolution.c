@@ -118,7 +118,6 @@ static void fail(char* mp, char* rp, char* path, uvwasi_errno_t expected) {
 
 static void fail_follow(char *mp, char *rp, char *path, uvwasi_errno_t expected)
 {
-  uvwasi_errno_t err;
   char *resolved;
 
   assert(expected == check(mp, rp, path, &resolved, UVWASI_LOOKUP_SYMLINK_FOLLOW));
