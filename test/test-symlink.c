@@ -36,7 +36,7 @@ int main(void) {
   err = uvwasi_init(&uvwasi, &init_options);
   assert(err == 0);
 
-  buf = (unsigned char*) malloc(BUFFER_SIZE);
+  buf = (char*) malloc(BUFFER_SIZE);
   assert(buf != NULL);
   memset(buf, 0, BUFFER_SIZE);
 
