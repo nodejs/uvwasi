@@ -2306,6 +2306,7 @@ uvwasi_errno_t uvwasi_path_symlink(uvwasi_t* uvwasi,
                                    uvwasi_fd_t fd,
                                    const char* new_path,
                                    uvwasi_size_t new_path_len) {
+  char* truncated_old_path;
   char* resolved_new_path;
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
@@ -2332,6 +2333,15 @@ uvwasi_errno_t uvwasi_path_symlink(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
+  truncated_old_path = uvwasi__malloc(uvwasi, old_path_len + 1);
+  if (truncated_old_path == NULL) {
+    uv_mutex_unlock(&wrap->mutex);
+    return UVWASI_ENOMEM;
+  }
+
+  memcpy(truncated_old_path, old_path, old_path_len);
+  truncated_old_path[old_path_len] = '\0';
+
   err = uvwasi__resolve_path(uvwasi,
                              wrap,
                              new_path,
@@ -2340,12 +2350,14 @@ uvwasi_errno_t uvwasi_path_symlink(uvwasi_t* uvwasi,
                              0);
   if (err != UVWASI_ESUCCESS) {
     uv_mutex_unlock(&wrap->mutex);
+    uvwasi__free(uvwasi, truncated_old_path);
     return err;
   }
 
   /* Windows support may require setting the flags option. */
-  r = uv_fs_symlink(NULL, &req, old_path, resolved_new_path, 0, NULL);
+  r = uv_fs_symlink(NULL, &req, truncated_old_path, resolved_new_path, 0, NULL);
   uv_mutex_unlock(&wrap->mutex);
+  uvwasi__free(uvwasi, truncated_old_path);
   uvwasi__free(uvwasi, resolved_new_path);
   uv_fs_req_cleanup(&req);
   if (r != 0)
