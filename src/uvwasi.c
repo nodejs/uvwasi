@@ -2696,7 +2696,7 @@ uvwasi_errno_t uvwasi_sock_shutdown(uvwasi_t* uvwasi,
                                     uvwasi_sdflags_t how) {
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err = 0;
-  shutdown_data_t shutdown_data = {};
+  shutdown_data_t shutdown_data = {0};
 
   if (how & ~UVWASI_SHUT_WR)
     return UVWASI_ENOTSUP;
