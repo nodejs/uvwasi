@@ -86,6 +86,7 @@ int main(void) {
   assert(err == 0);
 
   free(buf);
+  free(init_options.preopens);
   uvwasi_destroy(&uvwasi);
 
   return 0;
