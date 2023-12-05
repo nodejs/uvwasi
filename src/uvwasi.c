@@ -624,6 +624,7 @@ uvwasi_errno_t uvwasi_fd_advise(uvwasi_t* uvwasi,
                                 uvwasi_advice_t advice) {
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
+  uv_fs_t req;
 #ifdef POSIX_FADV_NORMAL
   int mapped_advice;
   int r;
@@ -679,6 +680,17 @@ uvwasi_errno_t uvwasi_fd_advise(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
+  r = uv_fs_fstat(NULL, &req, wrap->fd, NULL);
+  if (r == -1) {
+    err = uvwasi__translate_uv_error(r);
+    goto exit;
+  }
+
+  if (S_ISDIR(req.statbuf.st_mode)) {
+    err = UVWASI_EBADF;
+    goto exit;
+  }
+
   err = UVWASI_ESUCCESS;
 
 #ifdef POSIX_FADV_NORMAL
@@ -686,7 +698,9 @@ uvwasi_errno_t uvwasi_fd_advise(uvwasi_t* uvwasi,
   if (r != 0)
     err = uvwasi__translate_uv_error(uv_translate_sys_error(r));
 #endif /* POSIX_FADV_NORMAL */
+exit:
   uv_mutex_unlock(&wrap->mutex);
+  uv_fs_req_cleanup(&req);
   return err;
 }
 
