@@ -625,9 +625,9 @@ uvwasi_errno_t uvwasi_fd_advise(uvwasi_t* uvwasi,
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
   uv_fs_t req;
+  int r;
 #ifdef POSIX_FADV_NORMAL
   int mapped_advice;
-  int r;
 #endif /* POSIX_FADV_NORMAL */
 
   UVWASI_DEBUG("uvwasi_fd_advise(uvwasi=%p, fd=%d, offset=%"PRIu64", "
