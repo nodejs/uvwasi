@@ -17,6 +17,10 @@
 # define UVWASI_FD_READDIR_SUPPORTED 1
 #endif
 
+#if !defined(S_ISDIR) && defined(S_IFMT) && defined(S_IFDIR)
+  #define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#endif
+
 #include "uvwasi.h"
 #include "uvwasi_alloc.h"
 #include "uv.h"
