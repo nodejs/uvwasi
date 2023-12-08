@@ -8,6 +8,8 @@
 # include <dirent.h>
 # include <time.h>
 #else
+# define _CRT_INTERNAL_NONSTDC_NAMES 1
+# include <sys/stat.h>
 # include <io.h>
 #endif /* _WIN32 */
 
