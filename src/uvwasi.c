@@ -37,10 +37,11 @@
 
 #define VALIDATE_FSTFLAGS_OR_RETURN(flags)                                    \
   do {                                                                        \
-    if ((flags) & ~(UVWASI_FILESTAT_SET_ATIM |                                \
-                    UVWASI_FILESTAT_SET_ATIM_NOW |                            \
-                    UVWASI_FILESTAT_SET_MTIM |                                \
-                    UVWASI_FILESTAT_SET_MTIM_NOW)) {                          \
+    uvwasi_fstflags_t f = flags;                                              \
+    if (((f) & ~(UVWASI_FILESTAT_SET_ATIM | UVWASI_FILESTAT_SET_ATIM_NOW |    \
+                 UVWASI_FILESTAT_SET_MTIM | UVWASI_FILESTAT_SET_MTIM_NOW)) || \
+        ((f) & (UVWASI_FILESTAT_SET_ATIM | UVWASI_FILESTAT_SET_ATIM_NOW)) ||  \
+        ((f) & (UVWASI_FILESTAT_SET_MTIM | UVWASI_FILESTAT_SET_MTIM_NOW))) {  \
       return UVWASI_EINVAL;                                                   \
     }                                                                         \
   } while (0)
