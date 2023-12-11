@@ -2806,7 +2806,7 @@ uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
         goto close_sock_and_error_exit;
       }
 
-      int r = uv_accept((uv_stream_t*) wrap->sock, (uv_stream_t*) uv_connect_sock);
+      r = uv_accept((uv_stream_t*) wrap->sock, (uv_stream_t*) uv_connect_sock);
       if (r == UV_EAGAIN) {
 	// still no connection or error so run the loop again
         continue;
