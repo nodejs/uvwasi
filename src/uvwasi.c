@@ -1158,7 +1158,7 @@ uvwasi_errno_t uvwasi_fd_pread(uvwasi_t* uvwasi,
                offset,
                nread);
 
-  if (uvwasi == NULL || iovs == NULL || nread == NULL)
+  if (uvwasi == NULL || iovs == NULL || nread == NULL || offset > INT64_MAX)
     return UVWASI_EINVAL;
 
   err = uvwasi_fd_table_get(uvwasi->fds,
