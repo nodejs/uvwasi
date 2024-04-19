@@ -1175,6 +1175,15 @@ uvwasi_errno_t uvwasi_fd_pread(uvwasi_t* uvwasi,
     return err;
   }
 
+  // libuv returns EINVAL in this case.  To behave consistently with other
+  // Wasm runtimes, return OK here with a no-op.
+  if (iovs_len == 0) {
+    uv_mutex_unlock(&wrap->mutex);
+    uvwasi__free(uvwasi, bufs);
+    *nread = 0;
+    return UVWASI_ESUCCESS;
+  }
+
   r = uv_fs_read(NULL, &req, wrap->fd, bufs, iovs_len, offset, NULL);
   uv_mutex_unlock(&wrap->mutex);
   uvread = req.result;
@@ -1299,6 +1308,15 @@ uvwasi_errno_t uvwasi_fd_pwrite(uvwasi_t* uvwasi,
     return err;
   }
 
+  // libuv returns EINVAL in this case.  To behave consistently with other
+  // Wasm runtimes, return OK here with a no-op.
+  if (iovs_len == 0) {
+    uv_mutex_unlock(&wrap->mutex);
+    uvwasi__free(uvwasi, bufs);
+    *nwritten = 0;
+    return UVWASI_ESUCCESS;
+  }
+
   r = uv_fs_write(NULL, &req, wrap->fd, bufs, iovs_len, offset, NULL);
   uv_mutex_unlock(&wrap->mutex);
   uvwritten = req.result;
@@ -1332,7 +1350,6 @@ uvwasi_errno_t uvwasi_fd_read(uvwasi_t* uvwasi,
                iovs,
                iovs_len,
                nread);
-
   if (uvwasi == NULL || iovs == NULL || nread == NULL)
     return UVWASI_EINVAL;
 
@@ -1344,6 +1361,15 @@ uvwasi_errno_t uvwasi_fd_read(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS) {
     uv_mutex_unlock(&wrap->mutex);
     return err;
+  }
+
+  // libuv returns EINVAL in this case.  To behave consistently with other
+  // Wasm runtimes, return OK here with a no-op.
+  if (iovs_len == 0) {
+    uv_mutex_unlock(&wrap->mutex);
+    uvwasi__free(uvwasi, bufs);
+    *nread = 0;
+    return UVWASI_ESUCCESS;
   }
 
   r = uv_fs_read(NULL, &req, wrap->fd, bufs, iovs_len, -1, NULL);
@@ -1645,6 +1671,15 @@ uvwasi_errno_t uvwasi_fd_write(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS) {
     uv_mutex_unlock(&wrap->mutex);
     return err;
+  }
+
+  // libuv returns EINVAL in this case.  To behave consistently with other
+  // Wasm runtimes, return OK here with a no-op.
+  if (iovs_len == 0) {
+    uv_mutex_unlock(&wrap->mutex);
+    uvwasi__free(uvwasi, bufs);
+    *nwritten = 0;
+    return UVWASI_ESUCCESS;
   }
 
   r = uv_fs_write(NULL, &req, wrap->fd, bufs, iovs_len, -1, NULL);
