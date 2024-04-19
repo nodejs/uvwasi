@@ -1158,7 +1158,7 @@ uvwasi_errno_t uvwasi_fd_pread(uvwasi_t* uvwasi,
                offset,
                nread);
 
-  if (uvwasi == NULL || iovs == NULL || nread == NULL)
+  if (uvwasi == NULL || (iovs == NULL && iovs_len > 0) || nread == NULL || offset > INT64_MAX)
     return UVWASI_EINVAL;
 
   err = uvwasi_fd_table_get(uvwasi->fds,
@@ -1291,7 +1291,7 @@ uvwasi_errno_t uvwasi_fd_pwrite(uvwasi_t* uvwasi,
                offset,
                nwritten);
 
-  if (uvwasi == NULL || iovs == NULL || nwritten == NULL || offset > INT64_MAX)
+  if (uvwasi == NULL || (iovs == NULL && iovs > 0) || nwritten == NULL || offset > INT64_MAX)
     return UVWASI_EINVAL;
 
   err = uvwasi_fd_table_get(uvwasi->fds,
@@ -1350,7 +1350,7 @@ uvwasi_errno_t uvwasi_fd_read(uvwasi_t* uvwasi,
                iovs,
                iovs_len,
                nread);
-  if (uvwasi == NULL || iovs == NULL || nread == NULL)
+  if (uvwasi == NULL || (iovs == NULL && iovs_len > 0) || nread == NULL)
     return UVWASI_EINVAL;
 
   err = uvwasi_fd_table_get(uvwasi->fds, fd, &wrap, UVWASI_RIGHT_FD_READ, 0);
@@ -1660,7 +1660,7 @@ uvwasi_errno_t uvwasi_fd_write(uvwasi_t* uvwasi,
                iovs_len,
                nwritten);
 
-  if (uvwasi == NULL || iovs == NULL || nwritten == NULL)
+  if (uvwasi == NULL || (iovs == NULL && iovs_len > 0) || nwritten == NULL)
     return UVWASI_EINVAL;
 
   err = uvwasi_fd_table_get(uvwasi->fds, fd, &wrap, UVWASI_RIGHT_FD_WRITE, 0);
