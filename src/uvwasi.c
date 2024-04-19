@@ -1291,7 +1291,7 @@ uvwasi_errno_t uvwasi_fd_pwrite(uvwasi_t* uvwasi,
                offset,
                nwritten);
 
-  if (uvwasi == NULL || (iovs == NULL && iovs > 0) || nwritten == NULL || offset > INT64_MAX)
+  if (uvwasi == NULL || (iovs == NULL && iovs_len > 0) || nwritten == NULL || offset > INT64_MAX)
     return UVWASI_EINVAL;
 
   err = uvwasi_fd_table_get(uvwasi->fds,
