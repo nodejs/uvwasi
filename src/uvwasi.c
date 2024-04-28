@@ -2199,7 +2199,7 @@ uvwasi_errno_t uvwasi_path_readlink(uvwasi_t* uvwasi,
 
   memcpy(buf, req.ptr, len);
   buf[len] = '\0';
-  *bufused = len + 1;
+  *bufused = len;
   uv_fs_req_cleanup(&req);
   return UVWASI_ESUCCESS;
 }
