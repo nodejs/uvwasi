@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.11)
 project (
     uvwasi
     DESCRIPTION "WASI syscall API built atop libuv"
-    VERSION 0.0.20
+    VERSION 0.0.21
     LANGUAGES C
 )
 
