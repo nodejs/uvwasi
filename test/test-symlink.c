@@ -56,7 +56,7 @@ int main(void) {
                              strlen(path) + 1,
                              &bufused);
   assert(err == 0);
-  assert(bufused == strlen(path) + 1);
+  assert(bufused == strlen(path));
   assert(strcmp(buf, path) == 0);
 
   err = uvwasi_path_unlink_file(&uvwasi, 3, linkname, strlen(linkname));
@@ -79,7 +79,7 @@ int main(void) {
                              strlen(truncated_path) + 1,
                              &bufused);
   assert(err == 0);
-  assert(bufused == strlen(truncated_path) + 1);
+  assert(bufused == strlen(truncated_path));
   assert(strcmp(buf, truncated_path) == 0);
 
   err = uvwasi_path_unlink_file(&uvwasi, 3, truncated_linkname, strlen(truncated_linkname));
