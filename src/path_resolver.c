@@ -429,6 +429,11 @@ start:
   normalized_path = NULL;
   err = UVWASI_ESUCCESS;
 
+  if (input_len != strnlen(input, input_len - 1) + 1) {
+    err = UVWASI_EINVAL;
+    goto exit;
+  }
+
   if (1 == uvwasi__is_absolute_path(input, input_len)) {
     err = uvwasi__normalize_absolute_path(uvwasi,
                                           fd,

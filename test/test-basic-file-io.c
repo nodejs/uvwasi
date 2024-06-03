@@ -180,7 +180,7 @@ int main(void) {
                                  3,
                                  UVWASI_LOOKUP_SYMLINK_FOLLOW,
                                  linkname,
-                                 strlen(path) + 1,
+                                 strlen(linkname) + 1,
                                  &stats2);
   assert(err == 0);
   assert(stats2.st_dev == stats.st_dev);
@@ -197,7 +197,7 @@ int main(void) {
                                  3,
                                  0,
                                  linkname,
-                                 strlen(path) + 1,
+                                 strlen(linkname) + 1,
                                  &stats2);
   assert(err == 0);
   assert(stats2.st_dev == stats.st_dev);
