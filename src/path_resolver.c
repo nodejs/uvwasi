@@ -78,9 +78,12 @@ uvwasi_errno_t uvwasi__normalize_path(const char* path,
   char* last;
   size_t cur_len;
   int is_absolute;
+  int has_trailing_slash;
 
   if (path_len > normalized_len)
     return UVWASI_ENOBUFS;
+
+  has_trailing_slash = path_len > 0 && IS_SLASH(path[path_len - 1]);
 
   is_absolute = uvwasi__is_absolute_path(path, path_len);
   normalized_path[0] = '\0';
@@ -156,6 +159,12 @@ uvwasi_errno_t uvwasi__normalize_path(const char* path,
     *ptr = '\0';
   }
 
+  if (has_trailing_slash && !IS_SLASH(*(ptr - 1))) {
+    *ptr = '/';
+    ptr++;
+    *ptr = '\0';
+  }
+
   return UVWASI_ESUCCESS;
 }
 
@@ -171,7 +180,9 @@ static int uvwasi__is_path_sandboxed(const char* path,
     return path == strstr(path, fd_path) ? 1 : 0;
 
   /* Handle relative fds that normalized to '.' */
-  if (fd_path_len == 1 && fd_path[0] == '.') {
+  if ((fd_path_len == 1 && fd_path[0] == '.')
+      || (fd_path_len == 2 && fd_path[0] == '.' && fd_path[1] == '/')
+  ) {
     /* If the fd's path is '.', then any path does not begin with '..' is OK. */
     if ((path_len == 2 && path[0] == '.' && path[1] == '.') ||
         (path_len > 2 && path[0] == '.' && path[1] == '.' && path[2] == '/')) {
@@ -348,7 +359,11 @@ static uvwasi_errno_t uvwasi__resolve_path_to_host(
   fake_path_len = strlen(fd->normalized_path);
 
   /* If the fake path is '.' just ignore it. */
-  if (fake_path_len == 1 && fd->normalized_path[0] == '.') {
+  if ((fake_path_len == 1 && fd->normalized_path[0] == '.')
+      || (fake_path_len == 2
+          && fd->normalized_path[0] == '.'
+          && fd->normalized_path[1] == '/')
+  ) {
     fake_path_len = 0;
   }
 

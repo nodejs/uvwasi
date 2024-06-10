@@ -148,12 +148,12 @@ int main(void) {
   /* Arguments: input path, expected normalized path */
   check_normalize("", ".");
   check_normalize(".", ".");
-  check_normalize("./", ".");
+  check_normalize("./", "./");
   check_normalize("./.", ".");
   check_normalize("./..", "..");
-  check_normalize("./../", "..");
+  check_normalize("./../", "../");
   check_normalize("..", "..");
-  check_normalize("../", "..");
+  check_normalize("../", "../");
   check_normalize("../.", "..");
   check_normalize("../..", "../..");
   check_normalize("/", "/");
@@ -165,18 +165,18 @@ int main(void) {
   check_normalize("/foo/../bar", "/bar");
   check_normalize("/../bar", "/bar");
   check_normalize("/../../../bar", "/bar");
-  check_normalize("/../../../bar/", "/bar");
+  check_normalize("/../../../bar/", "/bar/");
   check_normalize("/../../../", "/");
   check_normalize("////..//../..///", "/");
-  check_normalize("./foo//", "foo");
+  check_normalize("./foo//", "foo/");
   check_normalize("./foo/////bar", "foo/bar");
   check_normalize("//", "/");
-  check_normalize("..//", "..");
-  check_normalize(".//", ".");
+  check_normalize("..//", "../");
+  check_normalize(".//", "./");
   check_normalize("./foo/bar/baz/../../../..", "..");
-  check_normalize("./foo/bar/baz/../../../../", "..");
+  check_normalize("./foo/bar/baz/../../../../", "../");
   check_normalize("./foo/bar/baz/../../../../..", "../..");
-  check_normalize("./foo/bar/baz/../../../../../", "../..");
+  check_normalize("./foo/bar/baz/../../../../../", "../../");
   check_normalize("../../../test_path", "../../../test_path");
   check_normalize("./././test_path", "test_path");
 

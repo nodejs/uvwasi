@@ -2105,8 +2105,13 @@ uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     goto close_file_and_error_exit;
 
-  if ((o_flags & UVWASI_O_DIRECTORY) != 0 &&
-      filetype != UVWASI_FILETYPE_DIRECTORY) {
+  if (
+    (filetype != UVWASI_FILETYPE_DIRECTORY)
+    && (
+      (o_flags & UVWASI_O_DIRECTORY) != 0
+      || (resolved_path[strlen(resolved_path) - 1] == '/')
+    )
+  ) {
     err = UVWASI_ENOTDIR;
     goto close_file_and_error_exit;
   }
