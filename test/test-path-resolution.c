@@ -182,13 +182,13 @@ int main(void) {
 
   /* Arguments: fd mapped path, fd real path, path to resolve, expected path */
   pass("/", "/foo", "test_path", "/foo/test_path");
-  pass("/", "/foo", "/test_path", "/foo/test_path");
+  pass("/", "/foo", "test_path", "/foo/test_path");
   pass("/bar", "/baz", "test_path", "/baz/test_path");
   pass("/bar", "/baz", "./test_path", "/baz/test_path");
   pass("/bar", "/baz", "../bar/test_path", "/baz/test_path");
   pass("/bar", "/baz", "../bar/./test_path/../test_path", "/baz/test_path");
-  pass("/bar", "/baz", "/bar/test_path", "/baz/test_path");
-  pass("/bar", "/baz", "/bar/../bar/test_path", "/baz/test_path");
+  pass("/bar", "/baz", "bar/test_path", "/baz/bar/test_path");
+  pass("/bar", "/baz", "bar/../bar/test_path", "/baz/bar/test_path");
   pass(".", "/foo", "test_path", "/foo/test_path");
   pass("./", "/foo", "test_path", "/foo/test_path");
   pass(".", "/foo", "./test_path", "/foo/test_path");
@@ -222,16 +222,16 @@ int main(void) {
   create_symlink("./qux", TEST_TMP_DIR "/dir/quux");
 
   /* Arguments: fd mapped path, fd real path, path to resolve, expected path */
-  pass_follow("/", TEST_TMP_DIR, "/bar", TEST_TMP_DIR "/foo");
-  pass_follow("/", TEST_TMP_DIR, "/bar2", TEST_TMP_DIR "/foo");
-  pass_follow("/", TEST_TMP_DIR, "/bar3", TEST_TMP_DIR "/foo");
-  pass_follow("/", TEST_TMP_DIR, "/bar4", TEST_TMP_DIR "/foo");
-  pass_follow("/", TEST_TMP_DIR, "/bar5", TEST_TMP_DIR "/foo");
-  pass_follow("/", TEST_TMP_DIR, "/baz", TEST_TMP_DIR "/foo");
-  pass_follow("/", TEST_TMP_DIR, "/baz2", TEST_TMP_DIR "/foo");
-  pass_follow("/", TEST_TMP_DIR, "/baz3", TEST_TMP_DIR "/foo");
-  pass_follow("/", TEST_TMP_DIR, "/dir/qux", TEST_TMP_DIR "/foo");
-  pass_follow("/", TEST_TMP_DIR, "/dir/quux", TEST_TMP_DIR "/foo");
+  pass_follow("/", TEST_TMP_DIR, "bar", TEST_TMP_DIR "/foo");
+  pass_follow("/", TEST_TMP_DIR, "bar2", TEST_TMP_DIR "/foo");
+  pass_follow("/", TEST_TMP_DIR, "bar3", TEST_TMP_DIR "/foo");
+  pass_follow("/", TEST_TMP_DIR, "bar4", TEST_TMP_DIR "/foo");
+  pass_follow("/", TEST_TMP_DIR, "bar5", TEST_TMP_DIR "/foo");
+  pass_follow("/", TEST_TMP_DIR, "baz", TEST_TMP_DIR "/foo");
+  pass_follow("/", TEST_TMP_DIR, "baz2", TEST_TMP_DIR "/foo");
+  pass_follow("/", TEST_TMP_DIR, "baz3", TEST_TMP_DIR "/foo");
+  pass_follow("/", TEST_TMP_DIR, "dir/qux", TEST_TMP_DIR "/foo");
+  pass_follow("/", TEST_TMP_DIR, "dir/quux", TEST_TMP_DIR "/foo");
 
   /* Arguments: fd mapped path, fd real path, path to resolve, expected error */
   fail_follow("/dir", TEST_TMP_DIR "/dir", "/dir/qux", UVWASI_ENOTCAPABLE);
