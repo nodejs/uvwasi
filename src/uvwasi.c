@@ -2401,6 +2401,12 @@ uvwasi_errno_t uvwasi_path_symlink(uvwasi_t* uvwasi,
   memcpy(truncated_old_path, old_path, old_path_len);
   truncated_old_path[old_path_len] = '\0';
 
+  if (old_path_len > 0 && old_path[0] == '/') {
+    uv_mutex_unlock(&wrap->mutex);
+    uvwasi__free(uvwasi, truncated_old_path);
+    return UVWASI_EPERM;
+  }
+
   err = uvwasi__resolve_path(uvwasi,
                              wrap,
                              new_path,
