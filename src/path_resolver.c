@@ -72,6 +72,10 @@ uvwasi_errno_t uvwasi__normalize_path(const char* path,
                                       uvwasi_size_t path_len,
                                       char* normalized_path,
                                       uvwasi_size_t normalized_len) {
+  /* Normalizes path and stores the resulting buffer in normalized_path.
+     the sizes of the buffers must correspond to strlen() of the relevant
+     buffers, i.e. there must be room in the relevant buffers for a
+     NULL-byte. */
   const char* cur;
   char* ptr;
   char* next;
