@@ -349,7 +349,8 @@ static uvwasi_errno_t uvwasi__resolve_path_to_host(
                                               char** resolved_path,
                                               uvwasi_size_t* resolved_len
                                             ) {
-  /* Return the normalized path, but resolved to the host's real path. */
+  /* Return the normalized path, but resolved to the host's real path.
+     `path` must be a NULL-terminated string. */
   char* res_path;
   char* stripped_path;
   int real_path_len;
