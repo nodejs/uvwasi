@@ -2500,6 +2500,26 @@ To do a release complete the following steps:
 * Update uvwasi in Node.js or any projects you want to update - there are several
   other projects that use uvwasi.
 
+## Running fuzzers locally
+
+We support fuzzing by way of [ClusterFuzzLite](https://google.github.io/clusterfuzzlite/),
+which is run automatically against pull requests. You can run these fuzzers
+locally with the [OSS-Fuzz](https://github.com/google/oss-fuzz)  fuzzing
+infrastructure, using the following steps:
+
+```sh
+git clone https://github.com/google/oss-fuzz
+git clone https://github.com/nodejs/uvwasi
+cd uvwasi
+
+# Build the fuzzers in .clusterfuzzlite
+python3 ../oss-fuzz/infra/helper.py build_fuzzers --external $PWD
+
+# Run the fuzzer for 10 seconds
+python3 ../oss-fuzz/infra/helper.py run_fuzzer --external $PWD fuzz_normalize_path -- -max_total_time=10
+```
+
+
 [WASI]: https://github.com/WebAssembly/WASI
 [libuv]: https://github.com/libuv/libuv
 [preview 1]: https://github.com/WebAssembly/WASI/blob/main/legacy/preview1/docs.md
