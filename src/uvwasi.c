@@ -1447,12 +1447,15 @@ uvwasi_errno_t uvwasi_fd_readdir(uvwasi_t* uvwasi,
   cur_cookie = 0;
   while (cur_cookie < cookie) {
     r = uv_fs_readdir(NULL, &req, dir, NULL);
+    cur_cookie += (uvwasi_dircookie_t)r;
     if (r < 0) {
       err = uvwasi__translate_uv_error(r);
       uv_fs_req_cleanup(&req);
       goto exit;
     }
-    cur_cookie += (uvwasi_dircookie_t)r;
+    if (r == 0) {
+      break;
+    }
   }
 
   /* Read the directory entries into the provided buffer. */
