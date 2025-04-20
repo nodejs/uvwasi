@@ -1396,6 +1396,7 @@ uvwasi_errno_t uvwasi_fd_readdir(uvwasi_t* uvwasi,
 #if defined(UVWASI_FD_READDIR_SUPPORTED)
   /* TODO(cjihrig): Avoid opening and closing the directory on each call. */
   struct uvwasi_fd_wrap_t* wrap;
+  uvwasi_dircookie_t cur_cookie;
   uvwasi_dirent_t dirent;
   uv_dirent_t dirents[UVWASI__READDIR_NUM_ENTRIES];
   uv_dir_t* dir;
@@ -1404,7 +1405,6 @@ uvwasi_errno_t uvwasi_fd_readdir(uvwasi_t* uvwasi,
   size_t name_len;
   size_t available;
   size_t size_to_cp;
-  long tell;
   int i;
   int r;
 #endif /* defined(UVWASI_FD_READDIR_SUPPORTED) */
@@ -1444,8 +1444,16 @@ uvwasi_errno_t uvwasi_fd_readdir(uvwasi_t* uvwasi,
   uv_fs_req_cleanup(&req);
 
   /* Seek to the proper location in the directory. */
-  if (cookie != UVWASI_DIRCOOKIE_START)
-    seekdir(dir->dir, cookie);
+  cur_cookie = 0;
+  while (cur_cookie < cookie) {
+    r = uv_fs_readdir(NULL, &req, dir, NULL);
+    if (r < 0) {
+      err = uvwasi__translate_uv_error(r);
+      uv_fs_req_cleanup(&req);
+      goto exit;
+    }
+    cur_cookie += (uvwasi_dircookie_t)r;
+  }
 
   /* Read the directory entries into the provided buffer. */
   err = UVWASI_ESUCCESS;
@@ -1460,15 +1468,9 @@ uvwasi_errno_t uvwasi_fd_readdir(uvwasi_t* uvwasi,
     available = 0;
 
     for (i = 0; i < r; i++) {
-      tell = telldir(dir->dir);
-      if (tell < 0) {
-        err = uvwasi__translate_uv_error(uv_translate_sys_error(errno));
-        uv_fs_req_cleanup(&req);
-        goto exit;
-      }
-
+      cur_cookie++;
       name_len = strlen(dirents[i].name);
-      dirent.d_next = (uvwasi_dircookie_t) tell;
+      dirent.d_next = (uvwasi_dircookie_t) cur_cookie;
       /* TODO(cjihrig): libuv doesn't provide d_ino, and d_type is not
                         supported on all platforms. Use stat()? */
       dirent.d_ino = 0;
