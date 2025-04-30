@@ -395,6 +395,10 @@ uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, const uvwasi_options_t* options) {
 
   if (options->preopen_socketc > 0) {
     uvwasi->loop = uvwasi__malloc(uvwasi, sizeof(uv_loop_t));
+
+    if (uvwasi->loop == NULL)
+      return UVWASI_ENOMEM;
+
     r = uv_loop_init(uvwasi->loop);
     if (r != 0) {
       err = uvwasi__translate_uv_error(r);
