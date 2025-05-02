@@ -4,6 +4,7 @@
 #ifndef _WIN32
 # include <sched.h>
 # include <sys/types.h>
+# include <sys/ioctl.h>
 # include <unistd.h>
 # include <dirent.h>
 # include <time.h>
@@ -11,7 +12,12 @@
 # define _CRT_INTERNAL_NONSTDC_NAMES 1
 # include <sys/stat.h>
 # include <io.h>
+# include <winsock2.h>
 #endif /* _WIN32 */
+
+#ifdef __APPLE__
+# include <sys/filio.h>  /* Required for FIONREAD on macOS */
+#endif
 
 #define UVWASI__READDIR_NUM_ENTRIES 1
 
@@ -1049,7 +1055,11 @@ exit:
 uvwasi_errno_t uvwasi_fd_filestat_set_size(uvwasi_t* uvwasi,
                                            uvwasi_fd_t fd,
                                            uvwasi_filesize_t st_size) {
-  /* TODO(cjihrig): uv_fs_ftruncate() takes an int64_t. st_size is uint64_t. */
+  /* Check if st_size (uint64_t) exceeds the range of int64_t for uv_fs_ftruncate() */
+  if (st_size > INT64_MAX) {
+    return UVWASI_EOVERFLOW;
+  }
+  
   struct uvwasi_fd_wrap_t* wrap;
   uv_fs_t req;
   uvwasi_errno_t err;
@@ -1089,11 +1099,9 @@ uvwasi_errno_t uvwasi_fd_filestat_set_times(uvwasi_t* uvwasi,
                                             uvwasi_timestamp_t st_mtim,
                                             uvwasi_fstflags_t fst_flags) {
   struct uvwasi_fd_wrap_t* wrap;
-  uvwasi_timestamp_t atim;
-  uvwasi_timestamp_t mtim;
-  uv_fs_t req;
   uvwasi_errno_t err;
-  int r;
+  uv_timespec_t atim;
+  uv_timespec_t mtim;
 
   UVWASI_DEBUG("uvwasi_fd_filestat_set_times(uvwasi=%p, fd=%d, "
                "st_atim=%"PRIu64", st_mtim=%"PRIu64", fst_flags=%d)\n",
@@ -2588,8 +2596,28 @@ uvwasi_errno_t uvwasi_poll_oneoff(uvwasi_t* uvwasi,
         ;
       else if ((fdevent->revents & UV_DISCONNECT) != 0)
         event->u.fd_readwrite.flags = UVWASI_EVENT_FD_READWRITE_HANGUP;
-      else if ((fdevent->revents & (UV_READABLE | UV_WRITABLE)) != 0)
-        ; /* TODO(cjihrig): Set nbytes if type is UVWASI_EVENTTYPE_FD_READ. */
+      else if ((fdevent->revents & (UV_READABLE | UV_WRITABLE)) != 0) {
+        if (fdevent->type == UVWASI_EVENTTYPE_FD_READ && (fdevent->revents & UV_READABLE) != 0) {
+          /* For READ events, try to determine how many bytes are available to read */
+          int available = 0;
+          if (fdevent->wrap != NULL && fdevent->wrap->fd >= 0) {
+#ifdef _WIN32
+            /* Windows doesn't support FIONREAD for non-socket file descriptors */
+            if (uv_guess_handle(fdevent->wrap->fd) == UV_TCP ||
+                uv_guess_handle(fdevent->wrap->fd) == UV_NAMED_PIPE ||
+                uv_guess_handle(fdevent->wrap->fd) == UV_UDP) {
+              if (ioctlsocket(fdevent->wrap->fd, FIONREAD, (u_long*)&available) != 0)
+                available = 0;
+            }
+#else
+            /* Use FIONREAD to get the number of bytes available to read */
+            if (ioctl(fdevent->wrap->fd, FIONREAD, &available) < 0)
+              available = 0;
+#endif
+          }
+          event->u.fd_readwrite.nbytes = (uvwasi_filesize_t)available;
+        }
+      }
       else
         continue;
 
