@@ -194,7 +194,13 @@ int uvwasi__translate_to_uv_signal(uvwasi_signal_t sig) {
 
 
 uvwasi_timestamp_t uvwasi__timespec_to_timestamp(const uv_timespec_t* ts) {
-  /* TODO(cjihrig): Handle overflow. */
+  /* Check for potential overflow when converting from seconds to nanoseconds */
+  if (ts->tv_sec > UINT64_MAX / NANOS_PER_SEC) {
+    /* Overflow would occur, return the maximum possible timestamp value */
+    return UINT64_MAX;
+  }
+  
+  /* No overflow, perform the calculation safely */
   return (uvwasi_timestamp_t) ts->tv_sec * NANOS_PER_SEC + ts->tv_nsec;
 }
 
