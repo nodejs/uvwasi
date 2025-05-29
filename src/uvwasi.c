@@ -807,7 +807,7 @@ uvwasi_errno_t uvwasi_fd_close(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
     uv_mutex_unlock(&wrap->mutex);
     if (err != UVWASI_ESUCCESS) {
       goto exit;
-    }   
+    }
   }
 
   if (r != 0) {
@@ -2370,6 +2370,7 @@ uvwasi_errno_t uvwasi_path_symlink(uvwasi_t* uvwasi,
                                    const char* new_path,
                                    uvwasi_size_t new_path_len) {
   char* truncated_old_path;
+  char* resolved_old_path;
   char* resolved_new_path;
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
@@ -2396,20 +2397,32 @@ uvwasi_errno_t uvwasi_path_symlink(uvwasi_t* uvwasi,
   if (err != UVWASI_ESUCCESS)
     return err;
 
+  resolved_old_path = NULL;
+  resolved_new_path = NULL;
+  truncated_old_path = NULL;
+
   truncated_old_path = uvwasi__malloc(uvwasi, old_path_len + 1);
   if (truncated_old_path == NULL) {
-    uv_mutex_unlock(&wrap->mutex);
-    return UVWASI_ENOMEM;
+    err = UVWASI_ENOMEM;
+    goto exit;
   }
 
   memcpy(truncated_old_path, old_path, old_path_len);
   truncated_old_path[old_path_len] = '\0';
 
   if (old_path_len > 0 && old_path[0] == '/') {
-    uv_mutex_unlock(&wrap->mutex);
-    uvwasi__free(uvwasi, truncated_old_path);
-    return UVWASI_EPERM;
+    err = UVWASI_EPERM;
+    goto exit;
   }
+
+  err = uvwasi__resolve_path(uvwasi,
+                             wrap,
+                             old_path,
+                             old_path_len,
+                             &resolved_old_path,
+                             0);
+  if (err != UVWASI_ESUCCESS)
+    goto exit;
 
   err = uvwasi__resolve_path(uvwasi,
                              wrap,
@@ -2417,24 +2430,27 @@ uvwasi_errno_t uvwasi_path_symlink(uvwasi_t* uvwasi,
                              new_path_len,
                              &resolved_new_path,
                              0);
-  if (err != UVWASI_ESUCCESS) {
-    uv_mutex_unlock(&wrap->mutex);
-    uvwasi__free(uvwasi, truncated_old_path);
-    return err;
-  }
+  if (err != UVWASI_ESUCCESS)
+    goto exit;
+
 
   /* Windows support may require setting the flags option. */
   r = uv_fs_symlink(NULL, &req, truncated_old_path, resolved_new_path, 0, NULL);
-  uv_mutex_unlock(&wrap->mutex);
-  uvwasi__free(uvwasi, truncated_old_path);
-  uvwasi__free(uvwasi, resolved_new_path);
   uv_fs_req_cleanup(&req);
-  if (r != 0)
-    return uvwasi__translate_uv_error(r);
+  if (r != 0) {
+    err = uvwasi__translate_uv_error(r);
+    goto exit;
+  }
 
-  return UVWASI_ESUCCESS;
+  err = UVWASI_ESUCCESS;
+exit:
+  uv_mutex_unlock(&wrap->mutex);
+  uvwasi__free(uvwasi, resolved_old_path);
+  uvwasi__free(uvwasi, resolved_new_path);
+  uvwasi__free(uvwasi, truncated_old_path);
+
+  return err;
 }
-
 
 uvwasi_errno_t uvwasi_path_unlink_file(uvwasi_t* uvwasi,
                                        uvwasi_fd_t fd,
@@ -2808,7 +2824,7 @@ uvwasi_errno_t uvwasi_sock_shutdown(uvwasi_t* uvwasi,
 
   uv_mutex_unlock(&wrap->mutex);
 
-  if (shutdown_data.status != 0) 
+  if (shutdown_data.status != 0)
     return uvwasi__translate_uv_error(shutdown_data.status);
 
   return UVWASI_ESUCCESS;
