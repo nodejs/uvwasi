@@ -1452,10 +1452,13 @@ uvwasi_errno_t uvwasi_fd_readdir(uvwasi_t* uvwasi,
       uv_fs_req_cleanup(&req);
       goto exit;
     }
+
+    cur_cookie += (uvwasi_dircookie_t)r;
+    uv_fs_req_cleanup(&req);
+
     if (r == 0) {
       break;
     }
-    cur_cookie += (uvwasi_dircookie_t)r;
   }
 
   /* Read the directory entries into the provided buffer. */
