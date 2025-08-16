@@ -99,6 +99,7 @@ endif()
 
 ## Static library target.
 add_library(uvwasi_a STATIC ${uvwasi_sources})
+set_target_properties(uvwasi_a PROPERTIES OUTPUT_NAME "uvwasi")
 target_compile_definitions(uvwasi_a PRIVATE ${uvwasi_defines})
 target_compile_options(uvwasi_a PRIVATE ${uvwasi_cflags})
 target_include_directories(uvwasi_a PRIVATE ${PROJECT_SOURCE_DIR}/include)
