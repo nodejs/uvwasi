@@ -13,7 +13,7 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 set(LIBUV_VERSION v1.44.2)
 
 include(CMakeDependentOption)
-cmake_dependent_option(UVWASI_BUILD_TESTS
+cmake_dependent_option(BUILD_TESTING
   "Build the unit tests when uvwasi is the root project" ON
   "CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR" OFF)
 
@@ -122,7 +122,7 @@ endif()
 
 
 ## Test targets.
-if(UVWASI_BUILD_TESTS)
+if(BUILD_TESTING)
     enable_testing()
     file(GLOB test_files "test/test-*.c")
     foreach(file ${test_files})
