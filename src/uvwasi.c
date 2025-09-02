@@ -136,6 +136,7 @@ void* uvwasi__malloc(const uvwasi_t* uvwasi, size_t size) {
   return uvwasi->allocator->malloc(size, uvwasi->allocator->mem_user_data);
 }
 
+UVWASI_EXPORT
 void uvwasi__free(const uvwasi_t* uvwasi, void* ptr) {
   if (ptr == NULL)
     return;
@@ -249,6 +250,7 @@ void on_new_connection(uv_stream_t *server, int status) {
   // just do nothing
 }
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_init(uvwasi_t* uvwasi, const uvwasi_options_t* options) {
   uv_fs_t realpath_req;
   uv_fs_t open_req;
@@ -435,6 +437,7 @@ exit:
 }
 
 
+UVWASI_EXPORT
 void uvwasi_destroy(uvwasi_t* uvwasi) {
   if (uvwasi == NULL)
     return;
@@ -458,6 +461,7 @@ void uvwasi_destroy(uvwasi_t* uvwasi) {
 }
 
 
+UVWASI_EXPORT
 void uvwasi_options_init(uvwasi_options_t* options) {
   if (options == NULL)
     return;
@@ -477,6 +481,7 @@ void uvwasi_options_init(uvwasi_options_t* options) {
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_embedder_remap_fd(uvwasi_t* uvwasi,
                                         const uvwasi_fd_t fd,
                                         uv_file new_host_fd) {
@@ -496,6 +501,7 @@ uvwasi_errno_t uvwasi_embedder_remap_fd(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_args_get(uvwasi_t* uvwasi, char** argv, char* argv_buf) {
   uvwasi_size_t i;
 
@@ -516,6 +522,7 @@ uvwasi_errno_t uvwasi_args_get(uvwasi_t* uvwasi, char** argv, char* argv_buf) {
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_args_sizes_get(uvwasi_t* uvwasi,
                                      uvwasi_size_t* argc,
                                      uvwasi_size_t* argv_buf_size) {
@@ -533,6 +540,7 @@ uvwasi_errno_t uvwasi_args_sizes_get(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_clock_res_get(uvwasi_t* uvwasi,
                                     uvwasi_clockid_t clock_id,
                                     uvwasi_timestamp_t* resolution) {
@@ -559,6 +567,7 @@ uvwasi_errno_t uvwasi_clock_res_get(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_clock_time_get(uvwasi_t* uvwasi,
                                      uvwasi_clockid_t clock_id,
                                      uvwasi_timestamp_t precision,
@@ -589,6 +598,7 @@ uvwasi_errno_t uvwasi_clock_time_get(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_environ_get(uvwasi_t* uvwasi,
                                   char** environment,
                                   char* environ_buf) {
@@ -612,6 +622,7 @@ uvwasi_errno_t uvwasi_environ_get(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_environ_sizes_get(uvwasi_t* uvwasi,
                                         uvwasi_size_t* environ_count,
                                         uvwasi_size_t* environ_buf_size) {
@@ -630,6 +641,7 @@ uvwasi_errno_t uvwasi_environ_sizes_get(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_advise(uvwasi_t* uvwasi,
                                 uvwasi_fd_t fd,
                                 uvwasi_filesize_t offset,
@@ -718,6 +730,7 @@ exit:
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_allocate(uvwasi_t* uvwasi,
                                   uvwasi_fd_t fd,
                                   uvwasi_filesize_t offset,
@@ -780,6 +793,7 @@ exit:
   return err;
 }
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_close(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err = 0;
@@ -823,6 +837,7 @@ exit:
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_datasync(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
   struct uvwasi_fd_wrap_t* wrap;
   uvwasi_errno_t err;
@@ -853,6 +868,7 @@ uvwasi_errno_t uvwasi_fd_datasync(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_fdstat_get(uvwasi_t* uvwasi,
                                     uvwasi_fd_t fd,
                                     uvwasi_fdstat_t* buf) {
@@ -894,6 +910,7 @@ uvwasi_errno_t uvwasi_fd_fdstat_get(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_fdstat_set_flags(uvwasi_t* uvwasi,
                                           uvwasi_fd_t fd,
                                           uvwasi_fdflags_t flags) {
@@ -964,6 +981,7 @@ uvwasi_errno_t uvwasi_fd_fdstat_set_flags(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_fdstat_set_rights(uvwasi_t* uvwasi,
                                            uvwasi_fd_t fd,
                                            uvwasi_rights_t fs_rights_base,
@@ -1007,6 +1025,7 @@ exit:
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_filestat_get(uvwasi_t* uvwasi,
                                       uvwasi_fd_t fd,
                                       uvwasi_filestat_t* buf) {
@@ -1046,6 +1065,7 @@ exit:
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_filestat_set_size(uvwasi_t* uvwasi,
                                            uvwasi_fd_t fd,
                                            uvwasi_filesize_t st_size) {
@@ -1083,6 +1103,7 @@ uvwasi_errno_t uvwasi_fd_filestat_set_size(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_filestat_set_times(uvwasi_t* uvwasi,
                                             uvwasi_fd_t fd,
                                             uvwasi_timestamp_t st_atim,
@@ -1140,6 +1161,7 @@ uvwasi_errno_t uvwasi_fd_filestat_set_times(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_pread(uvwasi_t* uvwasi,
                                uvwasi_fd_t fd,
                                const uvwasi_iovec_t* iovs,
@@ -1201,6 +1223,7 @@ uvwasi_errno_t uvwasi_fd_pread(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_prestat_get(uvwasi_t* uvwasi,
                                      uvwasi_fd_t fd,
                                      uvwasi_prestat_t* buf) {
@@ -1232,6 +1255,7 @@ exit:
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_prestat_dir_name(uvwasi_t* uvwasi,
                                           uvwasi_fd_t fd,
                                           char* path,
@@ -1272,6 +1296,7 @@ exit:
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_pwrite(uvwasi_t* uvwasi,
                                 uvwasi_fd_t fd,
                                 const uvwasi_ciovec_t* iovs,
@@ -1333,6 +1358,7 @@ uvwasi_errno_t uvwasi_fd_pwrite(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_read(uvwasi_t* uvwasi,
                               uvwasi_fd_t fd,
                               const uvwasi_iovec_t* iovs,
@@ -1387,6 +1413,7 @@ uvwasi_errno_t uvwasi_fd_read(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_readdir(uvwasi_t* uvwasi,
                                  uvwasi_fd_t fd,
                                  void* buf,
@@ -1551,6 +1578,7 @@ exit:
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_renumber(uvwasi_t* uvwasi,
                                   uvwasi_fd_t from,
                                   uvwasi_fd_t to) {
@@ -1566,6 +1594,7 @@ uvwasi_errno_t uvwasi_fd_renumber(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_seek(uvwasi_t* uvwasi,
                               uvwasi_fd_t fd,
                               uvwasi_filedelta_t offset,
@@ -1595,6 +1624,7 @@ uvwasi_errno_t uvwasi_fd_seek(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_sync(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
   struct uvwasi_fd_wrap_t* wrap;
   uv_fs_t req;
@@ -1625,6 +1655,7 @@ uvwasi_errno_t uvwasi_fd_sync(uvwasi_t* uvwasi, uvwasi_fd_t fd) {
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_tell(uvwasi_t* uvwasi,
                               uvwasi_fd_t fd,
                               uvwasi_filesize_t* offset) {
@@ -1649,6 +1680,7 @@ uvwasi_errno_t uvwasi_fd_tell(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_fd_write(uvwasi_t* uvwasi,
                                uvwasi_fd_t fd,
                                const uvwasi_ciovec_t* iovs,
@@ -1704,6 +1736,7 @@ uvwasi_errno_t uvwasi_fd_write(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_path_create_directory(uvwasi_t* uvwasi,
                                             uvwasi_fd_t fd,
                                             const char* path,
@@ -1752,6 +1785,7 @@ exit:
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_path_filestat_get(uvwasi_t* uvwasi,
                                         uvwasi_fd_t fd,
                                         uvwasi_lookupflags_t flags,
@@ -1810,6 +1844,7 @@ exit:
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_path_filestat_set_times(uvwasi_t* uvwasi,
                                               uvwasi_fd_t fd,
                                               uvwasi_lookupflags_t flags,
@@ -1889,6 +1924,7 @@ exit:
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_path_link(uvwasi_t* uvwasi,
                                 uvwasi_fd_t old_fd,
                                 uvwasi_lookupflags_t old_flags,
@@ -1995,6 +2031,7 @@ exit:
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_path_open(uvwasi_t* uvwasi,
                                 uvwasi_fd_t dirfd,
                                 uvwasi_lookupflags_t dirflags,
@@ -2159,6 +2196,7 @@ close_file_and_error_exit:
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_path_readlink(uvwasi_t* uvwasi,
                                     uvwasi_fd_t fd,
                                     const char* path,
@@ -2222,6 +2260,7 @@ uvwasi_errno_t uvwasi_path_readlink(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_path_remove_directory(uvwasi_t* uvwasi,
                                             uvwasi_fd_t fd,
                                             const char* path,
@@ -2268,6 +2307,7 @@ uvwasi_errno_t uvwasi_path_remove_directory(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_path_rename(uvwasi_t* uvwasi,
                                   uvwasi_fd_t old_fd,
                                   const char* old_path,
@@ -2371,6 +2411,7 @@ exit:
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_path_symlink(uvwasi_t* uvwasi,
                                    const char* old_path,
                                    uvwasi_size_t old_path_len,
@@ -2460,6 +2501,7 @@ exit:
   return err;
 }
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_path_unlink_file(uvwasi_t* uvwasi,
                                        uvwasi_fd_t fd,
                                        const char* path,
@@ -2506,6 +2548,7 @@ uvwasi_errno_t uvwasi_path_unlink_file(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_poll_oneoff(uvwasi_t* uvwasi,
                                   const uvwasi_subscription_t* in,
                                   uvwasi_event_t* out,
@@ -2629,6 +2672,7 @@ exit:
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_proc_exit(uvwasi_t* uvwasi, uvwasi_exitcode_t rval) {
   UVWASI_DEBUG("uvwasi_proc_exit(uvwasi=%p, rval=%d)\n", uvwasi, rval);
   exit(rval);
@@ -2636,6 +2680,7 @@ uvwasi_errno_t uvwasi_proc_exit(uvwasi_t* uvwasi, uvwasi_exitcode_t rval) {
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_proc_raise(uvwasi_t* uvwasi, uvwasi_signal_t sig) {
   int r;
 
@@ -2656,6 +2701,7 @@ uvwasi_errno_t uvwasi_proc_raise(uvwasi_t* uvwasi, uvwasi_signal_t sig) {
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_random_get(uvwasi_t* uvwasi,
                                  void* buf,
                                  uvwasi_size_t buf_len) {
@@ -2677,6 +2723,7 @@ uvwasi_errno_t uvwasi_random_get(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_sched_yield(uvwasi_t* uvwasi) {
   UVWASI_DEBUG("uvwasi_sched_yield(uvwasi=%p)\n", uvwasi);
 
@@ -2693,6 +2740,7 @@ uvwasi_errno_t uvwasi_sched_yield(uvwasi_t* uvwasi) {
   return UVWASI_ESUCCESS;
 }
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_sock_recv(uvwasi_t* uvwasi,
                                 uvwasi_fd_t sock,
                                 const uvwasi_iovec_t* ri_data,
@@ -2747,6 +2795,7 @@ uvwasi_errno_t uvwasi_sock_recv(uvwasi_t* uvwasi,
 }
 
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_sock_send(uvwasi_t* uvwasi,
                                 uvwasi_fd_t sock,
                                 const uvwasi_ciovec_t* si_data,
@@ -2796,6 +2845,7 @@ uvwasi_errno_t uvwasi_sock_send(uvwasi_t* uvwasi,
   return UVWASI_ESUCCESS;
 }
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_sock_shutdown(uvwasi_t* uvwasi,
                                     uvwasi_fd_t sock,
                                     uvwasi_sdflags_t how) {
@@ -2838,6 +2888,7 @@ uvwasi_errno_t uvwasi_sock_shutdown(uvwasi_t* uvwasi,
   return UVWASI_ESUCCESS;
 }
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_sock_accept(uvwasi_t* uvwasi,
                                   uvwasi_fd_t sock,
                                   uvwasi_fdflags_t flags,
