@@ -322,4 +322,14 @@ typedef uint8_t uvwasi_whence_t;
 #define UVWASI_WHENCE_CUR 1
 #define UVWASI_WHENCE_END 2
 
+#if defined(_WIN32) || defined(__CYGWIN__)
+  #ifdef BUILDING_DLL
+    #define UVWASI_EXPORT __declspec(dllexport)
+  #else
+    #define UVWASI_EXPORT __declspec(dllimport)
+  #endif
+#else
+  #define UVWASI_EXPORT __attribute__((visibility("default")))
+#endif
+
 #endif /* __UVWASI_WASI_TYPES_H__ */

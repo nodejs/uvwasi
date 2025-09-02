@@ -20,7 +20,7 @@ cmake_dependent_option(UVWASI_BUILD_TESTS
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/out)
 
 if(CMAKE_C_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
-  list(APPEND uvwasi_cflags --std=gnu89)
+  list(APPEND uvwasi_cflags -fvisibility=hidden --std=gnu89)
   list(APPEND uvwasi_cflags -Wall -Wsign-compare -Wextra -Wstrict-prototypes)
   list(APPEND uvwasi_cflags -Wno-unused-parameter)
 endif()
