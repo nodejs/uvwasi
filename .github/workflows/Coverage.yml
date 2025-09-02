@@ -9,7 +9,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
       - name: Test Coverage
         run: |
           sudo apt update && sudo apt install lcov -y

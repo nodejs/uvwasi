@@ -22,7 +22,7 @@ jobs:
           - os: ubuntu-latest
             config: {variation: 'debug-log', generate_options: '-DUVWASI_DEBUG_LOG=ON -DCMAKE_C_FLAGS="-Wall -Werror"'}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
       - name: Environment Information
         run: npx envinfo
       - name: Build and Test
