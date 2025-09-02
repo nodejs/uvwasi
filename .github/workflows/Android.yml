@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     container: reactnativecommunity/react-native-android:7.0
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
       - name: Envinfo
         run: npx envinfo
       - name: Build android arm64
