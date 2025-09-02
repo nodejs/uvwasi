@@ -124,12 +124,14 @@ STRUCT(subscription_t)
 #undef STRUCT
 #undef IOVS_STRUCT
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_serdes_readv_ciovec_t(const void* ptr,
                                             size_t end,
                                             size_t offset,
                                             uvwasi_ciovec_t* iovs,
                                             uvwasi_size_t iovs_len);
 
+UVWASI_EXPORT
 uvwasi_errno_t uvwasi_serdes_readv_iovec_t(const void* ptr,
                                            size_t end,
                                            size_t offset,
@@ -137,7 +139,9 @@ uvwasi_errno_t uvwasi_serdes_readv_iovec_t(const void* ptr,
                                            uvwasi_size_t iovs_len);
 
 /* Helper functions for memory bounds checking. */
+UVWASI_EXPORT
 int uvwasi_serdes_check_bounds(size_t offset, size_t end, size_t size);
+UVWASI_EXPORT
 int uvwasi_serdes_check_array_bounds(size_t offset,
                                      size_t end,
                                      size_t size,
