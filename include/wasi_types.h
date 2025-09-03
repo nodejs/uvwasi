@@ -322,7 +322,7 @@ typedef uint8_t uvwasi_whence_t;
 #define UVWASI_WHENCE_CUR 1
 #define UVWASI_WHENCE_END 2
 
-#if NEED_UVWASI_EXPORT
+#ifdef NEED_UVWASI_EXPORT
   #define UVWASI_EXPORT __attribute__((visibility("default")))
 #else
   #define UVWASI_EXPORT
