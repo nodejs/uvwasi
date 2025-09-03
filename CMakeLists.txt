@@ -21,6 +21,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/out)
 
 if(CMAKE_C_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
   list(APPEND uvwasi_cflags -fvisibility=hidden --std=gnu89)
+  # Since we are setting default visibility as "hidden", we need to set `UVWASI_EXPORT`
+  # so symbols we want to export do end up in the dynamic library.
+  add_compile_definitions(UVWASI_EXPORT="__attribute__((visibility(\"default\")))")
+  
   list(APPEND uvwasi_cflags -Wall -Wsign-compare -Wextra -Wstrict-prototypes)
   list(APPEND uvwasi_cflags -Wno-unused-parameter)
 endif()
