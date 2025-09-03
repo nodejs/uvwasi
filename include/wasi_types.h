@@ -322,10 +322,10 @@ typedef uint8_t uvwasi_whence_t;
 #define UVWASI_WHENCE_CUR 1
 #define UVWASI_WHENCE_END 2
 
-#ifndef UVWASI_EXPORT
-  // Actual value should be passed by the build system if -fvisibility=hidden is passed.
-  // Otherwise, default to empty string, since by default all symbols are exported.
+#if NEED_UVWASI_EXPORT
+  #define UVWASI_EXPORT __attribute__((visibility("default")))
+#else
   #define UVWASI_EXPORT
-#endif
+#endif /* NEED_UVWASI_EXPORT */
 
 #endif /* __UVWASI_WASI_TYPES_H__ */
