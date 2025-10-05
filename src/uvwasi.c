@@ -15,7 +15,7 @@
 
 #define UVWASI__READDIR_NUM_ENTRIES 1
 
-#if !defined(_WIN32) && !defined(__ANDROID__)
+#if !defined(_WIN32)
 # define UVWASI_FD_READDIR_SUPPORTED 1
 #endif
 

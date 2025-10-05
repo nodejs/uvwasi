@@ -46,12 +46,12 @@ int main(void) {
   CHECK(uvwasi_fd_prestat_dir_name(&uvw, 100, test_str, 10));
   CHECK(uvwasi_fd_pwrite(&uvw, 100, &test_ciovec, 2, 10, &test_size));
   CHECK(uvwasi_fd_read(&uvw, 100, &test_iovec, 2, &test_size));
-#if !defined(_WIN32) && !defined(__ANDROID__)
+#if !defined(_WIN32)
   CHECK(uvwasi_fd_readdir(&uvw, 100, test_void, 3, test_dircookie, &test_size));
 #else
   assert(UVWASI_ENOSYS ==
       uvwasi_fd_readdir(&uvw, 100, test_void, 3, test_dircookie, &test_size));
-#endif /* !defined(_WIN32) && !defined(__ANDROID__) */
+#endif /* !defined(_WIN32) */
   CHECK(uvwasi_fd_renumber(&uvw, 100, 2));
   CHECK(uvwasi_fd_seek(&uvw, 100, 10, UVWASI_WHENCE_CUR, &test_filesize));
   CHECK(uvwasi_fd_sync(&uvw, 100));
