@@ -9,7 +9,7 @@
 #define TEST_PATH_ADVISE TEST_TMP_DIR "/test_fd_advise_dir"
 
 int main(void) {
-#if !defined(_WIN32) && !defined(__ANDROID__)
+#if !defined(_WIN32)
   uvwasi_t uvwasi;
   uvwasi_options_t init_options;
   uv_fs_t req;
@@ -40,6 +40,6 @@ int main(void) {
 
   uvwasi_destroy(&uvwasi);
   free(init_options.preopens);
-#endif /* !defined(_WIN32) && !defined(__ANDROID__) */
+#endif /* !defined(_WIN32) */
   return 0;
 }

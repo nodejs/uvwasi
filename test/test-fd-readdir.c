@@ -12,7 +12,7 @@
 #define TEST_PATH_FILE_2 TEST_PATH_READDIR "/test_file_2"
 
 
-#if !defined(_WIN32) && !defined(__ANDROID__)
+#if !defined(_WIN32)
 static void touch_file(const char* name) {
   uv_fs_t req;
   int r;
@@ -29,11 +29,11 @@ static void touch_file(const char* name) {
   uv_fs_req_cleanup(&req);
   assert(r == 0);
 }
-#endif /* !defined(_WIN32) && !defined(__ANDROID__) */
+#endif /* !defined(_WIN32) */
 
 
 int main(void) {
-#if !defined(_WIN32) && !defined(__ANDROID__)
+#if !defined(_WIN32)
   uvwasi_t uvwasi;
   uvwasi_options_t init_options;
   uvwasi_dircookie_t cookie;
@@ -113,6 +113,6 @@ int main(void) {
 
   uvwasi_destroy(&uvwasi);
   free(init_options.preopens);
-#endif /* !defined(_WIN32) && !defined(__ANDROID__) */
+#endif /* !defined(_WIN32) */
   return 0;
 }

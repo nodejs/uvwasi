@@ -10,7 +10,7 @@
 #define TEST_TMP_DIR "./out/tmp"
 #define TEST_PATH_READDIR TEST_TMP_DIR "/test_readdir_cookie"
 
-#if !defined(_WIN32) && !defined(__ANDROID__)
+#if !defined(_WIN32)
 static void touch_file(const char *name) {
   uv_fs_t req;
   int r;
@@ -23,14 +23,14 @@ static void touch_file(const char *name) {
   uv_fs_req_cleanup(&req);
   assert(r == 0);
 }
-#endif /* !defined(_WIN32) && !defined(__ANDROID__) */
+#endif /* !defined(_WIN32) */
 
 /*
  * This is a test case for https://github.com/nodejs/node/issues/47193.
  */
 
 int main(void) {
-#if !defined(_WIN32) && !defined(__ANDROID__)
+#if !defined(_WIN32)
   uvwasi_t uvwasi;
   uvwasi_options_t init_options;
   uvwasi_dircookie_t cookie;
@@ -96,6 +96,6 @@ int main(void) {
   uvwasi_destroy(&uvwasi);
   free(init_options.preopens);
 
-#endif /* !defined(_WIN32) && !defined(__ANDROID__) */
+#endif /* !defined(_WIN32) */
   return 0;
 }

@@ -8,7 +8,7 @@
 #define TEST_TMP_DIR "./out/tmp"
 
 int main(void) {
-#if !defined(_WIN32) && !defined(__ANDROID__)
+#if !defined(_WIN32)
   uvwasi_t uvwasi;
   uvwasi_options_t init_options;
   uvwasi_errno_t err;
@@ -42,6 +42,6 @@ int main(void) {
 
   uvwasi_destroy(&uvwasi);
   free(init_options.preopens);
-#endif /* !defined(_WIN32) && !defined(__ANDROID__) */
+#endif /* !defined(_WIN32) */
   return 0;
 }
