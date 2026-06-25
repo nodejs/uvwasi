@@ -10,7 +10,7 @@ project (
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 # This can be a commit hash or tag
-set(LIBUV_VERSION v1.44.2)
+set(LIBUV_VERSION v1.52.1)
 
 include(CMakeDependentOption)
 cmake_dependent_option(BUILD_TESTING
