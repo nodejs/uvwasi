@@ -5,7 +5,9 @@ cd build
 cmake ../
 make uvwasi_a
 
+LIBUV_A="$(find . -name 'libuv_a.a' -o -name 'libuv.a' | head -n1)"
+
 $CC $CFLAGS $LIB_FUZZING_ENGINE ../.clusterfuzzlite/fuzz_normalize_path.c \
   -o $OUT/fuzz_normalize_path \
-  ./libuvwasi.a _deps/libuv-build/libuv_a.a \
+  ./libuvwasi.a "$LIBUV_A" \
   -I$SRC/uvwasi/include -I$PWD/_deps/libuv-src/include/
