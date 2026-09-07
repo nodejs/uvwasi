@@ -143,7 +143,9 @@ static void create_symlink(char* src, char* real_dst) {
 
 int main(void) {
   uvwasi_options_init(&init_options);
-  assert(0 == uvwasi_init(&uvwasi, &init_options));
+
+  int r = uvwasi_init(&uvwasi, &init_options);
+  assert(0 == r);
 
   /* Arguments: input path, expected normalized path */
   check_normalize("", ".");
