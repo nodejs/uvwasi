@@ -22,7 +22,8 @@ int main(void) {
   assert(init_options.preopens == NULL);
   assert(init_options.allocator == NULL);
 
-  assert(0 == uvwasi_init(&uvwasi, &init_options));
+  int r = uvwasi_init(&uvwasi, &init_options);
+  assert(0 == r);
   /* Calling uvwasi_destroy() multiple times should be fine. */
   uvwasi_destroy(&uvwasi);
   uvwasi_destroy(&uvwasi);
