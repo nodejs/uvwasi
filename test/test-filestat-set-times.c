@@ -74,6 +74,9 @@ int main(void) {
   assert(err == 0);
 
   /* Stat the file to get initial times. */
+  err = uvwasi_path_filestat_get(&uvwasi, 3, 0, path, 0, &stats2);
+  assert(err == UVWASI_ENOENT);
+
   err = uvwasi_fd_filestat_get(&uvwasi, fd, &stats);
   assert(err == 0);
   assert(stats.st_filetype == UVWASI_FILETYPE_REGULAR_FILE);
