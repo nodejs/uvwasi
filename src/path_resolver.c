@@ -445,6 +445,11 @@ uvwasi_errno_t uvwasi__resolve_path(const uvwasi_t* uvwasi,
   normalized_parent = NULL;
   resolved_link_target = NULL;
 
+  if (input_len == 0) {
+    *resolved_path = NULL;
+    return UVWASI_ENOENT;
+  }
+
   if (uvwasi__is_absolute_path(input, input_len)) {
     *resolved_path = NULL;
     return UVWASI_ENOTCAPABLE;
